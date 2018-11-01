@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block banner-title %}{{ object.order }}{% endblock %}
+{% block bnaner-content %}
+    供应商：{{ object.partner }} / 经办人：{{ object.handler }}
+{% endblock %}
+{% block btn %}
+    {% if state_form %}
+        <form action="" method="post">
+            {% csrf_token %}
+            {{ state_form }}
+            {% if btn_visible.draft %}
+                <input type="submit" class="btn btn-outline-secondary" value="设成草稿" name="draft">
+            {% endif %}
+            {% if btn_visible.confirm %}
+                <input type="submit" class="btn btn-outline-primary" value="确定" name="confirm">
+            {% endif %}
+            {% if btn_visible.cancel %}
+                <input type="submit" class="btn btn-outline-danger" value="取消" name="cancel">
+            {% endif %}
+        </form>
+    {% endif %}
+{% endblock %}
+{% block content %}
+    <table class="table table-sm">
+        <thead>
+        <tr>
+            <th>编号</th>
+            <th>重量</th>
+            <th>长</th>
+            <th>宽</th>
+            <th>高</th>
+            <th>立方</th>
+            <th>单位</th>
+            <th>单价</th>
+            <th>金额</th>
+            <th>编辑</th>
+        </tr>
+        </thead>
+
+        <tbody>
+        {% for object in object_list %}
+            <tr id="block_list_tr">
+                <td>{{ object.name }}</td>
+                <td>{{ object.weight }}</td>
+                <td>{{ object.long }}</td>
+                <td>{{ object.width }}</td>
+                <td>{{ object.height }}</td>
+                <td>{{ object.m3 }}</td>
+                <td>{{ object.uom }}</td>
+                <td>{{ object.price }}</td>
+                <td>{{ object.get_amount }}</td>
+                <td>
+                    <div class="dropdown">
+                        <button type="button" class="btn btn-sm " data-toggle="dropdown"
+                                aria-haspopup="true" aria-expanded="false">
+                            ...
+                        </button>
+                        <div class="dropdown-menu">
+                            <a class="dropdown-item" data-toggle="modal" data-target=".bd-example-modal-sm"
+                               href="{% url 'import_block_edit' %}">修改</a>
+                            <a class="dropdown-item" href="#">Another action</a>
+                            <a class="dropdown-item" href="#">Something else here</a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="#">Separated link</a>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+        <tfoot>
+        <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>{{ object.get_quantity }}</td>
+            <td>{{ object.uom }}</td>
+            <td>{{ object.get_amount }}</td>
+            <td></td>
+        </tr>
+        </tfoot>
+    </table>
+
+{% endblock %}
+{% block siderbar %}
+
+{% endblock %}

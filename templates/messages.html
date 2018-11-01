@@ -1,0 +1,16 @@
+{% if messages %}
+        <ul class="messages list-unstyled" id="top-messages">
+            {% for message in messages %}
+                {% if message %}
+                    <li class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible in text-center"
+                        role="alert">
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                        {% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}{% endif %}
+                        <h4>{{ message }}</h4>
+                    </li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+    {% endif %}
