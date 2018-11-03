@@ -1,11 +1,11 @@
 from decimal import Decimal
-
+from .fields import OrderField
 from datetime import datetime
 from django.db import models
-from mrp.models import OrderAbstract
 from purchase.fields import LineField
 from django.contrib.auth.models import User
 from django.shortcuts import reverse
+from django.contrib.contenttypes.fields import GenericRelation
 
 CURRENCY_CHOICE = (
     ('USD', u'$美元'),
@@ -14,8 +14,35 @@ CURRENCY_CHOICE = (
 )
 UOM_CHOICES = (('t', '吨'), ('m3', '立方'))
 
+STATE_CHOICES = (
+    ('draft', '草稿'),
+    ('confirm', '确认'),
+    ('cancel', '取消'),
+)
+
+
+class OrderAbstract(models.Model):
+    state = models.CharField('状态', choices=STATE_CHOICES, max_length=20, default='draft')
+    order = OrderField(order_str=None, max_length=26, default='New', db_index=True, unique=True, verbose_name='订单号码', )
+    date = models.DateField('日期')
+    created = models.DateField('创建日期', auto_now_add=True)
+    updated = models.DateTimeField('更新时间', auto_now=True)
+    handler = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='经办人',
+                                related_name='%(class)s_handler')
+    entry = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='登记人',
+                              related_name='%(class)s_entry')
+    partner = models.ForeignKey('partner.Partner', on_delete=models.SET_NULL, null=True, blank=True,
+                                verbose_name='业务伙伴')
+    comments = GenericRelation('comment.Comment')
+    invoices = GenericRelation('invoice.OrderInvoiceThrough')
+
+    class Meta:
+        abstract = True
+        ordering = ['-created']
+
 
 class PurchaseOrder(OrderAbstract):
+    order = OrderField(order_str='PO', max_length=10, default='New', db_index=True, unique=True, verbose_name='订单号码', )
     currency = models.CharField('货币', choices=CURRENCY_CHOICE, max_length=10)
     uom = models.CharField('计量单位', null=False, choices=UOM_CHOICES, max_length=10)
 

@@ -1,0 +1,11 @@
+{% if object %}
+    <div class="album text-muted">
+    <div class="container">
+        <ul>
+            {% for comment in object.comments.all %}
+            <li>{{ comment.comment }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    </div>
+{% endif %}

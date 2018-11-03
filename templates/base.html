@@ -8,6 +8,14 @@
     <link rel="stylesheet" href="https://cdn.rawgit.com/twbs/bootstrap/v4-dev/dist/css/bootstrap.css">
     <script src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
 
+{#<script type="text/javascript" src="/jsi18n/"></script>#}
+{#<script type="text/javascript" src="{% static 'admin/js/core.js' %}"></script>#}
+{#<script type="text/javascript" src="{% static 'admin/js/admin/RelatedObjectLookups.js' %}"></script>#}
+{##}
+{#<link rel="stylesheet" type="text/css" href="{% static 'admin/css/forms.css' %}"/>#}
+{#<link rel="stylesheet" type="text/css" href="{% static 'admin/css/base.css' %}"/>#}
+{#<link rel="stylesheet" type="text/css" href="{% static 'admin/css/widgets.css' %}"/>#}
+
 </head>
 <body>
 {% block messges %}
@@ -40,6 +48,7 @@
         <div class="col-md-8">
             {% block content %}
             {% endblock %}
+        {% include 'comment.html' %}
         </div>
         <div class="col-md-4">
             {% block siderbar %}

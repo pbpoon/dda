@@ -39,7 +39,7 @@
         </thead>
 
         <tbody>
-        {% for object in object_list %}
+        {% for object in object.items.all %}
             <tr id="block_list_tr">
                 <td>{{ object.name }}</td>
                 <td>{{ object.weight }}</td>
@@ -87,5 +87,9 @@
 
 {% endblock %}
 {% block siderbar %}
-
+    <ul class="list_group">
+    {% for invoice in object.invoices.all %}
+        <li class="list_group_item"><a href="{{ invoice.invoice.get_absolute_url }}">{{ invoice.invoice }}</a></li>
+    {% endfor %}
+    </ul>
 {% endblock %}

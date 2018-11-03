@@ -13,7 +13,10 @@ class Warehouse(models.Model):
     name = models.CharField('仓库名称', max_length=50, null=False)
     code = models.CharField('缩写名称', max_length=20, null=False)
     is_activate = models.BooleanField('启用', default=True)
-    partner = models.ForeignKey('partner.Partner', on_delete=models.SET_NULL, verbose_name='合作伙伴', null=True, blank=True)
+    partner = models.ForeignKey('partner.Partner', on_delete=models.SET_NULL, verbose_name='合作伙伴', null=True,
+                                blank=True)
+    created = models.DateTimeField('创建时间', auto_now_add=True)
+    updated = models.DateTimeField('更新时间', auto_now=True)
 
     class Meta:
         verbose_name = '仓库信息'
@@ -31,6 +34,8 @@ class Location(models.Model):
     is_virtual = models.BooleanField('虚拟库位')
     desc = models.TextField('描述')
     is_activate = models.BooleanField('启用', default=True)
+    created = models.DateTimeField('创建时间', auto_now_add=True)
+    updated = models.DateTimeField('更新时间', auto_now=True)
 
     class Meta:
         verbose_name = '库位信息'
@@ -56,10 +61,17 @@ class StockTrace(models.Model):
                                  on_delete=models.DO_NOTHING)
     location_dest = models.ForeignKey('Location', related_name='stock_trace_to', verbose_name='目标库位',
                                       on_delete=models.DO_NOTHING)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='product_stock_trace')
+    product = models.ForeignKey('product.Product', on_delete=models.CASCADE, related_name='product_stock_trace')
+    created = models.DateTimeField('创建时间', auto_now_add=True)
 
     class Meta:
         verbose_name = '库存轨迹'
 
     def __str__(self):
         return '{}|{}:{}=>{}'.format(self.order, self.product, self.location, self.location_dest)
+
+
+class Stock(models.Model):
+    """只有location的is_virtual=True是才写入stock"""
+    product = models.ForeignKey('product.Product', on_delete=models.CASCADE, related_name='product_stock')
+    pic

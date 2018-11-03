@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block banner-title %}{{ object.order }}
+    <a href="{{ object.to_order.get_absolute_url }}">{{ object.to_order }}</a> {% endblock %}
+{% block bnaner-content %}
+    对方名称：{{ object.partner }} / 金额：{{ object.get_amount }}
+{% endblock %}
+{% block btn %}
+    {% if state_form %}
+        <form action="" method="post">
+            {% csrf_token %}
+            {{ state_form }}
+            {% if btn_visible.draft %}
+                <input type="submit" class="btn btn-outline-secondary" value="设成草稿" name="draft">
+            {% endif %}
+            {% if btn_visible.confirm %}
+                <input type="submit" class="btn btn-outline-primary" value="确定" name="confirm">
+            {% endif %}
+            {% if btn_visible.cancel %}
+                <input type="submit" class="btn btn-outline-danger" value="取消" name="cancel">
+            {% endif %}
+        </form>
+    {% endif %}
+{% endblock %}
+{% block content %}
+    <table class="table table-sm">
+        <thead>
+        <tr>
+            <th>项目</th>
+            <th>数量</th>
+            <th>单价</th>
+            <th>金额</th>
+            <th>编辑</th>
+        </tr>
+        </thead>
+
+        <tbody>
+        {% for object in object_list %}
+            <tr id="block_list_tr">
+                <td>{{ object.item }}</td>
+                <td>{{ object.quantity }}</td>
+                <td>{{ object.price }}</td>
+                <td>{{ object.get_amount }}</td>
+                <td>
+                    <div class="dropdown">
+                        <button type="button" class="btn btn-sm " data-toggle="dropdown"
+                                aria-haspopup="true" aria-expanded="false">
+                            ...
+                        </button>
+                        <div class="dropdown-menu">
+                            <a class="dropdown-item" data-toggle="modal" data-target=".bd-example-modal-sm"
+                               href="{% url 'import_block_edit' %}">修改</a>
+                            <a class="dropdown-item" href="#">Another action</a>
+                            <a class="dropdown-item" href="#">Something else here</a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="#">Separated link</a>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+        <tfoot>
+        <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>{{ object.get_amount }}</td>
+            <td></td>
+        </tr>
+        </tfoot>
+    </table>
+
+    <p>lenp</p>
+
+{% endblock %}
+{% block siderbar %}
+    {% if object.assign_payments.all %}
+        <p class="h3">已分配的款项：</p>
+        <ui class="list-group">
+            {% for payment in object.assign_payments.all %}
+                <form action="{% url 'assign_delete' payment.id %}" method="post">
+                    <li class="list-group-item">{{ payment.amount }}-{{ payment.updated }}
+                        <input class="btn btn-link float-right" value="取消分配" type="submit"></li>
+                    {% csrf_token %}
+                </form>
+            {% endfor %}
+        </ui>
+            <hr>
+
+    {% endif %}
+    {% if object.get_due_amount %}
+        <p class="h3" >可分配的付款项：</p>
+        <ul class="list-group">
+            {% for payment in object.partner.payments.all %}
+                {% if payment.get_due_amount %}
+
+                    <li class="list-group-item">{{ payment.get_due_amount }}:{{ payment.account.name }}
+                        <a href="{% url 'assign_payment' object.id payment.id %}" class="float-md-right">分配到此账单</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+    {% endif %}
+    <a href="{% url 'payment_create' object.id object.partner.id %}"
+       class="btn btn-outline-info">登记收款</a>
+{% endblock %}

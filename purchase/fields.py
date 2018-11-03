@@ -3,6 +3,7 @@
 # Created by pbpoon on 2018/10/27
 from django.db import models
 from django.core.exceptions import ObjectDoesNotExist
+from datetime import datetime
 
 
 class LineField(models.PositiveIntegerField):
@@ -36,3 +37,33 @@ class LineField(models.PositiveIntegerField):
         else:
             # 如果有值，不做任何处理，直接调用父类的pre_save()方法
             return super(LineField, self).pre_save(model_instance, add)
+
+
+class OrderField(models.CharField):
+    def __init__(self, order_str=None, *args, **kwargs):
+
+        self.order_str = order_str
+        super(OrderField, self).__init__(*args, **kwargs)
+
+    def pre_save(self, model_instance, add):
+        if getattr(model_instance, self.attname) == 'New':
+            #如果是新记录
+            date_str = datetime.now().strftime('%y%m')
+            # 转换时间格式为str
+            value = self.order_str + date_str + '001'
+            # 把value初始化成 order_str + 年月 + 001
+            try:
+                # 取自己所在数据表内全部对象（行）
+                qs = self.model.objects.all()
+                # 判断是否传入for_fields参数
+                # 格式为 IM1703001
+                last_order = qs.latest(self.attname)
+                last_order_str = getattr(last_order, self.attname)
+                if date_str in last_order_str[2:6]:
+                    value = self.order_str + str(int(last_order_str[2:9]) + 1)
+            except ObjectDoesNotExist:
+                pass
+            setattr(model_instance, self.attname, value)
+            return value
+        else:
+            return super(OrderField, self).pre_save(model_instance, add)
