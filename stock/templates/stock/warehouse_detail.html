@@ -1,0 +1,12 @@
+{% extends 'stock/detail.html' %}
+{% block siderbar %}
+    <a href="" class="btn btn-outline-primary">编辑</a>
+{% endblock %}
+{% block content %}
+    <p></p>其下库位：
+    <ul class="list-group">
+        {% for location in object.locations.all %}
+            <li class="list-group-item">{{ location.name }}</li>
+        {% endfor %}
+    </ul>
+{% endblock %}

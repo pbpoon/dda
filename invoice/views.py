@@ -12,6 +12,9 @@ from invoice.models import Invoice, Payment, Account, Assign
 
 
 class InvoiceDetailView(GetItemsMixin, DetailView):
+    """
+    需要有一个完成收款功能
+    """
     model = Invoice
     template_name = 'invoice/detail.html'
 

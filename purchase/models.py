@@ -40,6 +40,12 @@ class OrderAbstract(models.Model):
         abstract = True
         ordering = ['-created']
 
+    def get_quantity(self):
+        return sum(item.quantity for item in self.items.all())
+
+    def get_amount(self):
+        return sum(item.get_amount() for item in self.items.all())
+
 
 class PurchaseOrder(OrderAbstract):
     order = OrderField(order_str='PO', max_length=10, default='New', db_index=True, unique=True, verbose_name='订单号码', )
@@ -52,21 +58,6 @@ class PurchaseOrder(OrderAbstract):
 
     def get_absolute_url(self):
         return reverse('purchase_order_detail', args=[self.id])
-
-    def save(self, *args, **kwargs):
-        # 格式为 IM1703001
-        date_str = datetime.now().strftime('%y%m')
-        if self.order == 'New':
-            last_record = self.__class__.objects.last()
-            if last_record:
-                last_order = last_record.order
-                if date_str in last_order[2:6]:
-                    self.order = 'PO' + str(int(last_order[2:9]) + 1)
-                else:
-                    self.order = 'PO' + date_str + '001'  # 新月份
-            else:
-                self.order = 'PO' + date_str + '001'  # 新记录
-        super(OrderAbstract, self).save(*args, **kwargs)
 
     def get_quantity(self):
         return sum(item.get_quantity() for item in self.items.all())

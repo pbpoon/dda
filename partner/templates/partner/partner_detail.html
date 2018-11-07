@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block bnaner-title %}
+    {{ object }}
+{% endblock %}
+{% block content %}
+    <ul>
+        <li>{{ object.type }}</li>
+        <li>{{ object.is_activate }}</li>
+    </ul>
+{% endblock %}
+{% block siderbar %}
+    <a href="{% url 'partner_update'  object.id %}" class="btn btn-outline-secondary btn-block">修改</a>
+{% endblock %}

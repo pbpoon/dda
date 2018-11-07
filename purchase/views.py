@@ -33,12 +33,14 @@ class StateChangeMixin:
     def get_success_url(self):
         return self.object.get_absolute_url()
 
+    def get_btn_visible(self, state):
+        return {s: s != state for s in ('draft', 'confirm', 'cancel')}
+
     def get_context_data(self, **kwargs):
         state_form = StateForm()
         state = self.object.state
-        btn_visible = {s: s != state for s in ('draft', 'confirm', 'cancel')}
         kwargs.update({'state_form': state_form,
-                       'btn_visible': btn_visible})
+                       'btn_visible': self.get_btn_visible(state)})
         return super(StateChangeMixin, self).get_context_data(**kwargs)
 
     def post(self, *args, **kwargs):

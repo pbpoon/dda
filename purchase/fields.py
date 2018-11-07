@@ -46,7 +46,8 @@ class OrderField(models.CharField):
         super(OrderField, self).__init__(*args, **kwargs)
 
     def pre_save(self, model_instance, add):
-        if getattr(model_instance, self.attname) == 'New':
+        attname_value = getattr(model_instance, self.attname)
+        if attname_value == 'New' or not attname_value:
             #如果是新记录
             date_str = datetime.now().strftime('%y%m')
             # 转换时间格式为str

@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block bnaner-title %}
+    {{ object.name }}
+{% endblock %}
+{% block content %}
+    <ul>
+        <li>{{ object.category }}</li>
+        <li>{{ object.batch }}</li>
+        <li>{{ object.weight }}</li>
+        <li>{{ object.m3 }}</li>
+        <li>{{ object.uom }}</li>
+    </ul>
+    <hr>
+    {% if object.stock.all %}
+        <p class="h4">可以库存：</p>
+        <ul>
+            {% for stock in object.stock.all %}
+                <li><a href="">{{ stock.piece }}件/{{ stock.quantity }}{{ stock.uom }}</a></li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endblock %}

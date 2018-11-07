@@ -1,0 +1,64 @@
+{% extends 'mrp/blockcheckinorder_detail.html' %}
+{% load crispy_forms_tags %}
+{% block content %}
+    <table class="table table-sm">
+        <thead>
+        <tr>
+            <th>编号</th>
+            <th>件</th>
+            <th>数量</th>
+            <th>单位</th>
+            <th>编辑</th>
+        </tr>
+        </thead>
+
+        <tbody>
+        {% for object in object_list %}
+            <tr id="block_list_tr">
+                <td>{{ object.product }}</td>
+                <td>{{ object.piece }}</td>
+                <td>{{ object.quantity }}</td>
+                <td>{{ object.uom }}</td>
+                <td>
+                    <div class="dropdown">
+                        <button type="button" class="btn btn-sm " data-toggle="dropdown"
+                                aria-haspopup="true" aria-expanded="false">
+                            ...
+                        </button>
+                        <div class="dropdown-menu">
+                            <a class="dropdown-item" data-toggle="modal" data-target=".bd-example-modal-sm"
+                               href="{% url 'import_block_edit' %}">修改</a>
+                            <a class="dropdown-item" href="#">Another action</a>
+                            <a class="dropdown-item" href="#">Something else here</a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="#">Separated link</a>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+        <tfoot>
+        <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>{{ object.get_quantity }}</td>
+            <td></td>
+            <td>{{ object.get_amount }}</td>
+            <td></td>
+        </tr>
+        </tfoot>
+    </table>
+
+{% endblock %}
+{% block siderbar %}
+    <form action="" method="post">
+        {{ form|crispy }}
+        <input class="btn btn-primary btn-block" type="submit" value="确认">
+        {% csrf_token %}
+    </form>
+{% endblock %}

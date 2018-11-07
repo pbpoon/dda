@@ -11,7 +11,7 @@ STATE_CHOICES = (
 )
 
 
-class ImprotFileForm(forms.Form):
+class ImportFileForm(forms.Form):
     file = forms.FileField(label='选择文件')
 
 
