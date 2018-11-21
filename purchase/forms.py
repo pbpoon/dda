@@ -2,7 +2,9 @@
 # -*- coding: utf-8 -*-
 # Created by pbpoon on 2018/10/30
 from django import forms
+
 from .models import PurchaseOrderItem, PurchaseOrder
+from material_widgets import forms as md_forms
 
 STATE_CHOICES = (
     ('draft', '草稿'),
@@ -18,15 +20,18 @@ class ImportFileForm(forms.Form):
 class PurchaseOrderForm(forms.ModelForm):
     class Meta:
         model = PurchaseOrder
-        exclude = ('order', 'state', 'entry')
+        exclude = ('order', 'entry', 'state')
 
 
 class PurchaseOrderItemForm(forms.ModelForm):
     class Meta:
         model = PurchaseOrderItem
-        exclude = ('order', 'product', 'entry')
+        # fields = '__all__'
+        exclude = ( 'product', 'entry')
         widgets = {
             'type': forms.HiddenInput(),
+            'id': forms.HiddenInput(),
+            'order':forms.HiddenInput()
         }
 
 

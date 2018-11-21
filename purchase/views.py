@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404, render_to_response
 from django.http import JsonResponse
 from django.urls import reverse_lazy
 from django.views.generic.base import View
@@ -92,7 +92,6 @@ class PurchaseOrderDetailView(StateChangeMixin, DetailView):
         return super(PurchaseOrderDetailView, self).get_context_data(**kwargs)
 
     def confirm(self):
-        comment = ''
         products = (item.product for item in self.object.items.all())
         for p in products:
             p.activate = True
@@ -121,7 +120,8 @@ class PurchaseOrderDetailView(StateChangeMixin, DetailView):
 
 class PurchaseOrderCreateView(CreateView):
     model = PurchaseOrder
-    fields = ('date', 'partner', 'handler', 'currency', 'uom')
+    form_class = PurchaseOrderForm
+    # fields = ('date', 'partner', 'handler', 'currency', 'uom')
     template_name = 'purchase/order/form.html'
 
     def form_valid(self, form):
@@ -130,16 +130,21 @@ class PurchaseOrderCreateView(CreateView):
         instance.save()
         return super(PurchaseOrderCreateView, self).form_valid(form)
 
+    # def get_context_data(self, **kwargs):
+    #     items = PurchaseOrderItem.objects.filter(entry=self.request.user, order__isnull=True)
+    #     kwargs.update({'object_list': items})
+    #     return super(PurchaseOrderCreateView, self).get_context_data(**kwargs)
 
-class PurchaseOrderCreateViewSetpOne(LoginRequiredMixin, ListView, FormView):
+
+class PurchaseOrderCreateViewStepOne(LoginRequiredMixin, ListView, FormView):
     model = PurchaseOrderItem
     form_class = PurchaseOrderItemForm
     template_name = 'purchase/order/form.html'
     success_url = reverse_lazy('purchase_order_create_one')
 
     def get_queryset(self):
-        qs = super(PurchaseOrderCreateViewSetpOne, self).get_queryset()
-        qs.filter(entry=self.request.user)
+        qs = super(PurchaseOrderCreateViewStepOne, self).get_queryset()
+        qs.filter(entry=self.request.user, order__isnull=True)
         go_next = True if qs else False
         return qs
 
@@ -147,10 +152,10 @@ class PurchaseOrderCreateViewSetpOne(LoginRequiredMixin, ListView, FormView):
         instance = form.save(commit=False)
         instance.entry = self.request.user
         instance.save()
-        return super(PurchaseOrderCreateViewSetpOne, self).form_valid(form)
+        return super(PurchaseOrderCreateViewStepOne, self).form_valid(form)
 
 
-class PurchaseOrderCreateViewSetpTwo(LoginRequiredMixin, CreateView):
+class PurchaseOrderCreateViewStepTwo(LoginRequiredMixin, CreateView):
     model = PurchaseOrder
     form_class = PurchaseOrderForm
     template_name = 'purchase/order/form2.html'
@@ -159,7 +164,7 @@ class PurchaseOrderCreateViewSetpTwo(LoginRequiredMixin, CreateView):
     def get_context_data(self, **kwargs):
         items = PurchaseOrderItem.objects.filter(entry=self.request.user, order__isnull=True)
         kwargs.update({'object_list': items})
-        return super(PurchaseOrderCreateViewSetpTwo, self).get_context_data(**kwargs)
+        return super(PurchaseOrderCreateViewStepTwo, self).get_context_data(**kwargs)
 
     def form_valid(self, form):
         # 先检查该名称的product是否已经存在，如果已经存在就raise，sent一个message
@@ -189,3 +194,43 @@ class PurchaseOrderCreateViewSetpTwo(LoginRequiredMixin, CreateView):
                 messages.add_message(self.request, messages.ERROR, error)
                 redirect(self.request.path)
         return redirect('purchase_order_detail', instance.id)
+
+
+class PurchaseOrderItemEditView(View):
+    form_class = PurchaseOrderItemForm
+    template_name = 'purchase/order/addNewBlockForm.html'
+    model = PurchaseOrderItem
+
+    def get(self, *args, **kwargs):
+        item_id = self.request.GET.get('item_id')
+        item = get_object_or_404(self.model, pk=item_id)
+        form = self.form_class(instance=item)
+        return render_to_response(self.template_name, {'item_form': form, 'item_id': item_id})
+
+    def post(self, *args, **kwargs):
+        item = self.model.objects.get(pk=self.request.POST.get('item_id'))
+        form = self.form_class(self.request.POST, instance=item)
+        if form.is_valid():
+            form.save()
+            path = self.request.META.get('HTTP_REFERER')
+            return redirect(path)
+        return render_to_response(self.template_name, {'item_form': form})
+
+
+class PurchaseOrderItemCreateView(View):
+    form_class = PurchaseOrderItemForm
+    template_name = 'purchase/order/addNewBlockForm.html'
+    model = PurchaseOrderItem
+
+    def get(self, *args, **kwargs):
+        form = self.form_class(initial={'order':self.request.GET.get('order_id')})
+        return render_to_response(self.template_name, {'item_form': form})
+
+    def post(self, *args, **kwargs):
+        form = self.form_class(self.request.POST)
+        if form.is_valid():
+            form.save()
+            path = self.request.META.get('HTTP_REFERER')
+            messages.success('成功添加一行明细')
+            return redirect(path)
+        return render_to_response(self.template_name, {'item_form': form})

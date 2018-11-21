@@ -125,7 +125,7 @@ class Invoice(models.Model):
         ordering = ('-created',)
 
     def get_amount(self):
-        return Decimal('{0:.2f}'.format(sum(item.get_amount() for item in self.items.all())))
+        return Decimal('{0:.2f}'.format(sum(item.get_amount for item in self.items.all())))
 
     def get_due_amount(self):
         # 未付余额

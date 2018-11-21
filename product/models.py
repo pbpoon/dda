@@ -89,6 +89,9 @@ class Product(models.Model):
     def get_absolute_url(self):
         return reverse('product_detail', args=[self.id])
 
+    def get_uom(self):
+        return self.uom if self.type == 'block' else 'm2'
+
 
 class Slab(models.Model):
     product = models.ForeignKey('Product', on_delete=models.CASCADE, limit_choices_to={'type': 'slab'},

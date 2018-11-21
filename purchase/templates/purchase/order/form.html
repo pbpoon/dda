@@ -1,77 +1,65 @@
 {% extends "base.html" %}
-{% load crispy_forms_tags %}
-{% block content %}
-    {% if object_list %}
-        <form action="" method="post" id="select_block_form">
-            <table class="table table-sm">
-                <thead>
-                <tr>
-                    <th>选</th>
-                    <th>编号</th>
-                    <th>重量</th>
-                    <th>长</th>
-                    <th>宽</th>
-                    <th>高</th>
-                    <th>立方</th>
-                    <th>计量单位</th>
-                    <th>单价</th>
-                    <th>金额</th>
-                    <th>编辑</th>
-                </tr>
-                </thead>
+{% load materializecss %}
 
-                <tbody>
-                {% for object in object_list %}
-                    <tr id="block_list_tr">
-                        <td><input type="checkbox" name="check_box_list" value="{{ object.id }}"></td>
-                        <td>{{ object.name }}</td>
-                        <td>{{ object.weight }}</td>
-                        <td>{{ object.long }}</td>
-                        <td>{{ object.width }}</td>
-                        <td>{{ object.height }}</td>
-                        <td>{{ object.m3 }}</td>
-                        <td>{{ object.uom }}</td>
-                        <td>{{ object.price }}</td>
-                        <td>{{ object.get_amount }}</td>
-                        <td>
-                            <div class="dropdown">
-                                <button type="button" class="btn btn-sm " data-toggle="dropdown"
-                                        aria-haspopup="true" aria-expanded="false">
-                                    ...
-                                </button>
-                                <div class="dropdown-menu">
-                                    <a class="dropdown-item" data-toggle="modal" data-target=".bd-example-modal-sm"
-                                       href="{% url 'import_block_edit' %}">修改</a>
-                                    <a class="dropdown-item" href="#">Another action</a>
-                                    <a class="dropdown-item" href="#">Something else here</a>
-                                    <div class="dropdown-divider"></div>
-                                    <a class="dropdown-item" href="#">Separated link</a>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-                <tfoot>
-                <tr>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
+{% block content %}
+    <form action="" method="post">
+        {{ form|materializecss }}
+        {% csrf_token %}
+        <input type="submit" value="确定" class="btn btn-block btn-outline-primary">
+    </form>
+    {% if object_list %}
+        <table>
+            <thead>
+            <tr>
+                <th>选</th>
+                <th>编号</th>
+                <th>重量</th>
+                <th>长</th>
+                <th>宽</th>
+                <th>高</th>
+                <th>立方</th>
+                <th>计量单位</th>
+                <th>单价</th>
+                <th>金额</th>
+                <th>编辑</th>
+            </tr>
+            </thead>
+
+            <tbody>
+            {% for object in object_list %}
+                <tr id="block_list_tr">
+                    <td><input type="checkbox" name="check_box_list" value="{{ object.id }}"></td>
+                    <td>{{ object.name }}</td>
+                    <td>{{ object.weight }}</td>
+                    <td>{{ object.long }}</td>
+                    <td>{{ object.width }}</td>
+                    <td>{{ object.height }}</td>
+                    <td>{{ object.m3 }}</td>
+                    <td>{{ object.uom }}</td>
+                    <td>{{ object.price }}</td>
+                    <td>{{ object.get_amount }}</td>
+                    <td>
+                        <button class="mdui-btn"></button>
+                    </td>
                 </tr>
-                </tfoot>
-            </table>
-            {% csrf_token %}
-        </form>
-    {% else %}
-        <p>还未有内容</p>
+            {% endfor %}
+            </tbody>
+            <tfoot>
+            <tr>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            </tfoot>
+        </table>
     {% endif %}
 
 {% endblock %}
@@ -80,65 +68,24 @@
         <li><input type="submit" form="select_block_form" class="btn btn-success" value="select">
         </li>
         <li><a href="{% url 'purchase_order_create_two' %}" class="btn btn-primary">下一步</a></li>
-        <li><a class="btn btn-primary" data-toggle="modal" data-target=".bd-example-modal-sm">添加一个荒料</a>
+        <li>
+            <button class="btn btn-primary" id="addNew">添加一个荒料</button>
         </li>
 
     </ul>
 
-    <div class="modal fade bd-example-modal-sm" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel"
-         aria-hidden="true">
-        <div class="modal-dialog modal-sm">
-            <div class="modal-content">
-                <div class="container">
-                    <form id="block_form" method="post">
-                        {{ form|crispy }}
-                        {#                        <fieldset class="form-group">#}
-                        {#                            <label for="name">编号</label>#}
-                        {#                            <input type="text" name="name" class="form-control">#}
-                        {#                        </fieldset>#}
-                        {#                        <fieldset class="form-group">#}
-                        {#                            <label for="quantity">数量</label>#}
-                        {#                            <input type="number" name="quantity">#}
-                        {#                            <select type="select" name="uom">#}
-                        {#                                <option value="t">吨</option>#}
-                        {#                                <option value="m3">立方</option>#}
-                        {#                            </select>#}
-                        {#                            <input type="number" name="price">#}
-                        {#                            <input type="number" name="weight">#}
-                        {#                            <input type="number" name="long">#}
-                        {#                            <input type="number" name="width">#}
-                        {#                            <input type="number" name="height">#}
-                        {#                            <input type="number" name="m3">#}
-                        <input id="block_form_submit" class="btn btn-primary" type="submit" value="确认">
-                        {#                        </fieldset>#}
-                        {% csrf_token %}
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-{#    <script type="text/javascript">#}
-{#        $('#block_form').submit(function () {#}
-{#            $.ajax({url:"{% url 'import_block_edit' %}",#}
-{#                 type: 'POST',#}
-{#                data: $(this).serialize(),#}
-{#                cache: false,#}
-{#                success: function (data) {#}
-{#                    console.log(data);#}
-{#                    //插入数据#}
-{#                    var new_block = ''#}
-{#                    $("#block_list_tr").append(new_block)#}
-{#                },#}
-{#                error: function (xhr) {#}
-{#                    console.log(xhr);#}
-{#                },});#}
-{#            return false#}
-{#        });#}
-
-
-    {#</script>#}
 {% endblock %}
 {% block domready %}
+{#    $('.datepicker').datepicker({'format': 'yyyy-mm-dd'});#}
+    $('select').formSelect();
+{% endblock %}
+{% block script %}
+    <script
+            src="https://code.jquery.com/jquery-3.3.1.min.js"
+            integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+            crossorigin="anonymous"></script>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-rc.1/js/materialize.min.js"
+            integrity="sha256-SrBfGi+Zp2LhAvy9M1bWOCXztRU9Ztztxmu5BcYPcPE=" crossorigin="anonymous"></script>
 
 {% endblock %}

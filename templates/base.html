@@ -5,66 +5,102 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}stone system{% endblock %}</title>
-    <link rel="stylesheet" href="https://cdn.rawgit.com/twbs/bootstrap/v4-dev/dist/css/bootstrap.css">
-    <script src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+    <!--Import Google Icon Font-->
+    <link href="http://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!--Import materialize.css-->
+    <link rel="stylesheet" href="{% static 'css/materialize.css' %}">
+    <style>
+        header, main, footer {
+            padding-left: 300px;
+        }
 
-{#<script type="text/javascript" src="/jsi18n/"></script>#}
-{#<script type="text/javascript" src="{% static 'admin/js/core.js' %}"></script>#}
-{#<script type="text/javascript" src="{% static 'admin/js/admin/RelatedObjectLookups.js' %}"></script>#}
-{##}
-{#<link rel="stylesheet" type="text/css" href="{% static 'admin/css/forms.css' %}"/>#}
-{#<link rel="stylesheet" type="text/css" href="{% static 'admin/css/base.css' %}"/>#}
-{#<link rel="stylesheet" type="text/css" href="{% static 'admin/css/widgets.css' %}"/>#}
+        @media only screen and (max-width: 992px) {
+            header, main, footer {
+                padding-left: 0;
+            }
+        }
+    </style>
 
 </head>
 <body>
-{% block messges %}
-    {% include 'messages.html' %}
-{% endblock %}
-{% block menu %}
-    <nav class="navbar navbar-light bg-faded">
-        <a class="navbar-brand" href="#">stone</a>
-        <ul class="nav navbar-nav">
-            <li class="nav-item active">
-                <a class="nav-link" href="{% url 'purchase_order_list' %}">采购<span class="sr-only">(current)</span></a>
-            </li>
+<ul id="slide-out" class="side-nav fixed">
+    <li><a href="#!">第一导航链接</a></li>
+    <li><a href="#!">第二导航链接</a></li>
+    <li class="no-padding">
 
+        <ul class="collapsible collapsible-accordion">
+            <li>
+                <a class="collapsible-header">采购订单<i class="material-icons">arrow_drop_down</i></a>
+                <div class="collapsible-body">
+                    <ul>
+                        <li><a href="#!">一</a></li>
+                        <li><a href="#!">二</a></li>
+                        <li><a href="#!">三</a></li>
+                        <li><a href="#!">四</a></li>
+                    </ul>
+                </div>
+            </li>
         </ul>
-        <form class="form-inline navbar-form pull-right">
-            <input class="form-control" type="text" placeholder="Search">
-            <button class="btn btn-success-outline" type="submit">Search</button>
-        </form>
-    </nav>
-{% endblock %}
-<div class="jumbotron jumbotron-fluid">
-    <div class="container">{% block btn %}{% endblock %}
-        <h1 class="display-6">{% block banner-title %}Hello!{% endblock %}</h1>
-        <hr class="my-4">
-        <p class="lead">{% block bnaner-content %}{% endblock %}</p>
+    </li>
+    <li><a href="{% url 'cart_detail' %}">选择了：{{ cart|length }}项</a></li>
+
+</ul>
+<a href="#" data-activates="slide-out" class="button-collapse"><i class="material-icons">menu</i></a>
+
+
+<!--标题块相关-->
+<header>
+    <div class="container">
+
+        <div class="display-6">{% block headline %}{% endblock %}</div>
+        <p>{% block subheadline %}{% endblock %}</p>
     </div>
-</div>
-<div class="container">
+    <hr/>
+</header>
+
+<main>
+
+
+    <!--内容块，分content及sidebar-->
     <div class="row">
-        <div class="col-md-8">
-            {% block content %}
-            {% endblock %}
-        {% include 'comment.html' %}
+
+        <div class="col s8">
+            <div class="container">
+                {% block content %}
+                {% endblock %}
+                {% include 'comment.html' %}
+            </div>
         </div>
-        <div class="col-md-4">
-            {% block siderbar %}
+        <div class="col s4">
+            {% block sidebar %}
             {% endblock %}
         </div>
     </div>
-</div>
+</main>
+
 </body>
+<script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+{#<script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>#}
+<script src="{% static 'js/materialize.js' %}"></script>
+
 {% block script %}
-    <script src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
-    <script src="https://cdn.bootcss.com/popper.js/1.12.5/umd/popper.min.js"></script>
-    <script src="https://cdn.bootcss.com/bootstrap/4.1.0/js/bootstrap.min.js"></script>
+ <script
+            src="https://code.jquery.com/jquery-3.3.1.min.js"
+            integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+            crossorigin="anonymous"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-rc.1/js/materialize.min.js"
+            integrity="sha256-SrBfGi+Zp2LhAvy9M1bWOCXztRU9Ztztxmu5BcYPcPE=" crossorigin="anonymous"></script>
+
 {% endblock %}
+
 <script>
     $(document).ready(function () {
+        {% if messages %}
+            Materialize.toast({{ messages }}, 4000);
+        {% endif %}
         {% block domready %}
+
         {% endblock %}
     });
 </script>

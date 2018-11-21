@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block content %}
+    <table class="table">
+        <thead>
+        <tr>
+            <th>选择</th>
+            <th>序号</th>
+            <th>产品</th>
+            <th>件</th>
+            <th>数量</th>
+            <th>单位</th>
+            <th>操作</th>
+        </tr>
+        </thead>
+
+        <tbody>
+        {% for item in cart %}
+            <tr>
+
+                <td><input type="checkbox" name="select"></td>
+                <td>{{ item.line }}</td>
+                <td>{{ item.product.name }}</td>
+                <td>{{ item.piece }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>{{ item.product.uom }}</td>
+                <td>...</td>
+            </tr>
+
+        {% endfor %}
+        </tbody>
+        <tfoot>
+        <tr>
+            <tf></tf>
+            <tf></tf>
+            <tf></tf>
+            <tf></tf>
+            <tf></tf>
+            <tf></tf>
+            <tf></tf>
+        </tr>
+        </tfoot>
+    </table>
+{% endblock %}
+{% block siderbar %}
+    <a href="{% url 'cart_clean' %}" class="btn-block btn-danger">清空选择项</a>
+
+{% endblock %}

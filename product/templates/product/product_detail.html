@@ -14,10 +14,18 @@
     <hr>
     {% if object.stock.all %}
         <p class="h4">可以库存：</p>
-        <ul>
-            {% for stock in object.stock.all %}
-                <li><a href="">{{ stock.piece }}件/{{ stock.quantity }}{{ stock.uom }}</a></li>
-            {% endfor %}
-        </ul>
+        <form action="{% url 'cart_add' object.id %}" method="post" id="stock_form">
+            <ul>
+                {% for stock in object.stock.all %}
+                    <li><input type="checkbox" value="{{ stock.product.id }}" name="select_product_list"><a
+                            href="">{{ stock.piece }}件/{{ stock.quantity }}{{ stock.uom }}@{{ stock.location }}</a></li>
+                {% endfor %}
+                <input type="hidden" value="{{ path }}" name="path">
+            {% csrf_token %}
+            </ul>
+        </form>
     {% endif %}
+{% endblock %}
+{% block siderbar %}
+    <input class="btn btn-block btn-outline-primary" type="submit" value="添加到选择列表" form="stock_form">
 {% endblock %}

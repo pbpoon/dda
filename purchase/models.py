@@ -94,3 +94,6 @@ class PurchaseOrderItem(models.Model):
     def get_amount(self):
         quantity = self.weight if self.uom == 't' else self.m3
         return Decimal('{0:.2f}'.format(quantity * self.price))
+
+    def get_size(self):
+        return '%sx%sx%s' % (self.long, self.weight, self.height)

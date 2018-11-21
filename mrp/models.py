@@ -59,17 +59,25 @@ class KesOrder(MrpOrderAbstract):
     class Meta:
         verbose_name = '界石加工单'
 
+    def get_absolute_url(self):
+        return reverse('kes_order_detail', args=[self.id])
+
 
 class KesOrderRawItem(OrderItemBase):
     order = models.ForeignKey('KesOrder', on_delete=models.CASCADE, related_name='items', blank=True,
                               null=True)
     price = models.DecimalField('单价', max_digits=8, decimal_places=2)
+    m3 = models.DecimalField('立方数', max_digits=5, decimal_places=2, null=True, blank=True)
 
     class Meta:
         verbose_name = '界石单荒料项'
 
     def get_amount(self):
-        return self.quantity * self.price
+        m3 = self.m3 if self.m3 else 0
+        return m3 * self.price
+
+    def __str__(self):
+        return str(self.product)
 
 
 class KesOrderProduceItem(OrderItemBase):
@@ -79,7 +87,7 @@ class KesOrderProduceItem(OrderItemBase):
                                  verbose_name='原材料')
     product = models.ForeignKey('product.Product', on_delete=models.CASCADE, verbose_name='product', blank=True,
                                 null=True)
-    thickness = models.DecimalField('厚度规格', max_digits=5, decimal_places=2, null=True, blank=True)
+    thickness = models.DecimalField('厚度规格', max_digits=5, decimal_places=2)
     quantity = models.DecimalField('数量', decimal_places=2, max_digits=10, null=True, blank=True)
 
     class Meta:

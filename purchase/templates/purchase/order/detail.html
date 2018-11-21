@@ -1,8 +1,8 @@
-{% extends "base.html" %}
+{% extends "purchase/index.html" %}
+{#导入purchase的templatetages用来显示#}
 {% load purchase %}
-{% load crispy_forms_tags %}
-{% block banner-title %}{{ object.order }}{% endblock %}
-{% block bnaner-content %}
+{% block headline %}{{ object.order }}{% endblock %}
+{% block subheadline %}
     供应商：{{ object.partner }} / 经办人：{{ object.handler }}
 {% endblock %}
 {% block btn %}
@@ -56,19 +56,11 @@
                 <td>{{ object.price }}</td>
                 <td>{{ object.get_amount }}</td>
                 <td>
-                    <div class="dropdown">
-                        <button type="button" class="btn btn-sm " data-toggle="dropdown"
-                                aria-haspopup="true" aria-expanded="false">
-                            ...
+                    <div class="btn-group">
+                        <button class="btn btn-outline-primary"
+                                onclick="edit_item({{ object.id }},'{% url 'purchase_order_edit_item' %}')">修改
                         </button>
-                        <div class="dropdown-menu">
-                            <a class="dropdown-item" data-toggle="modal" data-target=".bd-example-modal-sm"
-                               href="{% url 'import_block_edit' %}">修改</a>
-                            <a class="dropdown-item" href="#">Another action</a>
-                            <a class="dropdown-item" href="#">Something else here</a>
-                            <div class="dropdown-divider"></div>
-                            <a class="dropdown-item" href="#">Separated link</a>
-                        </div>
+                        <button class="btn btn-outline-danger" onclick="">删除</button>
                     </div>
                 </td>
             </tr>
@@ -90,11 +82,96 @@
         </tfoot>
     </table>
 
+    <!-- action btn -->
+    <div class="fixed-action-btn">
+        <a class="btn-floating btn-large red">
+            <i class="large material-icons">mode_edit</i>
+        </a>
+        <ul>
+            <li>
+                <button onclick="add_item({{ object.id }})" class="btn-floating red waves-effect waves-light btn"><i
+                        class="material-icons">insert_chart</i></button>
+            </li>
+            <li>
+                <button class="btn-floating yellow darken-1"><i class="material-icons">format_quote</i></button>
+            </li>
+            <li>
+                <button class="btn-floating green"><i class="material-icons">publish</i></button>
+            </li>
+            <li>
+                <button class="btn-floating blue"><i class="material-icons">attach_file</i></button>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Modal Structure -->
+
+    <!-- Modal Structure -->
+    <div id="modal1" class="modal">
+        <div class="modal-content">
+            <h6>添加明细行</h6>
+            <hr>
+            <form id="item_form" action="{% url 'purchase_order_item_create' %}" method="post">
+                <div class="container">
+                    {% include 'purchase/order/addNewBlockForm.html' %}
+                </div>
+                {% csrf_token %}
+            </form>
+        </div>
+        <div class="modal-footer">
+            <input type="submit" class="btn-block red" form="item_form" value="确定">
+        </div>
+    </div>
+
+
+
 {% endblock %}
-{% block siderbar %}
+{% block sidebar %}
     <ul class="list_group">
-    {% for invoice in object.invoices.all %}
-        <li class="list_group_item"><a href="{{ invoice.invoice.get_absolute_url }}">{{ invoice.invoice }}</a></li>
-    {% endfor %}
+        {% for invoice in object.invoices.all %}
+            <li class="list_group_item"><a href="{{ invoice.invoice.get_absolute_url }}">{{ invoice.invoice }}</a></li>
+        {% endfor %}
     </ul>
+{% endblock %}
+{% block script %}
+    <script>
+        var md = $('#modal1').modal();
+
+        function add_item(order_id) {
+            var $form = $('#item_form');
+            $.ajax({
+                url: $form.attr('action'),
+                data: {'order_id': order_id},
+                method: 'GET',
+                success: function (data) {
+                    $('#modal1 .container').html(data);
+                    md.modal('open')
+                }
+            })
+        }
+
+        $('#item_form').on('submit', function (e) {
+            var $form = $('#item_form')
+            $.ajax({
+                url: $form.attr('action'),
+                method: 'POST',
+                data: $form.serialize(),
+                success: function () {
+                    md.modal('close')
+                    window.location.reload()
+                },
+                error: function (data) {
+                    $('#modal1 .container').html(data);
+                    md.modal('open')
+                }
+            });
+            return false
+
+        })
+
+
+    </script>
+{% endblock %}
+{% block domready %}
+
 {% endblock %}

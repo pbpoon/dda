@@ -1,13 +1,17 @@
-from django.shortcuts import render, get_object_or_404
-from django.views.generic import ListView, DetailView
-from django.views.generic.edit import ModelFormMixin, CreateView, UpdateView
+from django.shortcuts import render, get_object_or_404, redirect
+from django.urls import reverse_lazy, reverse
+from django.views import View
+from django.views.generic import ListView, DetailView, TemplateView
+from django.views.generic.edit import ModelFormMixin, CreateView, UpdateView, DeleteView, BaseDeleteView
 from django.contrib import messages
 
+from product.models import Product
 from purchase.models import PurchaseOrder
 from purchase.views import GetItemsMixin, StateChangeMixin
+from stock.models import Stock
 from stock.stock_operate import StockOperate
-from .models import BlockCheckInOrder, BlockCheckInOrderItem
-from .forms import BlockCheckOrderForm
+from .models import BlockCheckInOrder, BlockCheckInOrderItem, KesOrder, KesOrderRawItem, KesOrderProduceItem
+from .forms import BlockCheckOrderForm, KesOrderRawItemForm, KesOrderProduceItemForm
 
 
 class BlockCheckInOrderListView(ListView):
@@ -66,7 +70,7 @@ class BlockCheckInOrderEditMixin:
             order__block_check_in_order__state__in=('confirm', 'done'))
         purchase_order_items = self.purchase_order.items.all()
         if already_check_in_items:
-            purchase_order_items.filter(product_id__exact=[item.product.id for item in already_check_in_items])
+            purchase_order_items.exclude(product_id__in=[item.product.id for item in already_check_in_items])
         for item in purchase_order_items:
             item, _ = BlockCheckInOrderItem.objects.get_or_create(product=item.product, piece=1,
                                                                   quantity=item.product.weight if item.product.uom == 't' else item.product.get_m3(),
@@ -97,3 +101,82 @@ class BlockCheckInOrderUpdateView(StateChangeMixin, BlockCheckInOrderEditMixin, 
     pass
 
 
+##################################### Kes Order ###############################################
+
+
+class KesOrderListView(ListView):
+    model = KesOrder
+
+
+class KesOrderDetailView(GetItemsMixin, DetailView):
+    model = KesOrder
+
+
+class KesOrderCreateView(CreateView):
+    model = KesOrder
+    fields = '__all__'
+    template_name = 'mrp/kesorder_form.html'
+
+    def get_form(self, form_class=None):
+        form = super(KesOrderCreateView, self).get_form(form_class)
+        return form
+
+    def get_success_url(self):
+        return reverse('kes_order_create_step2', kwargs={'kes_order_id': self.object.id})
+
+
+class KesOrderFormMixin:
+    order = None
+
+    def dispatch(self, request, kes_order_id):
+        self.order = get_object_or_404(KesOrder, pk=kes_order_id)
+        return super(KesOrderFormMixin, self).dispatch(request, kes_order_id)
+
+    def get_context_data(self, **kwargs):
+        context = super(KesOrderFormMixin, self).get_context_data(**kwargs)
+        context['order'] = self.order
+        context['object_list'] = self.order.items.all()
+        context['product_list'] = Product.objects.filter(type='block', stock__isnull=False)
+        return context
+
+    def get_initial(self):
+        initial = {'order': self.order}
+        return initial
+
+    def get_success_url(self):
+        return reverse('kes_order_create_step2', kwargs={'kes_order_id': self.order.id})
+
+
+class KesOrderCreateStep2View(KesOrderFormMixin, CreateView):
+    model = KesOrderRawItem
+    form_class = KesOrderRawItemForm
+    template_name = 'mrp/kesorder_form2.html'
+
+
+class KesOrderCreateStep3View(KesOrderFormMixin, CreateView):
+    model = KesOrderProduceItem
+    form_class = KesOrderProduceItemForm
+    template_name = 'mrp/kesorder_form3.html'
+
+    def get_form(self, form_class=None):
+        form = super(KesOrderCreateStep3View, self).get_form(form_class=form_class)
+        products = [item.product for item in self.order.items.all()]
+        form.fields['raw_item'].widget.query = products
+        return form
+
+    def get_success_url(self):
+        return reverse('kes_order_create_step3', kwargs={'kes_order_id': self.order.id})
+
+
+class KesOrderDeleteMixin(BaseDeleteView):
+    # 删除item的mixin，是在页面用onchange之后post转入来
+    def get_success_url(self):
+        order = self.object.order
+        return order.get_absolute_url()
+
+    def get(self, *args, **kwargs):
+        return self.delete(*args, **kwargs)
+
+
+class KesOrderDeleteRawItem(KesOrderDeleteMixin):
+    model = KesOrderRawItem

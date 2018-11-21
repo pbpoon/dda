@@ -73,7 +73,8 @@ class Location(models.Model):
         while parent:
             name = '{}/{}'.format(parent.name, name)
             parent = parent.parent
-        return name
+        warehouse_name = self.warehouse.name + '/' if self.warehouse else ''
+        return '%s%s' % (warehouse_name, name)
 
     def __str__(self):
         return self.get_full_name()
