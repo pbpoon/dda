@@ -8,7 +8,8 @@
     <!--Import Google Icon Font-->
     <link href="http://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <!--Import materialize.css-->
-    <link rel="stylesheet" href="{% static 'css/materialize.css' %}">
+    {#        <link rel="stylesheet" href="{% static 'css/materialize.css' %}">#}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-rc.2/css/materialize.min.css">
     <style>
         header, main, footer {
             padding-left: 300px;
@@ -23,37 +24,15 @@
 
 </head>
 <body>
-<ul id="slide-out" class="side-nav fixed">
-    <li><a href="#!">第一导航链接</a></li>
-    <li><a href="#!">第二导航链接</a></li>
-    <li class="no-padding">
-
-        <ul class="collapsible collapsible-accordion">
-            <li>
-                <a class="collapsible-header">采购订单<i class="material-icons">arrow_drop_down</i></a>
-                <div class="collapsible-body">
-                    <ul>
-                        <li><a href="#!">一</a></li>
-                        <li><a href="#!">二</a></li>
-                        <li><a href="#!">三</a></li>
-                        <li><a href="#!">四</a></li>
-                    </ul>
-                </div>
-            </li>
-        </ul>
-    </li>
-    <li><a href="{% url 'cart_detail' %}">选择了：{{ cart|length }}项</a></li>
-
-</ul>
-<a href="#" data-activates="slide-out" class="button-collapse"><i class="material-icons">menu</i></a>
-
+{% include 'menu.html' %}
 
 <!--标题块相关-->
 <header>
     <div class="container">
-
         <div class="display-6">{% block headline %}{% endblock %}</div>
-        <p>{% block subheadline %}{% endblock %}</p>
+        <p>{% block subheadline %}
+        {% endblock %}</p>
+        {% include 'state.html' %}
     </div>
     <hr/>
 </header>
@@ -77,31 +56,28 @@
         </div>
     </div>
 </main>
-
+<!--一下代码用于ajax crud-->
 </body>
 <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
-{#<script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>#}
-<script src="{% static 'js/materialize.js' %}"></script>
+{#<script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>#}
+<script src="{% static 'js/materialize.min.js' %}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-rc.1/js/materialize.min.js"></script>
 
 {% block script %}
- <script
-            src="https://code.jquery.com/jquery-3.3.1.min.js"
-            integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
-            crossorigin="anonymous"></script>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-rc.1/js/materialize.min.js"
-            integrity="sha256-SrBfGi+Zp2LhAvy9M1bWOCXztRU9Ztztxmu5BcYPcPE=" crossorigin="anonymous"></script>
 
 {% endblock %}
 
 <script>
     $(document).ready(function () {
-        {% if messages %}
-            Materialize.toast({{ messages }}, 4000);
-        {% endif %}
-        {% block domready %}
-
-        {% endblock %}
+        $('.sidenav').sidenav();
+        $('.fixed-action-btn').floatingActionButton();
+        {% block domready %}{% endblock %}
     });
+    {% if messages %}
+        {% for message in messages %}
+            M.toast({html: '{{ message }}'}, 4000);
+        {% endfor %}
+    {% endif %}
 </script>
+<script src="{% static "js/owner.js" %}"></script>
 </html>

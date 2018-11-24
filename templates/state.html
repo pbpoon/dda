@@ -1,0 +1,15 @@
+{% if state_form %}
+    <form action="" method="post">
+        {% csrf_token %}
+        {{ state_form }}
+        {% if btn_visible.draft %}
+            <input type="submit" class="btn btn-outline-secondary" value="设成草稿" name="draft">
+        {% endif %}
+        {% if btn_visible.confirm %}
+            <input type="submit" class="btn btn-outline-primary" value="确定" name="confirm">
+        {% endif %}
+        {% if btn_visible.cancel %}
+            <input type="submit" class="btn btn-outline-danger" value="取消" name="cancel">
+        {% endif %}
+    </form>
+{% endif %}

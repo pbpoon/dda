@@ -1,4 +1,6 @@
 from decimal import Decimal
+
+import decimal
 from django.db import models
 from django.urls import reverse
 
@@ -82,7 +84,11 @@ class Product(models.Model):
         return super(Product, self).save(*args, **kwargs)
 
     def get_m3(self):
-        if not self.m3:
+        if self.type == 'block' and self.uom == 't':
+            m3 = self.weight / decimal.Decimal(2.8)
+            return Decimal('{0:.2f}'.format(m3))
+
+        elif not self.m3:
             return self.long * self.width * self.height * 0.000001
         return self.m3
 

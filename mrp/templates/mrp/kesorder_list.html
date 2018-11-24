@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load crispy_forms_tags %}
+{% load materializecss %}
 {% block content %}
     {% if object_list %}
         <form action="" method="post" id="select_block_form" >
@@ -40,10 +40,6 @@
                     <td></td>
                     <td></td>
                     <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
                 </tr>
                 </tfoot>
             </table>
@@ -58,44 +54,7 @@
     <ul>
         <li><a href="{% url 'purchase_order_create_one' %}" class="btn btn-primary">新建</a></li>
     </ul>
-
-    <div class="modal fade bd-example-modal-sm" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel"
-         aria-hidden="true">
-        <div class="modal-dialog modal-sm">
-            <div class="modal-content">
-                <div class="container">
-                    <form id="block_form" method="post">
-                        {{ form|crispy }}
-                        <input id="block_form_submit" class="btn btn-primary" type="submit" value="确认">
-                        {#                        </fieldset>#}
-                        {% csrf_token %}
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-{#    <script type="text/javascript">#}
-{#        $('#block_form').submit(function () {#}
-{#            $.ajax({url:"{% url 'import_block_edit' %}",#}
-{#                 type: 'POST',#}
-{#                data: $(this).serialize(),#}
-{#                cache: false,#}
-{#                success: function (data) {#}
-{#                    console.log(data);#}
-{#                    //插入数据#}
-{#                    var new_block = ''#}
-{#                    $("#block_list_tr").append(new_block)#}
-{#                },#}
-{#                error: function (xhr) {#}
-{#                    console.log(xhr);#}
-{#                },});#}
-{#            return false#}
-{#        });#}
-
-
-    {#</script>#}
 {% endblock %}
-{% block domready %}
-
-
+{% block headline %}
+    界石单列表
 {% endblock %}

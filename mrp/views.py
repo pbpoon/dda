@@ -1,14 +1,13 @@
-from django.shortcuts import render, get_object_or_404, redirect
+from django.shortcuts import render, get_object_or_404, redirect, render_to_response
 from django.urls import reverse_lazy, reverse
-from django.views import View
 from django.views.generic import ListView, DetailView, TemplateView
 from django.views.generic.edit import ModelFormMixin, CreateView, UpdateView, DeleteView, BaseDeleteView
 from django.contrib import messages
 
 from product.models import Product
+from public.views import OrderItemEditMixin, OrderItemDeleteMixin
 from purchase.models import PurchaseOrder
 from purchase.views import GetItemsMixin, StateChangeMixin
-from stock.models import Stock
 from stock.stock_operate import StockOperate
 from .models import BlockCheckInOrder, BlockCheckInOrderItem, KesOrder, KesOrderRawItem, KesOrderProduceItem
 from .forms import BlockCheckOrderForm, KesOrderRawItemForm, KesOrderProduceItemForm
@@ -108,7 +107,7 @@ class KesOrderListView(ListView):
     model = KesOrder
 
 
-class KesOrderDetailView(GetItemsMixin, DetailView):
+class KesOrderDetailView(StateChangeMixin, GetItemsMixin, DetailView):
     model = KesOrder
 
 
@@ -125,58 +124,36 @@ class KesOrderCreateView(CreateView):
         return reverse('kes_order_create_step2', kwargs={'kes_order_id': self.object.id})
 
 
-class KesOrderFormMixin:
-    order = None
+class KesOrderRawItemEditView(OrderItemEditMixin):
+    form_class = KesOrderRawItemForm
+    model = KesOrderRawItem
 
-    def dispatch(self, request, kes_order_id):
-        self.order = get_object_or_404(KesOrder, pk=kes_order_id)
-        return super(KesOrderFormMixin, self).dispatch(request, kes_order_id)
+    def get_form(self, *args, **kwargs):
+        order_id = self.request.GET.get('order_id', None)
+        order = None
+        if order_id:
+            order = KesOrder.objects.get(pk=order_id)
+        return self.form_class(order=order, *args, **kwargs)
 
-    def get_context_data(self, **kwargs):
-        context = super(KesOrderFormMixin, self).get_context_data(**kwargs)
-        context['order'] = self.order
-        context['object_list'] = self.order.items.all()
-        context['product_list'] = Product.objects.filter(type='block', stock__isnull=False)
-        return context
 
-    def get_initial(self):
-        initial = {'order': self.order}
-        return initial
+class KesOrderRawItemDeleteView(BaseDeleteView):
+    model = KesOrderRawItem
 
     def get_success_url(self):
-        return reverse('kes_order_create_step2', kwargs={'kes_order_id': self.order.id})
+        return self.request.META.get('HTTP_REFERER')
 
 
-class KesOrderCreateStep2View(KesOrderFormMixin, CreateView):
-    model = KesOrderRawItem
-    form_class = KesOrderRawItemForm
-    template_name = 'mrp/kesorder_form2.html'
-
-
-class KesOrderCreateStep3View(KesOrderFormMixin, CreateView):
+class KesOrderProduceItemEditView(OrderItemEditMixin):
     model = KesOrderProduceItem
     form_class = KesOrderProduceItemForm
-    template_name = 'mrp/kesorder_form3.html'
 
-    def get_form(self, form_class=None):
-        form = super(KesOrderCreateStep3View, self).get_form(form_class=form_class)
-        products = [item.product for item in self.order.items.all()]
-        form.fields['raw_item'].widget.query = products
-        return form
-
-    def get_success_url(self):
-        return reverse('kes_order_create_step3', kwargs={'kes_order_id': self.order.id})
+    def get_initial(self):
+        initial = super(KesOrderProduceItemEditView, self).get_initial()
+        raw_item_id = self.request.GET.get('raw_item_id', None)
+        if raw_item_id:
+            initial['raw_item'] = raw_item_id
+        return initial
 
 
-class KesOrderDeleteMixin(BaseDeleteView):
-    # 删除item的mixin，是在页面用onchange之后post转入来
-    def get_success_url(self):
-        order = self.object.order
-        return order.get_absolute_url()
-
-    def get(self, *args, **kwargs):
-        return self.delete(*args, **kwargs)
-
-
-class KesOrderDeleteRawItem(KesOrderDeleteMixin):
-    model = KesOrderRawItem
+class KesOrderProduceItemDeleteView(OrderItemDeleteMixin):
+    model = KesOrderProduceItem

@@ -1,4 +1,6 @@
 from decimal import Decimal
+
+from product.models import Product
 from .fields import OrderField
 from datetime import datetime
 from django.db import models
@@ -65,6 +67,9 @@ class PurchaseOrder(OrderAbstract):
     def get_amount(self):
         return sum(item.get_amount() for item in self.items.all())
 
+    def get_item_edit_url(self):
+        return reverse('purchase_order_item_edit')
+
 
 class PurchaseOrderItem(models.Model):
     # line = LineField(for_fields=['order'], blank=True, verbose_name='行')
@@ -97,3 +102,10 @@ class PurchaseOrderItem(models.Model):
 
     def get_size(self):
         return '%sx%sx%s' % (self.long, self.weight, self.height)
+
+    def save(self, *args, **kwargs):
+        p_fields = [f.name for f in Product._meta.fields]
+        p_kwarg = {f.name: getattr(self, f.name) for f in self._meta.fields if f.name in p_fields}
+        self.product = Product.objects.create(**p_kwarg)
+        # 日后product action 添加action记录
+        super(PurchaseOrderItem, self).save(*args, **kwargs)

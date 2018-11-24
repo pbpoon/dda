@@ -1,10 +1,11 @@
 {% extends 'base.html' %}
-{% load crispy_forms_tags %}
+{% load materializecss %}
 {{ form.media }}
 {% block content %}
     <table class="table table-sm">
         <thead>
         <tr>
+            <th></th>
             <th>编号</th>
             <th>件</th>
             <th>数量</th>
@@ -16,24 +17,47 @@
         </thead>
 
         <tbody>
-        {% for object in object_list %}
+        {% for item in object_list %}
             <tr id="block_list_tr">
-                <td>{{ object.product }}</td>
-                <td>{{ object.piece }}</td>
-                <td>{{ object.quantity }}</td>
-                <td>{{ object.uom }}</td>
-                <td>{{ object.price }}</td>
-                <td>{{ object.get_amount }}</td>
-                <td>
-                    <a href="{% url 'kes_order_delete_raw_item' object.id %}"
-                       onclick="return delete_confirm(this)">删除</a>
-                </td>
+                <td>原料</td>
+                <td>{{ item.product }}</td>
+                <td>{{ item.piece }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>{{ item.uom }}</td>
+                <td>{{ item.price }}</td>
+                <td>{{ item.get_amount }}</td>
+                <td>{% if object.state == 'draft' %}
+                    <div class="btn-group">
+                        <button class="btn btn-outline-primary"
+                                onclick="edit_item({{ item.id }}, '{% url 'kes_order_raw_item_edit' %}')">修改
+                        </button>
+                        <button class="btn btn-outline-danger"
+                                onclick="item_remove({{ item.id }},'{% url 'kes_order_raw_item_delete' 9999 %}')">
+                            删除
+                        </button>
+                        <button class="btn btn-outline-danger"
+                                onclick="add_produce_item({{ object.id }},{{ item.id }})">
+                            添加成品
+                        </button>
+                    </div>
+                {% endif %}</td>
             </tr>
-            {% if object.produces.all %}
-                {% for produce in object.produces.all %}
+            {% if item.produces.all %}
+                {% for produce in item.produces.all %}
                     <tr>
+                        <td>成品</td>
                         <td>{{ produce.thickness }}厚度</td>
                         <td>{{ produce.piece }}</td>
+                        <td>{{ produce.quantity }}</td>
+                        <td>
+                            <button class="btn btn-outline-primary"
+                                    onclick="edit_item({{ produce.id }}, '{% url 'kes_order_produce_item_edit' %}')">修改
+                            </button>
+                            <button class="btn btn-outline-danger"
+                                    onclick="item_remove({{ produce.id }},'{% url 'kes_order_produce_item_delete' 9999 %}')">
+                                删除
+                            </button>
+                        </td>
                     </tr>
                 {% endfor %}
             {% endif %}
@@ -41,9 +65,6 @@
         </tbody>
         <tfoot>
         <tr>
-            <td></td>
-            <td></td>
-            <td></td>
             <td></td>
             <td></td>
             <td></td>
@@ -61,49 +82,44 @@
                     data-quantity="{{ product }}">{{ product.name }}</option>
         {% endfor %}
     </datalist>
-    {{ form.media.js }}
+    <!--右下角浮动按钮组-->
+    {% include 'float_btn.html' %}
 
+    <script>
+        function add_produce_item(order_id, raw_item_id) {
+            var $form = $('#item_form');
+            var old_action = $form.attr('action');
+            md.modal({
+                onCloseStart: function () {
+                    $form.attr('action', old_action)
+                }
+            });
+
+            $form.attr('action', '{% url "kes_order_produce_item_edit" %}');
+            $.ajax({
+                url: $form.attr('action'),
+                data: {
+                    'order_id': order_id,
+                    'raw_item_id': raw_item_id
+                },
+                method: 'GET',
+                success: function (data) {
+                    $('#modal1 .container').html(data);
+                    md.modal('open')
+                }
+            })
+        }
+    </script>
 {% endblock %}
 {% block siderbar %}
-    <a href="{{ object.get_absolute_url }}" onclick="return delete_confirm(this)">点击</a>
-    <button type="button" class="mdui-btn-raised " onclick="return rec(this)">点击</button>
     <div class="btn-group-vertical">
         <a class="mdui-btn" href="">编辑业务资料</a>
-        <a class="btn btn-block btn-outline-primary" href="{% url 'kes_order_create_step2' object.id %}">添加一项界石荒料</a>
-        <a class="btn btn-block btn-outline-primary" href="{% url 'kes_order_create_step3' object.id %}">添加一项毛板资料</a>
     </div>
 {% endblock %}
-{% block head %}
-    <script>
-        function delete_confirm(val) {
-            var a = confirm('确定要删除此条项目？');
-            if (a == true) {
-                {#    var body = $(document.body),#}
-                {#        form = $("<form method='post'></form>"),#}
-                {#        input;#}
-                {#    form.attr({"action": val.href});#}
-                {#$.each(args,function(key,value){#}
-                {#    input = $("<input type='hidden'>");#}
-                {#    input.attr({"name":key});#}
-                {#    input.val(value);#}
-                {#    form.append(input);#}
-                {#{);#}
-                {#    form.appendTo(document.body);#}
-                {#    form.submit();#}
-                {#    document.body.removeChild(form[0]);#}
-                location.href = '' + val.href + ''
-            }
-            else {
-                return false
-            }
-        }</script>
-{% endblock %}
-<script>
-    function getQuantity(product_id) {
-        var select = $('#product_list').find('option[data-id="' + product_id + '"]')
-        $("input[name='quantity']").val(select.val)
-    }
 
-</script>
-{% block domready %}
+{% block headline %}
+    {{ object.order }}
+{% endblock %}
+{% block subheadline %}
+    业务伙伴：{{ object.partner }} / 经办人:{{ object.handler }}
 {% endblock %}

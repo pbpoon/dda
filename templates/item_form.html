@@ -1,0 +1,15 @@
+{% load materializecss %}
+{% if item_form %}
+    {{ item_form|materializecss }}
+    <input type="hidden" name="item_id" value="{{ item_id }}">
+
+    {% block script %}
+        <script>
+            $('.datepicker').datepicker();
+            $('select').formSelect();
+            {% if error %}
+                M.toast({html: '{{ error }}'}, 4000);
+            {% endif %}
+        </script>
+    {% endblock %}
+{% endif %}

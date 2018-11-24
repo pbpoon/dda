@@ -8,6 +8,10 @@ from decimal import Decimal
 import json
 
 
+def obj_to_dict(obj):
+    return {q.name: getattr(obj, q.name) for q in obj._meta.fields}
+
+
 def str_to_list(str):
     s, r = '', ''
     try:
@@ -115,6 +119,7 @@ class ImportData:
                     item[name] = str(row).split('.')[0]
                 lst.append(item)
         return lst
+
 
 def default_decimal(obj):
     if isinstance(obj, Decimal):

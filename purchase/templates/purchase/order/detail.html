@@ -10,21 +10,6 @@
     <form action="" method="post" class="float-right">
         <input type="submit" class="btn btn-outline-secondary" value="入库">
     </form>
-    {% if state_form %}
-        <form action="" method="post">
-            {% csrf_token %}
-            {{ state_form }}
-            {% if btn_visible.draft %}
-                <input type="submit" class="btn btn-outline-secondary" value="设成草稿" name="draft">
-            {% endif %}
-            {% if btn_visible.confirm %}
-                <input type="submit" class="btn btn-outline-primary" value="确定" name="confirm">
-            {% endif %}
-            {% if btn_visible.cancel %}
-                <input type="submit" class="btn btn-outline-danger" value="取消" name="cancel">
-            {% endif %}
-        </form>
-    {% endif %}
 {% endblock %}
 {% block content %}
     <table class="table table-sm">
@@ -44,24 +29,29 @@
         </thead>
 
         <tbody>
-        {% for object in object.items.all %}
+        {% for item in object.items.all %}
             <tr id="block_list_tr">
-                <td>{{ object.name }}</td>
-                <td>{{ object.weight }}</td>
-                <td>{{ object.long }}</td>
-                <td>{{ object.width }}</td>
-                <td>{{ object.height }}</td>
-                <td>{{ object.m3 }}</td>
-                <td>{{ object.uom }}</td>
-                <td>{{ object.price }}</td>
-                <td>{{ object.get_amount }}</td>
+                <td>{{ item.name }}</td>
+                <td>{{ item.weight }}</td>
+                <td>{{ item.long }}</td>
+                <td>{{ item.width }}</td>
+                <td>{{ item.height }}</td>
+                <td>{{ item.m3 }}</td>
+                <td>{{ item.uom }}</td>
+                <td>{{ item.price }}</td>
+                <td>{{ item.get_amount }}</td>
                 <td>
-                    <div class="btn-group">
-                        <button class="btn btn-outline-primary"
-                                onclick="edit_item({{ object.id }},'{% url 'purchase_order_edit_item' %}')">修改
-                        </button>
-                        <button class="btn btn-outline-danger" onclick="">删除</button>
-                    </div>
+                    {% if object.state == 'draft' %}
+                        <div class="btn-group">
+                            <button class="btn btn-outline-primary"
+                                    onclick="edit_item({{ item.id }}, '{% url 'purchase_order_item_edit' %}')">修改
+                            </button>
+                            <button class="btn btn-outline-danger"
+                                    onclick="item_remove({{ item.id }},'{% url 'purchase_order_item_delete' 9999 %}')">
+                                删除
+                            </button>
+                        </div>
+                    {% endif %}
                 </td>
             </tr>
         {% endfor %}
@@ -81,49 +71,7 @@
         </tr>
         </tfoot>
     </table>
-
-    <!-- action btn -->
-    <div class="fixed-action-btn">
-        <a class="btn-floating btn-large red">
-            <i class="large material-icons">mode_edit</i>
-        </a>
-        <ul>
-            <li>
-                <button onclick="add_item({{ object.id }})" class="btn-floating red waves-effect waves-light btn"><i
-                        class="material-icons">insert_chart</i></button>
-            </li>
-            <li>
-                <button class="btn-floating yellow darken-1"><i class="material-icons">format_quote</i></button>
-            </li>
-            <li>
-                <button class="btn-floating green"><i class="material-icons">publish</i></button>
-            </li>
-            <li>
-                <button class="btn-floating blue"><i class="material-icons">attach_file</i></button>
-            </li>
-        </ul>
-    </div>
-
-    <!-- Modal Structure -->
-
-    <!-- Modal Structure -->
-    <div id="modal1" class="modal">
-        <div class="modal-content">
-            <h6>添加明细行</h6>
-            <hr>
-            <form id="item_form" action="{% url 'purchase_order_item_create' %}" method="post">
-                <div class="container">
-                    {% include 'purchase/order/addNewBlockForm.html' %}
-                </div>
-                {% csrf_token %}
-            </form>
-        </div>
-        <div class="modal-footer">
-            <input type="submit" class="btn-block red" form="item_form" value="确定">
-        </div>
-    </div>
-
-
+    {% include 'float_btn.html' %}
 
 {% endblock %}
 {% block sidebar %}
@@ -133,45 +81,7 @@
         {% endfor %}
     </ul>
 {% endblock %}
+
 {% block script %}
-    <script>
-        var md = $('#modal1').modal();
-
-        function add_item(order_id) {
-            var $form = $('#item_form');
-            $.ajax({
-                url: $form.attr('action'),
-                data: {'order_id': order_id},
-                method: 'GET',
-                success: function (data) {
-                    $('#modal1 .container').html(data);
-                    md.modal('open')
-                }
-            })
-        }
-
-        $('#item_form').on('submit', function (e) {
-            var $form = $('#item_form')
-            $.ajax({
-                url: $form.attr('action'),
-                method: 'POST',
-                data: $form.serialize(),
-                success: function () {
-                    md.modal('close')
-                    window.location.reload()
-                },
-                error: function (data) {
-                    $('#modal1 .container').html(data);
-                    md.modal('open')
-                }
-            });
-            return false
-
-        })
-
-
-    </script>
-{% endblock %}
-{% block domready %}
 
 {% endblock %}
