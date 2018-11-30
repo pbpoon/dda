@@ -2,7 +2,7 @@
 
 from django.db import migrations, models
 import django.db.models.deletion
-import purchase.fields
+import public.fields
 
 
 class Migration(migrations.Migration):
@@ -26,7 +26,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('part_number', models.SmallIntegerField(verbose_name='夹号')),
-                ('line', purchase.fields.LineField(blank=True, verbose_name='序号')),
+                ('line', public.fields.LineField(blank=True, verbose_name='序号')),
             ],
             options={
                 'verbose_name': '码单项',
@@ -44,7 +44,7 @@ class Migration(migrations.Migration):
                 ('kh2', models.SmallIntegerField(blank=True, null=True, verbose_name='高2')),
                 ('quantity', models.DecimalField(decimal_places=2, max_digits=4, verbose_name='面积(m2)')),
                 ('part_number', models.SmallIntegerField(verbose_name='夹号')),
-                ('line', purchase.fields.LineField(blank=True, verbose_name='序号')),
+                ('line', public.fields.LineField(blank=True, verbose_name='序号')),
                 ('product', models.ForeignKey(limit_choices_to={'type': 'slab'}, on_delete=django.db.models.deletion.CASCADE, to='product.Product', verbose_name='板材')),
             ],
             options={

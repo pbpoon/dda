@@ -8,7 +8,7 @@
     <!--Import Google Icon Font-->
     <link href="http://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <!--Import materialize.css-->
-    {#        <link rel="stylesheet" href="{% static 'css/materialize.css' %}">#}
+    <link rel="stylesheet" href="{% static 'css/materialize.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-rc.2/css/materialize.min.css">
     <style>
         header, main, footer {
@@ -23,38 +23,20 @@
     </style>
 
 </head>
-<body>
+<body class="grey lighten-4">
 {% include 'menu.html' %}
 
 <!--标题块相关-->
 <header>
-    <div class="container">
-        <div class="display-6">{% block headline %}{% endblock %}</div>
-        <p>{% block subheadline %}
-        {% endblock %}</p>
-        {% include 'state.html' %}
-    </div>
-    <hr/>
+    {% block header %}
+
+    {% endblock %}
 </header>
 
 <main>
+    {% block main %}
 
-
-    <!--内容块，分content及sidebar-->
-    <div class="row">
-
-        <div class="col s8">
-            <div class="container">
-                {% block content %}
-                {% endblock %}
-                {% include 'comment.html' %}
-            </div>
-        </div>
-        <div class="col s4">
-            {% block sidebar %}
-            {% endblock %}
-        </div>
-    </div>
+    {% endblock %}
 </main>
 <!--一下代码用于ajax crud-->
 </body>
@@ -71,6 +53,9 @@
     $(document).ready(function () {
         $('.sidenav').sidenav();
         $('.fixed-action-btn').floatingActionButton();
+        $('.datepicker').datepicker({'format': 'yyyy-mm-dd'});
+        $('select').formSelect();
+        $('.collapsible').collapsible();
         {% block domready %}{% endblock %}
     });
     {% if messages %}

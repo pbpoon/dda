@@ -1,12 +1,24 @@
 {% extends 'stock/detail.html' %}
-{% block siderbar %}
-    <a href="" class="btn btn-outline-primary">编辑</a>
+{% block subheadline %}
 {% endblock %}
 {% block content %}
-    <p></p>其下库位：
-    <ul class="list-group">
-        {% for location in object.locations.all %}
-            <li class="list-group-item">{{ location.name }}</li>
-        {% endfor %}
-    </ul>
+    <h5>其下库位：</h5>
+    <div class="row">
+    {% for location in object.locations.all %}
+            <div class="col s12 m6">
+                <div class="card blue-grey darken-1 hoverable">
+                    <div class="card-content white-text">
+                        <span class="card-title">{{ location }}</span>
+                        <p>仓库：{{ location.warehouse }}</p>
+                        <p>上级库位：{{ location.parent }}</p>
+                        <p>库位用途：{{ location.usage }}</p>
+                    </div>
+                    <div class="card-action">
+                        <a href="#">This is a link</a>
+                    </div>
+                </div>
+            </div>
+
+    {% endfor %}
+</div>
 {% endblock %}

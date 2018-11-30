@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block header %}
+    <div class="row">
+        <div class="col s12 m8">
+            <div class="card base">
+                <div class="card-content">
+                    <span class="card-title">{% block headline %}{% endblock %}</span>
+                    <p>{% block subheadline %}
+                    {% endblock %}</p>
+                </div>
+                <div class="card-action right-align grey lighten-3">
+                    {% include 'state.html' %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% block action_btn %}
+        {% include 'float_btn.html' %}
+    {% endblock %}
+    {% include 'modal.html' %}
+{% endblock %}
+
+{% block main %}
+    <div class="row">
+        <!--内容块，分content及sidebar-->
+        <div class="col s12 m8 l8">
+            <div class="card-panel ">
+                {% block content %}
+                {% endblock %}
+                {% include 'comment.html' %}
+            </div>
+        </div>
+        <div class="col s12 m4 l4">
+            <div class="card-panel white">
+                {% block sidebar %}
+                {% endblock %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

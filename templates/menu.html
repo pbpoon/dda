@@ -1,19 +1,53 @@
 <ul id="slide-out" class="sidenav sidenav-fixed">
-    <li><a href="#!">First Sidebar Link</a></li>
-    <li><a href="#!">Second Sidebar Link</a></li>
+
+    <ul class="collapsible">
+
+        <li>
+            <div class="collapsible-header">库存</div>
+            <div class="collapsible-body">
+                <ul>
+                    <li><a href="{% url 'stock_list' %}">库存列表</a></li>
+                    <li><a href="{% url 'warehouse_list' %}">仓库列表</a></li>
+                </ul>
+            </div>
+        </li>
+    </ul>
+    <ul class="collapsible">
+        <li>
+            <div class="collapsible-header">产品</div>
+            <div class="collapsible-body">
+                <ul>
+                    <li><a href="{% url 'product_list' %}">产品</a></li>
+                    <li><a href="{% url 'package_list_draft_create' %}">新建码单</a></li>
+                </ul>
+            </div>
+        </li>
+        <li class="active">
+            <div class="collapsible-header">出入库管理</div>
+            <div class="collapsible-body">
+                <ul>
+                    <li><a href="{% url 'block_check_in_list' %}">荒料入库单</a></li>
+                    <li><a href="{% url 'kes_order_list' %}">界石单</a></li>
+                    <li><a href="{% url 'move_location_order_list' %}">移库单</a></li>
+                    <li><a href="{% url 'slab_check_in_list' %}">板材入库单</a></li>
+                </ul>
+            </div>
+        </li>
+        <li>
+            <div class="collapsible-header">库存</div>
+            <div class="collapsible-body">
+                <ul>
+                    <li><a href="{% url 'stock_list' %}">库存</a></li>
+                    <li><a href="{% url 'warehouse_list' %}">仓库</a></li>
+                </ul>
+            </div>
+        </li>
+        <li>
+            <div class="collapsible-header"><i class="material-icons">whatshot</i>Third</div>
+            <div class="collapsible-body"><span>Lorem ipsum dolor sit amet.</span></div>
+        </li>
+    </ul>
     <!--采购app-->
-    <li class="no-padding">
-        <ul class="collapsible collapsible-accordion">
-            <li>
-                <a class="collapsible-header">采购<i class="material-icons">arrow_drop_down</i></a>
-                <div class="collapsible-body">
-                    <ul>
-                        <li><a href="{% url 'purchase_order_list' %}">订单列表</a></li>
-                    </ul>
-                </div>
-            </li>
-        </ul>
-    </li>
     <li><a href="{% url 'cart_detail' %}">选择了：{{ cart|length }}项</a></li>
 </ul>
 {#<ul class="right hide-on-med-and-down">#}

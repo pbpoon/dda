@@ -1,8 +1,11 @@
-{% extends 'base.html' %}
-{% load crispy_forms_tags %}
-{% block siderbar %}
+{% extends 'detail.html' %}
+{% load materializecss %}
+{% block headline %}
+    编辑:{{ object }}
+{% endblock %}
+{% block content %}
     <form action="" method="post">
-    {{ form|crispy }}
+    {{ form|materializecss }}
     {% csrf_token %}
         <input type="submit" class="btn btn-outline-primary btn-block" value="确定">
     </form>

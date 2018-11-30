@@ -1,0 +1,33 @@
+<!--form & modal -->
+<div id="modal1" class="modal modal-fixed-footer">
+    <div class="modal-content">
+        <h6>添加明细行</h6>
+        <hr>
+        <form id="item_form" action="{{ object.get_item_edit_url }}" method="post">
+            <div class="container">
+                <!--导入外部的form动态渲染-->
+                {% include 'item_form.html' %}
+            </div>
+            {% csrf_token %}
+        </form>
+    </div>
+    <div class="modal-footer">
+        <input type="submit" class="btn waves-effect waves-light" form="item_form" value="确定">
+        <button class="modal-close waves-effect waves-green btn-flat">取消</button>
+    </div>
+</div>
+<div id="modal2" class="modal">
+    <div class="modal-content">
+        <h6>提示</h6>
+        <hr>
+        <p>确认删除该明细行？</p>
+    </div>
+    <div class="modal-footer">
+        <button id="confirm_btn" class="modal-close waves-effect waves-green btn-flat red">确定</button>
+        <button class="modal-close waves-effect waves-green btn-flat">取消</button>
+    </div>
+</div>
+<!--用语删去item的时候解决csrf token的问题-->
+<form id="post_form" style="display: none" action="" method="post">
+    {% csrf_token %}
+</form>

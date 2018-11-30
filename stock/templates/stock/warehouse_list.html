@@ -1,4 +1,7 @@
 {% extends 'stock/list.html' %}
-{% block siderbar %}
-    <a href="{% url 'warehouse_create' %}" class="btn btn-outline-primary btn-block">新建仓库</a>
+{% block headline %}
+    仓库列表
+{% endblock %}
+{% block add_url %}
+    {% url 'warehouse_create' %}
 {% endblock %}

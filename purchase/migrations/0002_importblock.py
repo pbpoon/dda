@@ -3,7 +3,7 @@
 from django.conf import settings
 from django.db import migrations, models
 import django.db.models.deletion
-import purchase.fields
+import public.fields
 
 
 class Migration(migrations.Migration):
@@ -18,7 +18,7 @@ class Migration(migrations.Migration):
             name='ImportBlock',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('line', purchase.fields.LineField(blank=True, verbose_name='行')),
+                ('line', public.fields.LineField(blank=True, verbose_name='行')),
                 ('quantity', models.DecimalField(decimal_places=2, max_digits=5, verbose_name='数量')),
                 ('uom', models.CharField(choices=[('t', '吨'), ('m3', '立方')], max_length=10, verbose_name='计量单位')),
                 ('price', models.DecimalField(decimal_places=2, max_digits=5, verbose_name='单价')),

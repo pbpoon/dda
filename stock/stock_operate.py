@@ -26,7 +26,8 @@ class StockOperate:
                 2：写入StockTrace和更新stock，
         """
 
-    def __init__(self, request, order, items, location, location_dest):
+    # def __init__(self, request, order, items, location, location_dest):
+    def __init__(self, request, order, items):
         """
         Args:
             order: object, 对应的订单object，这是一个content_type
@@ -40,8 +41,8 @@ class StockOperate:
         self.slab_model = Slab
         self.order = order
         self.items = items
-        self.location = location
-        self.location_dest = location_dest
+        # self.location = location
+        # self.location_dest = location_dest
 
     def _get_stock(self, product, location, slabs=None, check_in=False):
         # 取得库存的记录
@@ -157,8 +158,8 @@ class StockOperate:
         # 如果超出就记载日error list，用作message返回
         error = []
         for item in self.items:
-            if not self.location.is_virtual:
-                av_piece, av_quantity = self.get_available(product=item.product, location=self.location)
+            if not item.location.is_virtual:
+                av_piece, av_quantity = self.get_available(product=item.product, location=item.location)
                 if (av_piece - item.piece) < 0:
                     error.append('{product}#可以库存为:{av_piece}件/{av_quantity}{uom},超出需求{piece}件/{quantity}{uom}'.format(
                         product=item.product, av_piece=av_piece, av_quantity=av_quantity, piece=item.piece,
@@ -170,28 +171,30 @@ class StockOperate:
     def handle_stock(self):
         clean, error = self.clean_items()
         if clean:
+            # 创建数据库事务保存点
             sid = transaction.savepoint()
             # 操作出库
             for item in self.items:
-                if not self.location.is_virtual:
+                if not item.location.is_virtual:
                     package_list = getattr(item, 'package_list', None)
                     slabs = package_list.items.all() if package_list else None
-                    if not self.update_available(product=item.product, location=self.location, piece=-item.piece,
+                    if not self.update_available(product=item.product, location=item.location, piece=-item.piece,
                                                  quantity=-item.quantity, slabs=slabs):
                         transaction.rollback(sid)
                         break
             else:
                 # 操作入库
                 for item in self.items:
-                    if not self.location_dest.is_virtual:
+                    if not item.location_dest.is_virtual:
                         package_list = getattr(item, 'package_list', None)
                         slabs = package_list.items.all() if package_list else None
-                        if not self.update_available(product=item.product, location=self.location_dest, piece=item.piece,
+                        if not self.update_available(product=item.product, location=item.location_dest, piece=item.piece,
                                                      quantity=item.quantity, slabs=slabs):
                             transaction.rollback(sid)
                             break
 
                 else:
+                    # 更新数据库
                     transaction.savepoint_commit(sid)
                     return True, '成功更新库存'
                 return False, '更新库存失败'

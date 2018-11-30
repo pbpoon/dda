@@ -28,11 +28,11 @@ class PurchaseOrderItemForm(forms.ModelForm):
     class Meta:
         model = PurchaseOrderItem
         # fields = '__all__'
-        exclude = ('entry',)
+        exclude = ('entry', 'uom', 'quantity', 'product')
         widgets = {
-            'type': forms.HiddenInput(),
-            'id': forms.HiddenInput(),
-            'order': forms.HiddenInput()
+            'type': forms.HiddenInput,
+            'id': forms.HiddenInput,
+            'order': forms.HiddenInput,
         }
 
     def clean_name(self):
@@ -40,5 +40,3 @@ class PurchaseOrderItemForm(forms.ModelForm):
         if Product.objects.filter(name=name).exists():
             raise forms.ValidationError('已有编号为：{}#的荒料存在，请确保该编号为全新'.format(name))
         return name
-
-

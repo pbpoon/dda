@@ -3,7 +3,7 @@
 from django.conf import settings
 from django.db import migrations, models
 import django.db.models.deletion
-import purchase.fields
+import public.fields
 
 
 class Migration(migrations.Migration):
@@ -25,7 +25,7 @@ class Migration(migrations.Migration):
                 ('date', models.DateField(verbose_name='日期')),
                 ('created', models.DateField(auto_now_add=True, verbose_name='创建日期')),
                 ('updated', models.DateTimeField(auto_now=True, verbose_name='更新时间')),
-                ('order', purchase.fields.OrderField(blank=True, max_length=20, verbose_name='单号')),
+                ('order', public.fields.OrderField(blank=True, max_length=20, verbose_name='单号')),
                 ('entry', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='blockcheckinorder_entry', to=settings.AUTH_USER_MODEL, verbose_name='登记人')),
                 ('handler', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='blockcheckinorder_handler', to=settings.AUTH_USER_MODEL, verbose_name='经办人')),
                 ('partner', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='partner.Partner', verbose_name='业务伙伴')),

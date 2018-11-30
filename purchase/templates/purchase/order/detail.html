@@ -1,15 +1,16 @@
 {% extends "purchase/index.html" %}
 {#导入purchase的templatetages用来显示#}
-{% load purchase %}
+{% load public %}
 {% block headline %}{{ object.order }}{% endblock %}
 {% block subheadline %}
     供应商：{{ object.partner }} / 经办人：{{ object.handler }}
-{% endblock %}
-{% block btn %}
     <a href="{% url 'block_check_in_create' object.id %}" class="float-right">收货</a>
     <form action="" method="post" class="float-right">
         <input type="submit" class="btn btn-outline-secondary" value="入库">
     </form>
+{% endblock %}
+{% block btn %}
+
 {% endblock %}
 {% block content %}
     <table class="table table-sm">

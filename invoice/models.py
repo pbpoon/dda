@@ -1,13 +1,12 @@
-from datetime import datetime
+import datetime
 from decimal import Decimal
 from django.db import models
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.urls import reverse
 from django.utils import timezone
-from django.core.exceptions import ObjectDoesNotExist
 
-from purchase.fields import OrderField
+from public.fields import OrderField
 from django.contrib.contenttypes.views import shortcut
 
 TYPE_CHOICES = (
@@ -32,7 +31,7 @@ STATE_CHOICES = (
 class CreateInvoice:
     # 创建发票的api
     def __init__(self, order, partner, entry, items_dict_lst, state=None, usage=None, type=None, date=None,
-                 due_date=None):
+                 due_date=None, due_day=None):
         self.model = OrderInvoiceThrough
         self.invoice_model = Invoice
         self.item_model = InvoiceItem
@@ -43,6 +42,8 @@ class CreateInvoice:
         self.usage = usage if usage else '货款'
         self.type = type if type else '-1'
         self.date = timezone.now() if date is None else date
+        if due_day and date:
+            due_date = date + datetime.timedelta(due_day)
         self.due_date = due_date
         self.items_dict_lst = items_dict_lst
         self.invoice = self.make_invoice()
@@ -73,8 +74,8 @@ class CreateInvoice:
         # 没有就create一条 ##create_invoice()
         comment_detail = {}
         comment_detail['order'] = self.order.order
-        if self.check_invoice():
-            invoice = self.check_invoice()
+        invoice = self.check_invoice()
+        if invoice:
             if self.state:
                 invoice.state = self.state
                 invoice.save()

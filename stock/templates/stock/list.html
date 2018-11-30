@@ -1,8 +1,15 @@
-{% extends 'base.html' %}
+{% extends 'list.html' %}
 {% block content %}
-    <ul class="list-group">
+    <div class="collection">
         {% for object in object_list %}
-            <li class="list-group-item"><a href="{{ object.get_absolute_url }}">{{ object }}</a></li>
+            <a href="{{ object.get_absolute_url }}" class="collection-item">{{ object }}</a>
         {% endfor %}
-    </ul>
+    </div>
+    {% block fixed-action-btn %}
+        <div class="fixed-action-btn">
+            <a href="{% block add_url %}{% endblock %}" class="btn-floating btn-large red">
+                <i class="large material-icons">add</i>
+            </a>
+        </div>
+    {% endblock %}
 {% endblock %}

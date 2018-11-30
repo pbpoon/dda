@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+<!--标题块相关-->
+{% block header %}
+    <div class="container">
+    <div class="section s12 m12 l12">
+        <h5>{% block headline %}{% endblock %}</h5>
+        <div class="divider"></div>
+
+        <p>{% block subheadline %}
+        {% endblock %}</p>
+    </div>
+    </div>
+{% endblock %}
+
+{% block main %}
+    <div class="row">
+        <!--内容块，分content及sidebar-->
+        <div class="col s12 m8 l8">
+            {% block content %}
+            {% endblock %}
+            {% include 'comment.html' %}
+        </div>
+        <div class="col s12 m4 l4">
+            {% block sidebar %}
+            {% endblock %}
+        </div>
+    </div>
+{% endblock %}

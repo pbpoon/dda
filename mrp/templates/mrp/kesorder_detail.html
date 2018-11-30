@@ -1,115 +1,95 @@
-{% extends 'base.html' %}
+{% extends 'mrp/detail.html' %}
 {% load materializecss %}
 {{ form.media }}
 {% block content %}
-    <table class="table table-sm">
-        <thead>
-        <tr>
-            <th></th>
-            <th>编号</th>
-            <th>件</th>
-            <th>数量</th>
-            <th>单位</th>
-            <th>单价</th>
-            <th>金额</th>
-            <th>编辑</th>
-        </tr>
-        </thead>
-
-        <tbody>
-        {% for item in object_list %}
-            <tr id="block_list_tr">
-                <td>原料</td>
-                <td>{{ item.product }}</td>
-                <td>{{ item.piece }}</td>
-                <td>{{ item.quantity }}</td>
-                <td>{{ item.uom }}</td>
-                <td>{{ item.price }}</td>
-                <td>{{ item.get_amount }}</td>
-                <td>{% if object.state == 'draft' %}
-                    <div class="btn-group">
-                        <button class="btn btn-outline-primary"
-                                onclick="edit_item({{ item.id }}, '{% url 'kes_order_raw_item_edit' %}')">修改
-                        </button>
-                        <button class="btn btn-outline-danger"
-                                onclick="item_remove({{ item.id }},'{% url 'kes_order_raw_item_delete' 9999 %}')">
-                            删除
-                        </button>
-                        <button class="btn btn-outline-danger"
-                                onclick="add_produce_item({{ object.id }},{{ item.id }})">
-                            添加成品
-                        </button>
-                    </div>
-                {% endif %}</td>
+    {% block tb %}
+        <table class="table">
+            <thead>
+            <tr>
+                <th></th>
+                <th>编号</th>
+                <th>数量</th>
+                <th>单价</th>
+                <th>金额</th>
+                <th>编辑</th>
             </tr>
-            {% if item.produces.all %}
-                {% for produce in item.produces.all %}
-                    <tr>
-                        <td>成品</td>
-                        <td>{{ produce.thickness }}厚度</td>
-                        <td>{{ produce.piece }}</td>
-                        <td>{{ produce.quantity }}</td>
-                        <td>
-                            <button class="btn btn-outline-primary"
-                                    onclick="edit_item({{ produce.id }}, '{% url 'kes_order_produce_item_edit' %}')">修改
-                            </button>
-                            <button class="btn btn-outline-danger"
-                                    onclick="item_remove({{ produce.id }},'{% url 'kes_order_produce_item_delete' 9999 %}')">
-                                删除
-                            </button>
-                        </td>
-                    </tr>
-                {% endfor %}
-            {% endif %}
-        {% endfor %}
-        </tbody>
-        <tfoot>
-        <tr>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td>{{ object.get_quantity }}</td>
-            <td></td>
-            <td>{{ object.get_amount }}</td>
-            <td></td>
-        </tr>
-        </tfoot>
-    </table>
-    <datalist id="product_list">
-        {% for product in product_list %}
-            <option value="{{ product.weight }}"
-                    data-id="{{ product.id }}"
-                    data-quantity="{{ product }}">{{ product.name }}</option>
-        {% endfor %}
-    </datalist>
+            </thead>
+
+            <tbody>
+            {% for item in object_list %}
+                <tr id="block_list_tr">
+                    <td>原料</td>
+                    <td>{{ item.product }}</td>
+                    <td>{{ item.piece }}件 | {{ item.quantity }}{{ item.uom }}</td>
+                    <td>{{ item.price }}</td>
+                    <td>{{ item.get_amount }}</td>
+                    <td>{% if object.state == 'draft' %}
+                        <!-- Dropdown Trigger -->
+
+                        <a class='dropdown-trigger btn-floating grey' href='#' data-target='dropdown1'> <i
+                                class="material-icons">more_vert</i></a>
+
+                        <!-- Dropdown Structure -->
+                        <ul id='dropdown1' class='dropdown-content'>
+                            <li>
+                                <a onclick="edit_item({{ item.id }}, '{% url 'kes_order_raw_item_edit' %}')">修改
+                                </a>
+                            </li>
+                            <li>
+                                <a onclick="item_remove({{ item.id }},'{% url 'kes_order_raw_item_delete' 9999 %}')">
+                                    删除
+                                </a>
+                            </li>
+                            <li>
+                                <a onclick="add_produce_item({{ object.id }},{{ item.id }})">
+                                    添加成品
+                                </a>
+                            </li>
+                        </ul>
+                    {% endif %}</td>
+                </tr>
+                {% if item.produces.all %}
+                    {% for produce in item.produces.all %}
+                        <tr>
+                            <td></td>
+                            <td>{{ produce.thickness }}厚度</td>
+                            <td>{{ produce.piece }}件 | {{ produce.quantity }}</td>
+                            <td></td>
+                            <td></td>
+                            <td>{% if object.state == 'draft' %}
+
+                                <a class='dropdown-trigger btn-floating grey' href='#' data-target='dropdown2'> <i
+                                        class="material-icons">more_vert</i></a>
+
+                                <!-- Dropdown Structure -->
+                                <ul id='dropdown2' class='dropdown-content'>
+                                    <li>
+                                        <a onclick="edit_item({{ produce.id }}, '{% url 'kes_order_produce_item_edit' %}')">
+                                            修改</a></li>
+                                    <li>
+                                        <a onclick="item_remove({{ produce.id }},'{% url 'kes_order_produce_item_delete' 9999 %}')">
+                                            删除</a></li>
+                                </ul>
+                            {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% endif %}
+            {% endfor %}
+            </tbody>
+            <tfoot>
+            <tr>
+                <td></td>
+                <td></td>
+                <td>{{ object.get_quantity }}</td>
+                <td></td>
+                <td>{{ object.get_amount }}</td>
+                <td></td>
+            </tr>
+            </tfoot>
+        </table>
+    {% endblock %}
     <!--右下角浮动按钮组-->
-    {% include 'float_btn.html' %}
-
-    <script>
-        function add_produce_item(order_id, raw_item_id) {
-            var $form = $('#item_form');
-            var old_action = $form.attr('action');
-            md.modal({
-                onCloseStart: function () {
-                    $form.attr('action', old_action)
-                }
-            });
-
-            $form.attr('action', '{% url "kes_order_produce_item_edit" %}');
-            $.ajax({
-                url: $form.attr('action'),
-                data: {
-                    'order_id': order_id,
-                    'raw_item_id': raw_item_id
-                },
-                method: 'GET',
-                success: function (data) {
-                    $('#modal1 .container').html(data);
-                    md.modal('open')
-                }
-            })
-        }
-    </script>
 {% endblock %}
 {% block siderbar %}
     <div class="btn-group-vertical">
@@ -118,8 +98,9 @@
 {% endblock %}
 
 {% block headline %}
-    {{ object.order }}
+    {{ object.get_state_display }}{{ object.order }}
 {% endblock %}
 {% block subheadline %}
     业务伙伴：{{ object.partner }} / 经办人:{{ object.handler }}
 {% endblock %}
+

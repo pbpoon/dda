@@ -21,21 +21,22 @@ class Warehouse(models.Model):
     code = models.CharField('缩写名称', max_length=20, null=False)
     is_activate = models.BooleanField('启用', default=True)
     partner = models.ForeignKey('partner.Partner', on_delete=models.SET_NULL, verbose_name='合作伙伴', null=True,
-                                blank=True)
+                                blank=True, related_name='warehouse')
     created = models.DateTimeField('创建时间', auto_now_add=True)
     updated = models.DateTimeField('更新时间', auto_now=True)
-    is_production = models.BooleanField('有生产活动')
+    is_production = models.BooleanField('有生产活动', default=False)
 
     class Meta:
         verbose_name = '仓库信息'
 
     def __str__(self):
-        return self.name
+        return '{}@{}'.format(self.partner, self.name)
 
     def save(self, *args, **kwargs):
         super(Warehouse, self).save(*args, **kwargs)
         if not self.locations.filter(is_main=True):
-            Location.objects.create(warehouse_id=self.id, name='仓库', is_main=True)
+            Location.objects.create(warehouse_id=self.id, name='仓库', is_main=True, usage='internal')
+            Location.objects.create(warehouse_id=self.id, name='盘点库位', is_virtual=True, usage='inventory')
         if self.is_production:
             Location.objects.get_or_create(warehouse_id=self.id, is_virtual=True, usage='production', name='生产库位')
 
@@ -45,6 +46,13 @@ class Warehouse(models.Model):
     def get_main_location(self):
         return self.locations.get(is_main=True, warehouse_id=self.id)
 
+    def get_production_location(self):
+        loc, _ = Location.objects.get_or_create(warehouse=self, name='production', usage='production', is_virtual=True)
+        return loc
+
+    def get_update_url(self):
+        return reverse('warehouse_update', args=[self.id])
+
 
 class Location(models.Model):
     """
@@ -52,7 +60,7 @@ class Location(models.Model):
     """
     warehouse = models.ForeignKey('Warehouse', related_name='locations', on_delete=models.SET_NULL, verbose_name='所属仓库',
                                   blank=True, null=True)
-    name = models.CharField('库位名称', max_length=50, unique=True)
+    name = models.CharField('库位名称', max_length=50)
     parent = models.ForeignKey('self', related_name='child', null=True, blank=True, verbose_name='上级库位',
                                on_delete=models.CASCADE, limit_choices_to={'is_virtual': False, 'is_activate': True})
     is_main = models.BooleanField('主库位', default=False, help_text='主库位，只有在创建warehouse时一并创建')
@@ -105,8 +113,8 @@ class Stock(models.Model):
     product = models.ForeignKey('product.Product', on_delete=models.CASCADE, related_name='stock')
     piece = models.IntegerField('件', default=1)
     quantity = models.DecimalField('数量', decimal_places=2, max_digits=10)
-    reserve_quantity = models.DecimalField('预留数量', decimal_places=2, max_digits=10, blank=True, null=True)
-    reserve_piece = models.IntegerField('预留件', blank=True, null=True)
+    reserve_quantity = models.DecimalField('预留数量', decimal_places=2, max_digits=10, default=0)
+    reserve_piece = models.IntegerField('预留件', default=0)
     uom = models.CharField('单位', choices=UOM_CHOICES, max_length=6)
     location = models.ForeignKey('Location', on_delete=models.CASCADE, limit_choices_to={'is_virtual': False},
                                  related_name='stock')
@@ -116,3 +124,6 @@ class Stock(models.Model):
     class Meta:
         verbose_name = '库存'
         unique_together = ('product', 'location')
+
+    def __str__(self):
+        return "{}@{}:{}件/{}{}".format(self.product, self.location, self.piece, self.quantity, self.uom)

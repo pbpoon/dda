@@ -27,7 +27,7 @@ class LineField(models.PositiveIntegerField):
                     query = {field: getattr(model_instance, field) for field in self.for_fields}
                     qs = qs.filter(**query)
                 last_item = qs.latest(self.attname)
-                value = last_item.order + 1
+                value = getattr(last_item, self.attname) + 1
             # 如果找不到最后一条数据，说明自己是第一条数据，将临时变量value 设置为0
             except ObjectDoesNotExist:
                 value = 1

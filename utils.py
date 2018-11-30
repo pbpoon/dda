@@ -12,6 +12,15 @@ def obj_to_dict(obj):
     return {q.name: getattr(obj, q.name) for q in obj._meta.fields}
 
 
+def qs_to_dict(obj):
+    if len(obj) > 1:
+        lst = []
+        for j in obj:
+            lst.append({q.name: getattr(j, q.name) for q in j._meta.fields})
+        return lst
+    return {q.name: getattr(obj, q.name) for q in obj._meta.fields}
+
+
 def str_to_list(str):
     s, r = '', ''
     try:

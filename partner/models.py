@@ -2,12 +2,11 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.urls import reverse
 
-from stock.models import Location
+from stock.models import Location, Warehouse
 
 PARTNER_TYPE_CHOICES = (
     ('customer', '客户'),
     ('supplier', '供应商'),
-    ('employee', '员工'),
 )
 
 
@@ -51,6 +50,10 @@ class Partner(models.Model):
     entry = models.ForeignKey(User, related_name='%(class)s_entry',
                               verbose_name='登记人', on_delete=models.SET_NULL, null=True, blank=True)
     is_activate = models.BooleanField('启用', default=True)
+    company = models.ForeignKey('self', related_name='members', limit_choices_to={'is_company': True},
+                                on_delete=models.SET_NULL,
+                                null=True, blank=True, verbose_name='所属公司')
+    is_production = models.BooleanField('是生产商', default=False)
 
     class Meta:
         verbose_name = '伙伴资料'
@@ -70,14 +73,8 @@ class Partner(models.Model):
 
     def get_location(self):
         """
-        is_virtual=True
-            先warehouse找，如果有就找该partner下的仓库的is_main的,没有就创建一个
-        取得虚拟的供应商或者
-        Returns:
-
+        这个是用来做mrp等order中，取得partner的类型虚拟库位
         """
-        if self.type != 'employee':
-            loc, _ = Location.objects.get_or_create(is_virtual=True, name=self.type, usage=self.type,
-                                                    is_activate=True)
-            return loc
-        return None
+        loc, _ = Location.objects.get_or_create(is_virtual=True, name=self.type, usage=self.type,
+                                                is_activate=True)
+        return loc

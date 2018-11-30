@@ -29,6 +29,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'public',
     'materializecssform',
     'partner.apps.PartnerConfig',
     'django.contrib.admin',

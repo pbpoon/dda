@@ -1,64 +1,40 @@
-{% extends "base.html" %}
-{% load crispy_forms_tags %}
-{% block banner-title %}<span class="h6">[{{ object.state }}]</span>{{ object.order }}/收货：
+{% extends "mrp/detail.html" %}
+{% load materializecss %}
+{% block headline %}<span class="h6">[{{ object.state }}]</span>{{ object.order }}/收货：
     <a href="{{ object.purchase_order.get_absolute_url }}">{{ object.purchase_order.order }}</a>{% endblock %}
-{% block bnaner-content %}
+{% block subheadline %}
     业务伙伴：{{ object.partner }} / 卸货仓库：{{ object.warehouse }} / 经办人：{{ object.handler }}
 {% endblock %}
-{% block btn %}
-    {% if state_form %}
-        <form action="" method="post" class="float-right">
-            {% csrf_token %}
-            {{ state_form }}
-            {% if btn_visible.draft %}
-                <input type="submit" class="btn btn-outline-secondary" value="设成草稿" name="draft">
-            {% endif %}
-            {% if btn_visible.confirm %}
-                <input type="submit" class="btn btn-outline-primary" value="确定" name="confirm">
-            {% endif %}
-            {% if btn_visible.done %}
-                <input type="submit" class="btn btn-outline-danger" value="完成" name="cancel">
-            {% endif %}
-            {% if btn_visible.cancel %}
-                <input type="submit" class="btn btn-outline-danger" value="取消" name="cancel">
-            {% endif %}
-        </form>
-    {% endif %}
-{% endblock %}
 {% block content %}
-    <table class="table table-sm">
+    <table class="table">
         <thead>
         <tr>
             <th>编号</th>
-            <th>件</th>
             <th>数量</th>
-            <th>单位</th>
             <th>编辑</th>
         </tr>
         </thead>
 
         <tbody>
-        {% for object in object.items.all %}
+        {% for item in object.items.all %}
             <tr id="block_list_tr">
-                <td>{{ object.product }}</td>
-                <td>{{ object.piece }}</td>
-                <td>{{ object.quantity }}</td>
-                <td>{{ object.uom }}</td>
-                <td>
-                    <div class="dropdown">
-                        <button type="button" class="btn btn-sm " data-toggle="dropdown"
-                                aria-haspopup="true" aria-expanded="false">
-                            ...
-                        </button>
-                        <div class="dropdown-menu">
-                            <a class="dropdown-item" data-toggle="modal" data-target=".bd-example-modal-sm"
-                               href="{% url 'import_block_edit' %}">修改</a>
-                            <a class="dropdown-item" href="#">Another action</a>
-                            <a class="dropdown-item" href="#">Something else here</a>
-                            <div class="dropdown-divider"></div>
-                            <a class="dropdown-item" href="#">Separated link</a>
-                        </div>
-                    </div>
+                <td>{{ item.product }}</td>
+                <td>{{ item.piece }}件 | {{ item.quantity }}{{ item.uom }}</td>
+                <td>{% if object.state == 'draft' %}
+                    <!-- Dropdown Trigger -->
+
+                    <a class='dropdown-trigger btn-floating grey' href='#' data-target='dropdown1'> <i
+                            class="material-icons">more_vert</i></a>
+
+                    <!-- Dropdown Structure -->
+                    <ul id='dropdown1' class='dropdown-content'>
+                        <li>
+                            <a onclick="item_remove({{ item.id }},'{% url 'block_check_in_item_delete' 9999 %}')">
+                                删除
+                            </a>
+                        </li>
+                    </ul>
+                {% endif %}
                 </td>
             </tr>
         {% endfor %}
@@ -66,14 +42,11 @@
         <tfoot>
         <tr>
             <td></td>
-            <td></td>
             <td>{{ object.get_quantity }}</td>
-            <td></td>
             <td></td>
         </tr>
         </tfoot>
     </table>
-
 {% endblock %}
 {% block siderbar %}
     <ul class="list_group">

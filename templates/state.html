@@ -1,15 +1,29 @@
 {% if state_form %}
-    <form action="" method="post">
+    <form action="" method="post" id="state_form">
         {% csrf_token %}
-        {{ state_form }}
-        {% if btn_visible.draft %}
-            <input type="submit" class="btn btn-outline-secondary" value="设成草稿" name="draft">
-        {% endif %}
-        {% if btn_visible.confirm %}
-            <input type="submit" class="btn btn-outline-primary" value="确定" name="confirm">
-        {% endif %}
-        {% if btn_visible.cancel %}
-            <input type="submit" class="btn btn-outline-danger" value="取消" name="cancel">
-        {% endif %}
+        <input type="hidden" value="" name="state">
     </form>
+    {% if btn_visible.draft %}
+        <button class="btn default" onclick="state_confirm('draft')">设成草稿</button>
+    {% endif %}
+    {% if btn_visible.confirm %}
+        <button class="btn blue" onclick="state_confirm('confirm')">确定</button>
+    {% endif %}
+    {% if btn_visible.cancel %}
+        <button class="btn red" onclick="state_confirm('cancel')">取消</button>
+    {% endif %}
+    {% if btn_visible.done %}
+        <button class="btn green" onclick="state_confirm('done')">完成</button>
+    {% endif %}
+
 {% endif %}
+<script>
+    function state_confirm(state_str) {
+        $('#modal2 p').text('确定要把本单状态设置为：' + state_str);
+        $('#state_form input[name=state]').val(state_str);
+        $('#confirm_btn').on('click', function (e) {
+            $('#state_form').submit()
+        });
+        md2.modal('open');
+    }
+</script>
