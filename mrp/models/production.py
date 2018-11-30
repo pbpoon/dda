@@ -10,13 +10,27 @@ from public.fields import OrderField
 
 UOM_CHOICES = (('t', '吨'), ('m3', '立方'), ('m2', '平方'))
 TYPE_CHOICES = (('block', '荒料'), ('semi_slab', '毛板'), ('slab', '板材'))
+EXPENSE_BY_CHOICES = (('raw', '原材料项'), ('produce', '产品项'), ('all', '原料及产品'))
 
 
-class KesOrder(MrpOrderAbstract):
-    order = OrderField(order_str='KS', blank=True, verbose_name='单号', default='New', max_length=20)
+class ProductionType(models.Model):
+    name = models.CharField('业务类型', max_length=30)
+    expense_by = models.CharField('费用结算按', max_length=10, choices=EXPENSE_BY_CHOICES)
+    raw_item_type = models.CharField('原材料类型', max_length=10, choices=TYPE_CHOICES, default='block')
+    produce_item_type = models.CharField('产出品类型', max_length=10, choices=TYPE_CHOICES, default='block')
+    activate = models.BooleanField('启用', default=False)
 
     class Meta:
-        verbose_name = '生产加工单'
+        verbose_name = '生产业务类型明细'
+
+
+class ProductionOrder(MrpOrderAbstract):
+    order = OrderField(order_str='MO', blank=True, verbose_name='单号', default='New', max_length=20)
+    production_type = models.ForeignKey(ProductionType, on_delete=models.CASCADE, verbose_name='业务类型',
+                                        limit_choices_to={'activate': True})
+
+    class Meta:
+        verbose_name = '生产订单'
 
     def get_absolute_url(self):
         return reverse('kes_order_detail', args=[self.id])
@@ -34,14 +48,13 @@ class KesOrder(MrpOrderAbstract):
         return self.warehouse.get_production_location()
 
 
-class KesOrderRawItem(OrderItemBase):
-    order = models.ForeignKey('KesOrder', on_delete=models.CASCADE, related_name='items', blank=True,
-                              null=True)
-    price = models.DecimalField('单价', max_digits=8, decimal_places=2, help_text='立方单价')
-    m3 = models.DecimalField('立方数', max_digits=5, decimal_places=2, null=True, blank=True)
+class ProductionOrderRawItem(OrderItemBase):
+    order = models.ForeignKey('ProductionOrder', on_delete=models.CASCADE, related_name='items')
+    price = models.DecimalField('单价', max_digits=8, decimal_places=2, null=True, blank=True)
+    quantity = models.DecimalField('数量', max_digits=5, decimal_places=2, null=True, blank=True)
 
     class Meta:
-        verbose_name = '界石单荒料行'
+        verbose_name = '生产单原料行'
 
     def get_amount(self):
         m3 = self.m3 if self.m3 else 0
@@ -53,8 +66,9 @@ class KesOrderRawItem(OrderItemBase):
     def save(self, *args, **kwargs):
         if not self.m3:
             self.m3 = self.product.get_m3()
-        super(KesOrderRawItem, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
+    # 估算毛板的出材率
     def produce_single_qty(self):
         # 先取出对应的item的最小的厚度
         all_produces = self.produces.all()
@@ -81,21 +95,22 @@ class KesOrderRawItem(OrderItemBase):
         single_qty = self.produce_single_qty()
         if single_qty:
             for p in self.produces.all():
-                KesOrderProduceItem.objects.filter(pk=p.id).update(quantity=p.piece * single_qty)
+                ProductionOrderProduceItem.objects.filter(pk=p.id).update(quantity=p.piece * single_qty)
 
 
-class KesOrderProduceItem(OrderItemBase):
-    order = models.ForeignKey('KesOrder', on_delete=models.CASCADE, related_name='produce_items', blank=True, null=True,
+class ProductionOrderProduceItem(OrderItemBase):
+    order = models.ForeignKey(ProductionOrder, on_delete=models.CASCADE, related_name='produce_items',
                               verbose_name='对应界石单')
-    raw_item = models.ForeignKey('KesOrderRawItem', on_delete=models.CASCADE, related_name='produces',
+    raw_item = models.ForeignKey(ProductionOrderRawItem, on_delete=models.CASCADE, related_name='produces',
                                  verbose_name='原材料')
     product = models.ForeignKey('product.Product', on_delete=models.CASCADE, verbose_name='product', blank=True,
                                 null=True)
-    thickness = models.DecimalField('厚度规格', max_digits=5, decimal_places=2)
+    thickness = models.DecimalField('厚度规格', max_digits=5, decimal_places=2, blank=True, null=True)
     quantity = models.DecimalField('数量', decimal_places=2, max_digits=10, null=True, blank=True)
+    price = models.DecimalField('单价', max_digits=8, decimal_places=2, help_text='立方单价', null=True, blank=True)
 
     class Meta:
-        verbose_name = '界石单毛板行'
+        verbose_name = '生产单成品行'
         # unique_together = ['thickness', 'raw_item']
 
     def get_location(self):
@@ -107,15 +122,19 @@ class KesOrderProduceItem(OrderItemBase):
     def save(self, *args, **kwargs):
         self.order = self.raw_item.order
         self.product = self.raw_item.product.create_product(type='semi_slab', thickness=self.thickness)
-        super(KesOrderProduceItem, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
 
 # 更新毛板平方数的
-@receiver(post_save, sender=KesOrderProduceItem, dispatch_uid='dis')
+@receiver(post_save, sender=ProductionOrderRawItem, dispatch_uid='dis')
 def post_save_update_produces_quantity(sender, **kwargs):
-    kwargs['instance'].raw_item.update_produces_quantity()
+    instance = kwargs['instance']
+    if instance.order.production_type.produce_item_type == 'semi_slab':
+        kwargs['instance'].raw_item.update_produces_quantity()
 
 
-@receiver(post_delete, sender=KesOrderProduceItem, dispatch_uid='sid')
+@receiver(post_delete, sender=ProductionOrderRawItem, dispatch_uid='sid')
 def post_delete_update_produces_quantity(sender, **kwargs):
-    kwargs['instance'].raw_item.update_produces_quantity()
+    instance = kwargs['instance']
+    if instance.order.production_type.produce_item_type == 'semi_slab':
+        kwargs['instance'].raw_item.update_produces_quantity()

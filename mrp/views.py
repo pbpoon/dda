@@ -12,9 +12,9 @@ from purchase.models import PurchaseOrder
 from public.views import GetItemsMixin, StateChangeMixin
 from stock.stock_operate import StockOperate
 from .models import BlockCheckInOrder, BlockCheckInOrderItem, KesOrder, KesOrderRawItem, KesOrderProduceItem, \
-    MoveLocationOrder, MoveLocationOrderItem, SlabCheckInOrder, SlabCheckInOrderProduceItem
+    MoveLocationOrder, MoveLocationOrderItem
 from .forms import BlockCheckInOrderForm, KesOrderRawItemForm, KesOrderProduceItemForm, KesOrderForm, \
-    BlockCheckInOrderItemForm, MoveLocationOrderItemForm, MoveLocationOrderForm, SlabCheckInOrderForm
+    BlockCheckInOrderItemForm, MoveLocationOrderItemForm, MoveLocationOrderForm
 
 
 class BlockCheckInOrderListView(ListView):
@@ -256,29 +256,29 @@ class MoveLocationOrderItemEditView(OrderItemEditMixin):
 class MoveLocationOrderItemDeleteView(OrderItemDeleteMixin):
     model = MoveLocationOrderItem
 
+#
+# class SlabCheckInOrderListView(ListView):
+#     model = SlabCheckInOrder
+#
+#
+# class SlabCheckInOrderDetailView(DetailView):
+#     model = SlabCheckInOrder
+#
+#
+# class SlabCheckInOrderEditMixin(OrderFormInitialEntryMixin):
+#     model = SlabCheckInOrder
+#     template_name = "mrp/form.html"
+#     form_class = SlabCheckInOrderForm
+#
+#
+# class SlabCheckInOrderCreateView(SlabCheckInOrderEditMixin, CreateView):
+#     pass
+#
+#
+# class SlabCheckInOrderUpdateView(SlabCheckInOrderEditMixin, UpdateView):
+#     pass
 
-class SlabCheckInOrderListView(ListView):
-    model = SlabCheckInOrder
 
-
-class SlabCheckInOrderDetailView(DetailView):
-    model = SlabCheckInOrder
-
-
-class SlabCheckInOrderEditMixin(OrderFormInitialEntryMixin):
-    model = SlabCheckInOrder
-    template_name = "mrp/form.html"
-    form_class = SlabCheckInOrderForm
-
-
-class SlabCheckInOrderCreateView(SlabCheckInOrderEditMixin, CreateView):
-    pass
-
-
-class SlabCheckInOrderUpdateView(SlabCheckInOrderEditMixin, UpdateView):
-    pass
-
-
-class SlabCheckInOrderItemEditView(OrderItemEditMixin):
-    model = SlabCheckInOrderProduceItem
-    fields = '__all__'
+# class SlabCheckInOrderItemEditView(OrderItemEditMixin):
+#     model = SlabCheckInOrderProduceItem
+#     fields = '__all__'

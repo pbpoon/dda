@@ -37,9 +37,8 @@ urlpatterns = [
     path('kes_order/<pk>/', views.KesOrderDetailView.as_view(), name='kes_order_detail'),
     path('kes_order/', views.KesOrderListView.as_view(), name='kes_order_list'),
     # ------------------------------------------------kes order
-    path('slab_check_in/item/edit/', views.SlabCheckInOrderItemEditView.as_view(), name='slab_check_in_item_edit'),
-    path('slab_check_in/create/', views.SlabCheckInOrderCreateView.as_view(), name='slab_check_in_create'),
-    path('slab_check_in/update/<pk>/', views.SlabCheckInOrderUpdateView.as_view(), name='slab_check_in_update'),
-    path('slab_check_in/<pk>/', views.SlabCheckInOrderDetailView.as_view(), name='slab_check_in_detail'),
-    path('slab_check_in/', views.SlabCheckInOrderListView.as_view(), name='slab_check_in_list'),
+    # path('slab_check_in/create/', views.SlabCheckInOrderCreateView.as_view(), name='slab_check_in_create'),
+    # path('slab_check_in/update/<pk>/', views.SlabCheckInOrderUpdateView.as_view(), name='slab_check_in_update'),
+    # path('slab_check_in/<pk>/', views.SlabCheckInOrderDetailView.as_view(), name='slab_check_in_detail'),
+    # path('slab_check_in/', views.SlabCheckInOrderListView.as_view(), name='slab_check_in_list'),
 ]

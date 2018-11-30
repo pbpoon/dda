@@ -4,10 +4,11 @@
 from django import forms
 from django.urls import reverse, reverse_lazy
 
+from mrp.models import ProductionOrder, ProductionOrderRawItem, ProductionOrderProduceItem
 from product.models import Product
 from stock.models import Location
-from .models import BlockCheckInOrder, KesOrderRawItem, KesOrderProduceItem, KesOrder, BlockCheckInOrderItem, \
-    MoveLocationOrder, MoveLocationOrderItem, SlabCheckInOrder
+from mrp.models import BlockCheckInOrder, KesOrderRawItem, KesOrderProduceItem, KesOrder, BlockCheckInOrderItem, \
+    MoveLocationOrder, MoveLocationOrderItem
 
 
 class BlockCheckInOrderForm(forms.ModelForm):
@@ -69,7 +70,7 @@ class KesOrderRawItemForm(forms.ModelForm):
         super(KesOrderRawItemForm, self).__init__(*args, **kwargs)
         # 按order的原材料的type来筛选product的query_set
         if kwargs.get('instance', None):
-            #如果是编辑状态，就把本荒料编号添加上
+            # 如果是编辑状态，就把本荒料编号添加上
             qs = Product.objects.filter(id=kwargs.get('instance').product.id)
         elif kes_order and kes_order.items.all():
             # 如果是是新建状态，并且本order已经有原材料行，就把已经填写的原料的的产品剔出
@@ -153,16 +154,95 @@ class MoveLocationOrderItemForm(forms.ModelForm):
         #     self.fields['product'].widget.attrs = {'disabled':True}
 
 
-class SlabCheckInOrderForm(forms.ModelForm):
-    class Meta:
-        model = SlabCheckInOrder
-        exclude = ('location', 'location_dest', 'state')
-        widgets = {
-            "order": forms.HiddenInput,
-            "entry": forms.HiddenInput,
 
-        }
 
 
 class SlabCheckInOrderItemForm(forms.ModelForm):
     pass
+
+
+class ProductionOrderForm(forms.ModelForm):
+    class Meta:
+        model = ProductionOrder
+        fields = ('partner', 'date', 'production_type', 'warehouse', 'entry')
+        # exclude = ('order', 'location', 'location_dest', 'state')
+        widgets = {
+            'entry': forms.HiddenInput,
+        }
+
+
+class ProductOrderRawItemForm(forms.ModelForm):
+    class Meta:
+        model = ProductionOrderRawItem
+        exclude = ('location', 'location_dest')
+        widgets = {
+            # 'piece': forms.HiddenInput,
+            'order': forms.HiddenInput,
+        }
+
+    def __init__(self, *args, **kwargs):
+        order = kwargs.pop('production_order')
+        super().__init__(*args, **kwargs)
+        # 按order的原材料的type来筛选product的query_set
+        qs = Product.objects.all()
+        this_product_id = None
+        product_type = order.production_type.raw_item_type
+        if kwargs.get('instance', None):
+            # 如果是编辑状态，就把本荒料编号添加上
+            qs = qs.filter(id=kwargs.get('instance').product.id)
+            this_product_id = qs[0].id
+        elif order and order.items.all():
+            # 如果是是新建状态，并且本order已经有原材料行，就把已经填写的原料的的产品剔出
+            exclude_product_ids = [int(item.product.id) for item in order.items.all()]
+            if this_product_id:
+                exclude_product_ids = filter(lambda p: p != this_product_id, exclude_product_ids)
+            qs = qs.filter(type=product_type, stock__isnull=False).exclude(
+                pk__in=exclude_product_ids)
+        else:
+            # 如果是完全新建状态，就直接按order的原材料的type来筛选product
+            qs = Product.objects.filter(type=product_type, stock__isnull=False)
+        # 把qs赋值到product的queryset
+        self.fields['product'].queryset = qs
+
+        # onchange的ajax取数据url
+        url = reverse_lazy('get_product_info')
+        self.fields['product'].widget.attrs = {
+            'onchange': 'onchange_set_product_info({},"{}","quantity")'.format('this.value', url)}
+
+        # 根据product type的expense_by来设置price是否显示及是否必填
+        if order.production_type.expense_by == 'produce':
+            self.fields['price'].widget = forms.HiddenInput()
+        self.fields['price'].required = True
+
+
+class ProductionOrderProduceItemForm(forms.ModelForm):
+    class Meta:
+        model = ProductionOrderProduceItem
+        fields = ('order', 'raw_item', 'thickness', 'piece', 'quantity', 'price')
+        widgets = {
+            'order': forms.HiddenInput,
+            'raw_item': forms.HiddenInput,
+        }
+
+    def __init__(self, *args, **kwargs):
+        order = kwargs.pop('production_order')
+        super().__init__(*args, **kwargs)
+        product_type = order.production_type.produce_item_type
+        # 根据生产的产品项来设置thickness的是否必填及是否显示
+        if product_type == 'semi_slab':
+            self.fields['thickness'].required = True
+        else:
+            self.fields['thickness'].widget = forms.HiddenInput(),
+        # 根据product type的expense_by来设置price是否显示及是否必填
+        if order.production_type.expense_by == 'produce':
+            self.fields['price'].widget = forms.HiddenInput()
+        self.fields['price'].required = True
+
+    def clean_thickness(self):
+        thickness = self.cleaned_data['thickness']
+        if not thickness:
+            return
+        raw_item = KesOrderRawItem.objects.get(id=self.cleaned_data['raw_item'].id)
+        if thickness in {item.thickness for item in raw_item.produces.all()} and self.cleaned_data['product']:
+            raise forms.ValidationError('该编号{}#已有相同的的厚度毛板存在！同一编号不允许有重复厚度的毛板行！'.format(raw_item.product))
+        return thickness
