@@ -93,22 +93,26 @@ function post(URL, PARAMS) {
     return temp;
 }
 
-//onchange事件通用方法，第一参数默认是this.value，第二个参数必须为url地址，之后的参数问问input的name
+//onchange事件通用方法，第一参数默认是this，第二个参数必须为url地址，之后的参数问问input的name
 function onchange_set_product_info() {
     var args = new Array(arguments.length);
     for (var i = 0; i < arguments.length; i++) {
         args[i] = arguments[i];
     }
     var DATA;
+    var form = $('#item_form');
     $.ajax({
             url: arguments[1],
             method: 'GET',
-            data: {'value': arguments[0]},
+            data: form.serialize(),
             success: function (data) {
                 DATA = data;
-                for (var i = 2; i < args.length; i++) {
-                    $('#item_form [name=' + args[i] + ']').val(DATA[args[i]])
+                for (var d in data) {
+                    $('#item_form [name=' + d + ']').val(data[d])
                 }
+                // for (var i = 2; i < args.length; i++) {
+                //     $('#item_form [name=' + args[i] + ']').val(DATA[args[i]])
+                // }
             }
         }
     );
@@ -133,7 +137,7 @@ function onchange_set_product_list(url, kwargs) {
     );
 }
 
-function add_produce_item(order_id, raw_item_id) {
+function add_produce_item(order_id, raw_item_id, url) {
     var $form = $('#item_form');
     var old_action = $form.attr('action');
     $('#modal1 h6').text('添加明细行');
@@ -142,8 +146,7 @@ function add_produce_item(order_id, raw_item_id) {
             $form.attr('action', old_action)
         }
     });
-
-    $form.attr('action', '{% url "kes_order_produce_item_edit" %}');
+    $form.attr('action', url);
     $.ajax({
         url: $form.attr('action'),
         data: {
@@ -154,6 +157,9 @@ function add_produce_item(order_id, raw_item_id) {
         success: function (data) {
             $('#modal1 .container').html(data);
             md.modal('open')
+        },
+        error: function () {
+            $form.attr('action', old_action)
         }
     })
 }

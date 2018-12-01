@@ -36,7 +36,7 @@ class SlabCheckInOrderRawItem(OrderItemBase):
     class Meta:
         verbose_name = '板材入库单'
 
-
+#
 # class SlabCheckInOrderProduceItem(OrderItemBase):
 #     order = models.ForeignKey('SlabCheckInOrder', on_delete=models.CASCADE, related_name='produce_items',
 #                               verbose_name='板材入库单')

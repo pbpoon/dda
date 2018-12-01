@@ -5,6 +5,8 @@ from django.db import models
 from django.urls import reverse
 
 from public.fields import LineField
+from stock.models import Stock
+# from stock.stock_operate import StockOperate
 
 TYPE_CHOICES = (('block', '荒料'), ('semi_slab', '毛板'), ('slab', '板材'))
 UOM_CHOICES = (('t', '吨'), ('m3', '立方'))
@@ -68,6 +70,7 @@ class Product(models.Model):
     updated = models.DateTimeField('更新日期', auto_now=True)
     created = models.DateTimeField('创建日期', auto_now_add=True)
     activate = models.BooleanField('启用', default=False)
+    semi_slab_single_qty = models.DecimalField('毛板单件平方', null=True, max_digits=5, decimal_places=2, blank=True)
 
     class Meta:
         verbose_name = '荒料编号'
@@ -88,9 +91,10 @@ class Product(models.Model):
             m3 = self.weight / decimal.Decimal(2.8)
             return Decimal('{0:.2f}'.format(m3))
 
-        elif not self.m3:
-            return self.long * self.width * self.height * 0.000001
-        return self.m3
+        elif not self.m3 and self.long and self.width and self.height:
+            m3 = self.long * self.width * self.height * 0.000001
+            return Decimal('{0:.2f}'.format(m3))
+        return Decimal('{0:.2f}'.format(0))
 
     def get_absolute_url(self):
         return reverse('product_detail', args=[self.id])
@@ -106,6 +110,9 @@ class Product(models.Model):
         product, is_create = self.__class__.objects.get_or_create(name=self.name, type=type, thickness=thickness,
                                                                   defaults=default)
         return product
+
+    def get_available(self, location=None):
+        return Stock.get_available(product=self, location=location)
 
 
 class SlabAbstract(models.Model):

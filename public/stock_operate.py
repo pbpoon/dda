@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # Created by pbpoon on 2018/11/7
 
-from .models import Stock, StockTrace
+from stock.models import Stock, StockTrace
 from product.models import Slab
 from django.db import transaction
 
@@ -47,18 +47,19 @@ class StockOperate:
 
     def _get_stock(self, product, location, slabs=None, check_in=False):
         # 取得库存的记录
-        location_child_id_list = [l.id for l in location.child.all()] if location.child.all() else []
-        qs = self.stock_model.objects.filter(product_id=product.id)
-        if slabs:
-            return qs.filter(slabs__in=[s.id for s in slabs])
-        if check_in:
-            try:
-                return qs.get(location_id=location.id)
-            except Exception as e:
-                return None
-        if location_child_id_list:
-            return qs.filter(location_id__in=location_child_id_list)
-        return qs.filter(location_id=location.id)
+        # location_child_id_list = [l.id for l in location.child.all()] if location.child.all() else []
+        # qs = self.stock_model.objects.filter(product_id=product.id)
+        # if slabs:
+        #     return qs.filter(slabs__in=[s.id for s in slabs])
+        # if check_in:
+        #     try:
+        #         return qs.get(location_id=location.id)
+        #     except Exception as e:
+        #         return None
+        # if location_child_id_list:
+        #     return qs.filter(location_id__in=location_child_id_list)
+        # return qs.filter(location_id=location.id)
+        return  Stock._get_stock(product, location, slabs, check_in=check_in)
 
     def get_available(self, product, location, slabs=None):
         """
@@ -70,12 +71,13 @@ class StockOperate:
         Returns:元祖，（件，数量）
 
         """
-        available_stock = self._get_stock(product=product, location=location, slabs=slabs)
-        piece = sum(available.piece for available in available_stock)
-        reserve_piece = sum(available.reserve_piece for available in available_stock)
-        quantity = sum(available.quantity for available in available_stock)
-        reserve_quantity = sum(available.quantity for available in available_stock)
-        return (piece - reserve_piece), (quantity - reserve_quantity)
+        return Stock.get_available(product=product, location=location, slabs=slabs)
+        # available_stock = self._get_stock(product=product, location=location, slabs=slabs)
+        # piece = sum(available.piece for available in available_stock)
+        # reserve_piece = sum(available.reserve_piece for available in available_stock)
+        # quantity = sum(available.quantity for available in available_stock)
+        # reserve_quantity = sum(available.quantity for available in available_stock)
+        # return (piece - reserve_piece), (quantity - reserve_quantity)
 
     def update_slab_stock(self, slabs, location, check_in=False):
         # 更新板材的库位
@@ -125,16 +127,16 @@ class StockOperate:
                     if piece == 0:
                         break
             except Exception as e:
-                max_piece, max_quantity = max((a.piece - a.reserve_piece), piece), \
-                                          max((a.quantity - a.reserve_quantity), quantity)
-                a.piece -= max_piece
-                a.quantity -= max_quantity
+                max_piece, max_quantity = max((available.piece - available.reserve_piece), piece), \
+                                          max((available.quantity - available.reserve_quantity), quantity)
+                available.piece -= max_piece
+                available.quantity -= max_quantity
                 piece -= max_piece
                 quantity -= max_quantity
-                if a.piece == 0:
-                    a.delete()
+                if available.piece == 0:
+                    available.delete()
                 else:
-                    a.save()
+                    available.save()
             if slabs:
                 return self.update_slab_stock(slabs=slabs, location=location)
             return True

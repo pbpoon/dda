@@ -93,7 +93,7 @@ class StateChangeMixin:
         return super(StateChangeMixin, self).get_context_data(**kwargs)
 
     def make_invoice(self):
-        raise None
+        raise True
 
     def post(self, *args, **kwargs):
         self.object = self.get_object()

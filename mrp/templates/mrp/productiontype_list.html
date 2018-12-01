@@ -1,0 +1,17 @@
+{% extends "list.html" %}
+{% block content %}
+    <ul class="collection">
+        {% for object in object_list %}
+            <li class="collection-item"><a href="{{ object.get_absolute_url }}">{{ object.name }}</a></li>
+        {% endfor %}
+    </ul>
+    <div class="fixed-action-btn">
+        <a href="{% url "production_type_create" %}" class="btn-floating btn-large red">
+            <i class="large material-icons">add</i>
+        </a>
+    </div>
+
+{% endblock %}
+{% block headline %}
+    生产业务流程明细：{{ object.name }}
+{% endblock %}

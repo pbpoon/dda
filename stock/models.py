@@ -4,7 +4,6 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.urls import reverse
 from django.contrib import messages
 
-from product.models import Product, Slab
 
 UOM_CHOICES = (('t', '吨'), ('m3', '立方'))
 
@@ -127,3 +126,35 @@ class Stock(models.Model):
 
     def __str__(self):
         return "{}@{}:{}件/{}{}".format(self.product, self.location, self.piece, self.quantity, self.uom)
+
+    @staticmethod
+    def _get_stock(product, location=None, slabs=None, check_in=False):
+        # 取得库存的记录
+        qs = Stock.objects.filter(product_id=product.id)
+        if location:
+            if check_in:
+                return qs.filter(location_id=location.id)
+            location_id_list = [l.id for l in location.child.all()] if location.child.all() else []
+            location_id_list.append(location.id)
+            qs.filter(location_id__in=location_id_list)
+        if slabs:
+            qs.filter(slabs__in=[s.id for s in slabs])
+        return qs
+
+    @staticmethod
+    def get_available(product, location, slabs=None):
+        """
+        Args:
+            product: object产品
+            location: object库位
+            slabs: questset板材
+
+        Returns:元祖，（件，数量）
+
+        """
+        available_stock = Stock._get_stock(product=product, location=location, slabs=slabs)
+        piece = sum(available.piece for available in available_stock)
+        reserve_piece = sum(available.reserve_piece for available in available_stock)
+        quantity = sum(available.quantity for available in available_stock)
+        reserve_quantity = sum(available.reserve_quantity for available in available_stock)
+        return (piece - reserve_piece), (quantity - reserve_quantity)

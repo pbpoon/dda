@@ -6,15 +6,17 @@ from django.contrib import messages
 from django import forms
 
 from invoice.models import CreateInvoice
+from mrp.models import ProductionOrder, ProductionOrderRawItem, ProductionOrderProduceItem, ProductionType
 from product.models import Product
 from public.views import OrderItemEditMixin, OrderItemDeleteMixin, OrderFormInitialEntryMixin
 from purchase.models import PurchaseOrder
 from public.views import GetItemsMixin, StateChangeMixin
-from stock.stock_operate import StockOperate
+from public.stock_operate import StockOperate
 from .models import BlockCheckInOrder, BlockCheckInOrderItem, KesOrder, KesOrderRawItem, KesOrderProduceItem, \
     MoveLocationOrder, MoveLocationOrderItem
 from .forms import BlockCheckInOrderForm, KesOrderRawItemForm, KesOrderProduceItemForm, KesOrderForm, \
-    BlockCheckInOrderItemForm, MoveLocationOrderItemForm, MoveLocationOrderForm
+    BlockCheckInOrderItemForm, MoveLocationOrderItemForm, MoveLocationOrderForm, ProductionOrderForm, \
+    ProductionOrderRawItemForm, ProductionOrderProduceItemForm
 
 
 class BlockCheckInOrderListView(ListView):
@@ -256,29 +258,102 @@ class MoveLocationOrderItemEditView(OrderItemEditMixin):
 class MoveLocationOrderItemDeleteView(OrderItemDeleteMixin):
     model = MoveLocationOrderItem
 
-#
-# class SlabCheckInOrderListView(ListView):
-#     model = SlabCheckInOrder
-#
-#
-# class SlabCheckInOrderDetailView(DetailView):
-#     model = SlabCheckInOrder
-#
-#
-# class SlabCheckInOrderEditMixin(OrderFormInitialEntryMixin):
-#     model = SlabCheckInOrder
-#     template_name = "mrp/form.html"
-#     form_class = SlabCheckInOrderForm
-#
-#
-# class SlabCheckInOrderCreateView(SlabCheckInOrderEditMixin, CreateView):
-#     pass
-#
-#
-# class SlabCheckInOrderUpdateView(SlabCheckInOrderEditMixin, UpdateView):
-#     pass
+
+class ProductionTypeListView(ListView):
+    model = ProductionType
 
 
-# class SlabCheckInOrderItemEditView(OrderItemEditMixin):
-#     model = SlabCheckInOrderProduceItem
-#     fields = '__all__'
+class ProductionTypeDetailView(DetailView):
+    model = ProductionType
+
+
+class ProductionTypeCreateView(CreateView):
+    model = ProductionType
+    fields = '__all__'
+    template_name = 'mrp/form.html'
+
+
+class ProductionTypeUpdateView(UpdateView):
+    model = ProductionType
+    fields = '__all__'
+    template_name = 'mrp/form.html'
+
+
+class ProductionOrderListView(ListView):
+    model = ProductionOrder
+
+
+class ProductionOrderDetailView(StateChangeMixin, DetailView):
+    model = ProductionOrder
+
+    def confirm(self):
+        items = [i for i in self.object.items.all()]
+        items.extend([i for i in self.object.produce_items.all()])
+        stock = StockOperate(self.request, order=self.object, items=items)
+        return stock.handle_stock()
+
+
+class ProductionOrderEditMixin(OrderFormInitialEntryMixin):
+    model = ProductionOrder
+    form_class = ProductionOrderForm
+    template_name = 'mrp/form.html'
+
+    def get_initial(self):
+        initial = super().get_initial()
+        initial['handle'] = initial.get('entry')
+        return initial
+
+
+class ProductionOrderCreateView(ProductionOrderEditMixin, CreateView):
+    pass
+
+
+class ProductionOrderUpdateView(ProductionOrderEditMixin, UpdateView):
+    pass
+
+
+class ProductionOrderItemEditMixin(OrderItemEditMixin):
+
+    def get_order(self):
+        order = None
+        order_id = self.get_order_id()
+        if self.object:
+            order = self.object.order
+        elif order_id:
+            order = ProductionOrder.objects.get(pk=order_id)
+        return order
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['production_order'] = self.get_order()
+        return kwargs
+
+
+class ProductionOrderRawItemEditView(ProductionOrderItemEditMixin):
+    model = ProductionOrderRawItem
+    form_class = ProductionOrderRawItemForm
+
+    def get_initial(self):
+        initial = super().get_initial()
+        initial['location'] = self.get_order().location.id
+        return initial
+
+
+class ProductionOrderRawItemDeleteView(OrderItemDeleteMixin):
+    model = ProductionOrderRawItem
+
+
+class ProductionOrderProduceItemEditView(ProductionOrderItemEditMixin):
+    model = ProductionOrderProduceItem
+    form_class = ProductionOrderProduceItemForm
+
+    def get_initial(self):
+        initial = super().get_initial()
+        raw_item_id = self.request.GET.get('raw_item_id', None)
+        if raw_item_id:
+            initial['raw_item'] = raw_item_id
+        return initial
+
+
+class ProductionOrderProduceItemDeleteView(OrderItemDeleteMixin):
+    model = ProductionOrderProduceItem

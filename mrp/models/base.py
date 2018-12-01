@@ -1,14 +1,6 @@
-import math
-from django.db.models.signals import post_save, post_delete
-from django.dispatch import receiver
-import decimal
 from django.contrib.contenttypes.fields import GenericRelation
-from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from django.contrib.auth.models import User
-from django.urls import reverse
 
-from public.fields import OrderField
 from purchase.models import OrderAbstract
 
 UOM_CHOICES = (('t', '吨'), ('m3', '立方'), ('m2', '平方'))

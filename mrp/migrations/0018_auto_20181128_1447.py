@@ -37,24 +37,24 @@ class Migration(migrations.Migration):
                 'verbose_name': '板材入库单',
             },
         ),
-        migrations.CreateModel(
-            name='SlabCheckInOrderProduceItem',
-            fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('piece', models.IntegerField(default=1, verbose_name='件')),
-                ('quantity', models.DecimalField(decimal_places=2, max_digits=10, verbose_name='数量')),
-                ('uom', models.CharField(choices=[('t', '吨'), ('m3', '立方'), ('m2', '平方')], default='t', max_length=10, verbose_name='计量单位')),
-                ('price', models.DecimalField(decimal_places=2, help_text='平方单价', max_digits=8, verbose_name='单价')),
-                ('location', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='slabcheckinorderitem_location', to='stock.Location', verbose_name='库位')),
-                ('location_dest', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='slabcheckinorderitem_location_dest', to='stock.Location', verbose_name='目标库位')),
-                ('order', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='items', to='mrp.SlabCheckInOrder', verbose_name='板材入库单')),
-                ('package_list', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='product.PackageList', verbose_name='码单')),
-                ('product', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='product.Product', verbose_name='product')),
-            ],
-            options={
-                'verbose_name': '板材入库单明细行',
-            },
-        ),
+        # migrations.CreateModel(
+        #     name='SlabCheckInOrderProduceItem',
+        #     fields=[
+        #         ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+        #         ('piece', models.IntegerField(default=1, verbose_name='件')),
+        #         ('quantity', models.DecimalField(decimal_places=2, max_digits=10, verbose_name='数量')),
+        #         ('uom', models.CharField(choices=[('t', '吨'), ('m3', '立方'), ('m2', '平方')], default='t', max_length=10, verbose_name='计量单位')),
+        #         ('price', models.DecimalField(decimal_places=2, help_text='平方单价', max_digits=8, verbose_name='单价')),
+        #         ('location', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='slabcheckinorderitem_location', to='stock.Location', verbose_name='库位')),
+        #         ('location_dest', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='slabcheckinorderitem_location_dest', to='stock.Location', verbose_name='目标库位')),
+        #         ('order', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='items', to='mrp.SlabCheckInOrder', verbose_name='板材入库单')),
+        #         ('package_list', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='product.PackageList', verbose_name='码单')),
+        #         ('product', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='product.Product', verbose_name='product')),
+        #     ],
+        #     options={
+        #         'verbose_name': '板材入库单明细行',
+        #     },
+        # ),
         migrations.AlterModelOptions(
             name='blockcheckinorderitem',
             options={'verbose_name': '荒料到货入库单明细行'},

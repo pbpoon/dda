@@ -15,12 +15,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='slab',
             name='reserve_stock',
-            field=models.ForeignKey(blank=True, limit_choices_to={'location__is_virtual': False}, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='reserve_slabs', to='stock.Stock'),
+            field=models.ForeignKey(blank=True, limit_choices_to={'location__is_virtual': False}, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='reserve_slabs', to='product.Stock'),
         ),
         migrations.AddField(
             model_name='slab',
             name='stock',
-            field=models.ForeignKey(blank=True, limit_choices_to={'location__is_virtual': False}, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='slabs', to='stock.Stock'),
+            field=models.ForeignKey(blank=True, limit_choices_to={'location__is_virtual': False}, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='slabs', to='product.Stock'),
         ),
         migrations.AddField(
             model_name='packagelistitem',

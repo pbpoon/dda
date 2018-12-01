@@ -1,0 +1,25 @@
+{% extends 'mrp/detail.html' %}
+{% load materializecss %}
+{{ form.media }}
+{% block content %}
+                <ul class="collection with-header">
+                    <li class="collection-header"><h4>{{ object.name }}</h4></li>
+                    <li class="collection-item">费用结算按：{{ object.get_expense_by_display }}</li>
+                    <li class="collection-item">原材料类型：{{ object.get_raw_item_type_display }}</li>
+                    <li class="collection-item">产出品类型：{{ object.get_produce_item_type_display }}</li>
+                    <li class="collection-item">启用：{{ object.activate }}</li>
+                </ul>
+
+    <!--右下角浮动按钮组-->
+    {% include 'float_btn.html' %}
+
+{% endblock %}
+{% block siderbar %}
+    <div class="btn-group-vertical">
+        <a class="mdui-btn" href="">编辑业务资料</a>
+    </div>
+{% endblock %}
+
+{% block headline %}
+    {{ object.name }}
+{% endblock %}

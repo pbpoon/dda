@@ -110,12 +110,12 @@ class KesOrderProduceItem(OrderItemBase):
         super(KesOrderProduceItem, self).save(*args, **kwargs)
 
 
-# 更新毛板平方数的
-@receiver(post_save, sender=KesOrderProduceItem, dispatch_uid='dis')
-def post_save_update_produces_quantity(sender, **kwargs):
-    kwargs['instance'].raw_item.update_produces_quantity()
-
-
-@receiver(post_delete, sender=KesOrderProduceItem, dispatch_uid='sid')
-def post_delete_update_produces_quantity(sender, **kwargs):
-    kwargs['instance'].raw_item.update_produces_quantity()
+# # 更新毛板平方数的
+# @receiver(post_save, sender=KesOrderProduceItem, dispatch_uid='dis')
+# def post_save_update_produces_quantity(sender, **kwargs):
+#     kwargs['instance'].raw_item.update_produces_quantity()
+#
+#
+# @receiver(post_delete, sender=KesOrderProduceItem, dispatch_uid='sid')
+# def post_delete_update_produces_quantity(sender, **kwargs):
+#     kwargs['instance'].raw_item.update_produces_quantity()

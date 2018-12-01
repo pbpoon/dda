@@ -6,7 +6,9 @@ from django.db import models
 from django.urls import reverse
 
 from mrp.models import MrpOrderAbstract, OrderItemBase
+from product.models import Product
 from public.fields import OrderField
+# from stock.stock_operate import StockOperate
 
 UOM_CHOICES = (('t', '吨'), ('m3', '立方'), ('m2', '平方'))
 TYPE_CHOICES = (('block', '荒料'), ('semi_slab', '毛板'), ('slab', '板材'))
@@ -23,6 +25,15 @@ class ProductionType(models.Model):
     class Meta:
         verbose_name = '生产业务类型明细'
 
+    def get_absolute_url(self):
+        return reverse('production_type_detail', args=[self.id])
+
+    def get_update_url(self):
+        return reverse('production_type_update', args=[self.id])
+
+    def __str__(self):
+        return self.name
+
 
 class ProductionOrder(MrpOrderAbstract):
     order = OrderField(order_str='MO', blank=True, verbose_name='单号', default='New', max_length=20)
@@ -33,13 +44,13 @@ class ProductionOrder(MrpOrderAbstract):
         verbose_name = '生产订单'
 
     def get_absolute_url(self):
-        return reverse('kes_order_detail', args=[self.id])
+        return reverse('production_detail', args=[self.id])
 
     def get_update_url(self):
-        return reverse('kes_order_update', args=[self.id])
+        return reverse('production_update', args=[self.id])
 
     def get_item_edit_url(self):
-        return reverse('kes_order_raw_item_edit')
+        return reverse('production_raw_item_edit')
 
     def get_location(self):
         return self.warehouse.get_main_location()
@@ -50,26 +61,31 @@ class ProductionOrder(MrpOrderAbstract):
 
 class ProductionOrderRawItem(OrderItemBase):
     order = models.ForeignKey('ProductionOrder', on_delete=models.CASCADE, related_name='items')
-    price = models.DecimalField('单价', max_digits=8, decimal_places=2, null=True, blank=True)
     quantity = models.DecimalField('数量', max_digits=5, decimal_places=2, null=True, blank=True)
+    uom = models.CharField('计量单位', null=False, choices=UOM_CHOICES, max_length=10, default='t')
+    price = models.DecimalField('单价', max_digits=8, decimal_places=2, blank=True, null=True)
 
     class Meta:
         verbose_name = '生产单原料行'
 
     def get_amount(self):
-        m3 = self.m3 if self.m3 else 0
-        return m3 * self.price
+        if self.product.type == 'block':
+            return self.get_m3() * self.price
+        return 0
+
+    def get_m3(self):
+        return self.product.get_m3()
 
     def __str__(self):
         return str(self.product)
 
-    def save(self, *args, **kwargs):
-        if not self.m3:
-            self.m3 = self.product.get_m3()
-        super().save(*args, **kwargs)
+    # def get_available(self):
+    #     stock = StockOperate()
+    #     piece, quantity = stock.get_available(product=self.product, location=self.location)
+    #     return piece, quantity
 
     # 估算毛板的出材率
-    def produce_single_qty(self):
+    def semi_slab_single_qty(self):
         # 先取出对应的item的最小的厚度
         all_produces = self.produces.all()
         if not all_produces:
@@ -92,16 +108,18 @@ class ProductionOrderRawItem(OrderItemBase):
         return single_qty
 
     def update_produces_quantity(self):
-        single_qty = self.produce_single_qty()
+        single_qty = self.semi_slab_single_qty()
         if single_qty:
             for p in self.produces.all():
                 ProductionOrderProduceItem.objects.filter(pk=p.id).update(quantity=p.piece * single_qty)
+                Product.objects.filter(pk=p.product.id).update(semi_slab_single_qty=single_qty)
 
 
 class ProductionOrderProduceItem(OrderItemBase):
     order = models.ForeignKey(ProductionOrder, on_delete=models.CASCADE, related_name='produce_items',
                               verbose_name='对应界石单')
-    raw_item = models.ForeignKey(ProductionOrderRawItem, on_delete=models.CASCADE, related_name='produces',
+    raw_item = models.ForeignKey('ProductionOrderRawItem', on_delete=models.CASCADE, related_name='produces',
+
                                  verbose_name='原材料')
     product = models.ForeignKey('product.Product', on_delete=models.CASCADE, verbose_name='product', blank=True,
                                 null=True)
@@ -126,15 +144,15 @@ class ProductionOrderProduceItem(OrderItemBase):
 
 
 # 更新毛板平方数的
-@receiver(post_save, sender=ProductionOrderRawItem, dispatch_uid='dis')
-def post_save_update_produces_quantity(sender, **kwargs):
+@receiver(post_save, sender=ProductionOrderProduceItem, dispatch_uid='dis')
+def production_produce_item_post_save_update_produces_quantity(sender, **kwargs):
     instance = kwargs['instance']
     if instance.order.production_type.produce_item_type == 'semi_slab':
         kwargs['instance'].raw_item.update_produces_quantity()
 
 
-@receiver(post_delete, sender=ProductionOrderRawItem, dispatch_uid='sid')
-def post_delete_update_produces_quantity(sender, **kwargs):
+@receiver(post_delete, sender=ProductionOrderProduceItem, dispatch_uid='sid')
+def production_produce_item_post_delete_update_produces_quantity(sender, **kwargs):
     instance = kwargs['instance']
     if instance.order.production_type.produce_item_type == 'semi_slab':
         kwargs['instance'].raw_item.update_produces_quantity()

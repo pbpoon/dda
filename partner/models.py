@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.urls import reverse
 
-from stock.models import Location, Warehouse
+from stock.models import Location
 
 PARTNER_TYPE_CHOICES = (
     ('customer', '客户'),

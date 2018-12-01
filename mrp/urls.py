@@ -6,7 +6,8 @@ from . import views
 
 urlpatterns = [
     # ------------------------------------------------kes order
-    path('move_order/item/delete/<pk>', views.MoveLocationOrderItemDeleteView.as_view(), name='move_location_order_delete'),
+    path('move_order/item/delete/<pk>', views.MoveLocationOrderItemDeleteView.as_view(),
+         name='move_location_order_delete'),
     path('move_order/create/', views.MoveLocationOrderCreateView.as_view(), name='move_location_order_create'),
     path('move_order/item/edit/', views.MoveLocationOrderItemEditView.as_view(), name='move_location_order_item_edit'),
     path('move_order/update/<pk>/', views.MoveLocationOrderUpdateView.as_view(), name='move_location_order_update'),
@@ -36,9 +37,18 @@ urlpatterns = [
     path('kes_order/create/', views.KesOrderCreateView.as_view(), name='kes_order_create'),
     path('kes_order/<pk>/', views.KesOrderDetailView.as_view(), name='kes_order_detail'),
     path('kes_order/', views.KesOrderListView.as_view(), name='kes_order_list'),
-    # ------------------------------------------------kes order
-    # path('slab_check_in/create/', views.SlabCheckInOrderCreateView.as_view(), name='slab_check_in_create'),
-    # path('slab_check_in/update/<pk>/', views.SlabCheckInOrderUpdateView.as_view(), name='slab_check_in_update'),
-    # path('slab_check_in/<pk>/', views.SlabCheckInOrderDetailView.as_view(), name='slab_check_in_detail'),
-    # path('slab_check_in/', views.SlabCheckInOrderListView.as_view(), name='slab_check_in_list'),
+    # ------------------------------------------------production order
+    path('production/produce_item/delete/<pk>', views.ProductionOrderProduceItemDeleteView.as_view(), name='production_produce_item_delete'),
+    path('production/produce_item/edit/', views.ProductionOrderProduceItemEditView.as_view(), name='production_produce_item_edit'),
+    path('production/raw_item/delete/<pk>', views.ProductionOrderRawItemDeleteView.as_view(), name='production_raw_item_delete'),
+    path('production/raw_item/edit/', views.ProductionOrderRawItemEditView.as_view(), name='production_raw_item_edit'),
+    path('production/update/<pk>/', views.ProductionOrderUpdateView.as_view(), name='production_update'),
+    path('production/create/', views.ProductionOrderCreateView.as_view(), name='production_create'),
+    path('production/<pk>/', views.ProductionOrderDetailView.as_view(), name='production_detail'),
+    path('production/', views.ProductionOrderListView.as_view(), name='production_list'),
+    # ------------------------------------------------production type
+    path('production_type/update/<pk>', views.ProductionTypeUpdateView.as_view(), name='production_type_update'),
+    path('production_type/create/', views.ProductionTypeCreateView.as_view(), name='production_type_create'),
+    path('production_type/<pk>/', views.ProductionTypeDetailView.as_view(), name='production_type_detail'),
+    path('production_type/', views.ProductionTypeListView.as_view(), name='production_type_list'),
 ]

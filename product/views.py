@@ -11,14 +11,13 @@ from .models import Product, Category, Slab, PackageList, DraftPackageList, Draf
 
 
 def get_product_info(request):
-    product_id = request.GET.get('value')
+    product_id = request.GET.get('product')
+    location_id = request.GET.get('location')
     product = get_object_or_404(Product, pk=product_id)
-    data = obj_to_dict(product)
-    if product.uom == 't':
-        data['quantity'] = data['weight']
-    else:
-        data['quantity'] = data['m3']
-    data['piece'] = 1
+    location = get_object_or_404(Location, pk=location_id)
+    piece, quantity = product.get_available(location=location)
+
+    data = {'piece': piece, 'quantity': quantity}
     return JsonResponse(data)
 
 
