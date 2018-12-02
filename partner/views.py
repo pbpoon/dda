@@ -15,8 +15,10 @@ class PartnerDetailView(DetailView):
 class PartnerCreateView(CreateView):
     model = Partner
     fields = '__all__'
+    template_name = 'form.html'
 
 
 class PartnerUpdateView(UpdateView):
     model = Partner
     fields = '__all__'
+    template_name = 'form.html'

@@ -1,0 +1,12 @@
+{% extends "list.html" %}
+
+{% block sidebar %}
+    <div class="fixed-action-btn">
+        <a href="{% block add_url %}{% endblock %}" class="btn-floating btn-large red">
+            <i class="large material-icons">add</i>
+        </a>
+    </div>
+{% endblock %}
+{% block headline %}
+    采购订单列表
+{% endblock %}

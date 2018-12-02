@@ -1,4 +1,4 @@
-{% extends "purchase/index.html" %}
+{% extends "purchase/list.html" %}
 {% block content %}
     {% if object_list %}
         <table class="highlight">
@@ -47,11 +47,7 @@
     {% endif %}
 
 {% endblock %}
-{% block sidebar %}
-    <ul>
-        <li><a href="{% url "purchase_order_create" %}" class="mdui-btn">新建</a></li>
-    </ul>
-{% endblock %}
+{% block add_url %}{% url "purchase_order_create" %}{% endblock %}
 {% block headline %}
     采购订单列表
 {% endblock %}

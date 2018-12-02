@@ -91,9 +91,9 @@ class StockOperate:
         # 入库
         available = self._get_stock(product=product, location=location, check_in=True)
         if available:
-            available.piece += piece
-            available.quantity += quantity
-            available.save()
+            available[0].piece += piece
+            available[0].quantity += quantity
+            available[0].save()
         else:
             self.stock_model.objects.create(product=product, piece=piece, quantity=quantity,
                                             uom=product.uom if product.type == 'block' else 'm2',
@@ -195,9 +195,9 @@ class StockOperate:
                         transaction.rollback(sid)
                         break
 
-                else:
-                    # 更新数据库
-                    transaction.savepoint_commit(sid)
-                    return True, '成功更新库存'
-                return False, '更新库存失败'
+            else:
+                # 更新数据库
+                transaction.savepoint_commit(sid)
+                return True, '成功更新库存'
+            return False, '更新库存失败'
         return False, error

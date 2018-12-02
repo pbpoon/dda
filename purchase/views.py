@@ -2,13 +2,12 @@ from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import FormView, CreateView, UpdateView, DeleteView, BaseDeleteView
 
-from public.views import OrderItemEditMixin, StateChangeMixin, OrderItemDeleteMixin
+from public.views import OrderItemEditMixin, StateChangeMixin, OrderItemDeleteMixin, OrderFormInitialEntryMixin
 from .forms import PurchaseOrderItemForm, PurchaseOrderForm
 from .models import PurchaseOrder, PurchaseOrderItem
 from invoice.models import CreateInvoice
 
 from django.contrib import messages
-
 
 
 class PurchaseOrderListView(ListView):
@@ -48,17 +47,19 @@ class PurchaseOrderDetailView(StateChangeMixin, DetailView):
         return super(PurchaseOrderDetailView, self).draft()
 
 
-class PurchaseOrderCreateView(CreateView):
+class PurchaseOrderEditMixin(OrderFormInitialEntryMixin):
     model = PurchaseOrder
     form_class = PurchaseOrderForm
     # fields = ('date', 'partner', 'handler', 'currency', 'uom')
-    template_name = 'purchase/order/form.html'
+    template_name = 'form.html'
 
-    def form_valid(self, form):
-        instance = form.save(commit=False)
-        instance.entry = self.request.user
-        instance.save()
-        return super(PurchaseOrderCreateView, self).form_valid(form)
+
+class PurchaseOrderCreateView(PurchaseOrderEditMixin, CreateView):
+    pass
+
+
+class PurchaseOrderUpdateView(PurchaseOrderEditMixin, UpdateView):
+    pass
 
 
 class PurchaseOrderItemEditView(OrderItemEditMixin):

@@ -3,6 +3,7 @@
 # Created by pbpoon on 2018/10/30
 from django import forms
 
+from partner.models import Partner
 from product.models import Product
 from .models import PurchaseOrderItem, PurchaseOrder
 from material_widgets import forms as md_forms
@@ -21,7 +22,14 @@ class ImportFileForm(forms.Form):
 class PurchaseOrderForm(forms.ModelForm):
     class Meta:
         model = PurchaseOrder
-        exclude = ('order', 'entry', 'state')
+        exclude = ('order', 'state')
+        widgets = {
+            'entry': forms.HiddenInput,
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['partner'].queryset = Partner.objects.filter(type='supplier', is_activate=True)
 
 
 class PurchaseOrderItemForm(forms.ModelForm):
