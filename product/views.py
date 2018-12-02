@@ -1,5 +1,6 @@
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404, HttpResponse
+from django.template.loader import render_to_string
 from django.views.generic import ListView, DetailView, CreateView
 
 from product.forms import DraftPackageListItemForm
@@ -39,6 +40,24 @@ class ProductDetailView(DetailView):
     model = Product
 
 
+class DraftPackageListView(ListView):
+    model = DraftPackageList
+    template_name = 'choice_package_list.html'
+
+
+def get_draft_package_list_info(request):
+    pk = request.GET.get('pk')
+    obj = get_object_or_404(DraftPackageList, pk=pk)
+    if obj:
+        data = {'status': 'success',
+                'draft_package_list': obj.id,
+                'piece': obj.get_total_piece(),
+                'quantity': str(obj.get_total_quantity())}
+    else:
+        data = {'status': 'error'}
+    return JsonResponse(data)
+
+
 class DraftPackageListDetailView(DetailView):
     model = DraftPackageList
 
@@ -75,3 +94,18 @@ class DraftPackageListItemEditView(OrderItemEditMixin):
 
 class DraftPackageListItemDeleteView(OrderItemDeleteMixin):
     model = DraftPackageListItem
+
+
+class PackageListDetail(DetailView):
+    model = PackageList
+    template_name = 'package_list.html'
+
+    context_object_name = 'package'
+
+    # def get_context_data(self, **kwargs):
+    #     context = super().get_context_data(**kwargs)
+    #     return context
+    #
+    # def get(self, *args, **kwargs):
+    #     self.object = self.get_object()
+    #     return HttpResponse(render_to_string(self.template_name, self.get_context_data(**kwargs)))

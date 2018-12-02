@@ -59,7 +59,7 @@ class StockOperate:
         # if location_child_id_list:
         #     return qs.filter(location_id__in=location_child_id_list)
         # return qs.filter(location_id=location.id)
-        return  Stock._get_stock(product, location, slabs, check_in=check_in)
+        return Stock._get_stock(product, location, slabs, check_in=check_in)
 
     def get_available(self, product, location, slabs=None):
         """
@@ -81,11 +81,10 @@ class StockOperate:
 
     def update_slab_stock(self, slabs, location, check_in=False):
         # 更新板材的库位
-        qs = self.slab_model.objects.filter(id__in=[s.id for s in slabs])
         if check_in:
-            qs.update(location_id=location.id)
+            slabs.update(stock=location.id)
             return True
-        qs.update(location=None)
+        slabs.update(stock=None)
         return True
 
     def check_in_stock(self, product, location, piece, quantity, slabs=None):
@@ -100,7 +99,7 @@ class StockOperate:
                                             uom=product.uom if product.type == 'block' else 'm2',
                                             location=location)
         if slabs:
-            return self.update_slab_stock(slabs=[s.id for s in slabs], location=location, check_in=True)
+            return self.update_slab_stock(slabs=slabs, location=location, check_in=True)
         return True
 
     def check_out_stock(self, product, location, piece, quantity, slabs=None):
@@ -180,22 +179,21 @@ class StockOperate:
             for item in self.items:
                 if not item.location.is_virtual:
                     package_list = getattr(item, 'package_list', None)
-                    slabs = package_list.items.all() if package_list else None
+                    slabs = Slab.objects.filter(
+                        id__in=package_list.items.values_list('id', flat=True)) if package_list else None
                     if not self.update_available(product=item.product, location=item.location, piece=-item.piece,
                                                  quantity=-item.quantity, slabs=slabs):
                         transaction.rollback(sid)
                         break
-            else:
                 # 操作入库
-                for item in self.items:
-                    if not item.location_dest.is_virtual:
-                        package_list = getattr(item, 'package_list', None)
-                        slabs = package_list.items.all() if package_list else None
-                        if not self.update_available(product=item.product, location=item.location_dest,
-                                                     piece=item.piece,
-                                                     quantity=item.quantity, slabs=slabs):
-                            transaction.rollback(sid)
-                            break
+                if not item.location_dest.is_virtual:
+                    package_list = getattr(item, 'package_list', None)
+                    slabs = package_list.items.all() if package_list else None
+                    if not self.update_available(product=item.product, location=item.location_dest,
+                                                 piece=item.piece,
+                                                 quantity=item.quantity, slabs=slabs):
+                        transaction.rollback(sid)
+                        break
 
                 else:
                     # 更新数据库

@@ -23,8 +23,11 @@ urlpatterns = [
     path('package_list/draft/item/edit/', views.DraftPackageListItemEditView.as_view(), name='package_list_draft_item_edit'),
     path('package_list/draft/<pk>', views.DraftPackageListDetailView.as_view(), name='package_list_draft_detail'),
     path('package_list/draft/create/', views.DraftPackageListCreateView.as_view(), name='package_list_draft_create'),
+    path('get_draft_package_list_info', views.get_draft_package_list_info, name='get_draft_package_list_info'),
+    path('draft_package_list', views.DraftPackageListView.as_view(), name='get_draft_package_list'),
     path('product_list', views.get_product_list, name='get_product_list'),
     path('product_info', views.get_product_info, name='get_product_info'),
+    path('package_list/<pk>', views.PackageListDetail.as_view(), name='package_list'),
     path('<pk>/', views.ProductDetailView.as_view(), name='product_detail'),
     path('', views.ProductListView.as_view(), name='product_list'),
 ]

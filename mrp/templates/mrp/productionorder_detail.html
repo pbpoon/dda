@@ -3,95 +3,11 @@
 {% load materializecss %}
 {{ form.media }}
 {% block content %}
-    {% block tb %}
-        <table class="table">
-            <thead>
-            <tr>
-                <th></th>
-                <th>编号</th>
-                <th>数量</th>
-                <th>单价</th>
-                <th>金额</th>
-                <th>编辑</th>
-            </tr>
-            </thead>
-
-            <tbody>
-            {% for item in object.items.all %}
-                <tr id="block_list_tr">
-                    <td>原料</td>
-                    <td>{{ item.product }}</td>
-                    <td>
-                        {{ item.piece }}件 |
-                        {{ item.quantity }}{{ item.uom }}</td>
-                    <td>{{ item.price }}</td>
-                    <td>{{ item.get_amount }}</td>
-                    <td>{% if object.state == 'draft' %}
-                        <!-- Dropdown Trigger -->
-
-                        <a class='dropdown-trigger btn-floating grey' href='#' data-target='dropdown1'> <i
-                                class="material-icons">more_vert</i></a>
-
-                        <!-- Dropdown Structure -->
-                        <ul id='dropdown1' class='dropdown-content'>
-                            <li>
-                                <a onclick="edit_item({{ item.id }}, '{% url 'production_raw_item_edit' %}')">修改
-                                </a>
-                            </li>
-                            <li>
-                                <a onclick="item_remove({{ item.id }},'{% url 'production_raw_item_delete' 9999 %}')">
-                                    删除
-                                </a>
-                            </li>
-                            <li>
-                                <a onclick="add_produce_item({{ object.id }},{{ item.id }}, '{% url 'production_produce_item_edit' %}')">
-                                    添加成品
-                                </a>
-                            </li>
-                        </ul>
-                    {% endif %}</td>
-                </tr>
-                {% if item.produces.all %}
-                    {% for produce in item.produces.all %}
-                        <tr>
-                            <td></td>
-                            <td>{{ produce.thickness }}厚度</td>
-                            <td>{{ produce.piece }}件 | {{ produce.quantity }}</td>
-                            <td></td>
-                            <td></td>
-                            <td>{% if object.state == 'draft' %}
-
-                                <a class='dropdown-trigger btn-floating grey' href='#' data-target='dropdown2'> <i
-                                        class="material-icons">more_vert</i></a>
-
-                                <!-- Dropdown Structure -->
-                                <ul id='dropdown2' class='dropdown-content'>
-                                    <li>
-                                        <a onclick="edit_item({{ produce.id }}, '{% url 'production_produce_item_edit' %}')">
-                                            修改</a></li>
-                                    <li>
-                                        <a onclick="item_remove({{ produce.id }},'{% url 'production_produce_item_delete' 9999 %}')">
-                                            删除</a></li>
-                                </ul>
-                            {% endif %}
-                            </td>
-                        </tr>
-                    {% endfor %}
-                {% endif %}
-            {% endfor %}
-            </tbody>
-            <tfoot>
-            <tr>
-                <td></td>
-                <td></td>
-                <td>{{ object.get_quantity }}</td>
-                <td></td>
-                <td>{{ object.get_amount }}</td>
-                <td></td>
-            </tr>
-            </tfoot>
-        </table>
-    {% endblock %}
+    {% if object.production_type.produce_item_type == 'semi_slab' %}
+        {% include 'mrp/produce_type_semi_slab.html' %}
+    {% elif object.production_type.produce_item_type == 'slab' %}
+        {% include 'mrp/produce_type_slab.html' %}
+    {% endif %}
     <!--右下角浮动按钮组-->
 {% endblock %}
 {% block siderbar %}
@@ -104,6 +20,10 @@
     {{ object.get_state_display }}{{ object.order }}
 {% endblock %}
 {% block subheadline %}
+    <span>{{ object.location }}/{{ object.production_type }}</span>
+    <p>原材料类型：{{ object.production_type.get_raw_item_type_display }} /
+        产品类型：{{ object.production_type.get_produce_item_type_display }}</p>
+    <hr>
     业务伙伴：{{ object.partner }} / 经办人:{{ object.handler }}
 {% endblock %}
 

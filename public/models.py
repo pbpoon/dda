@@ -41,7 +41,7 @@ class OrderAbstract(models.Model):
         ordering = ['-created']
 
     def get_quantity(self):
-        return sum(item.quantity for item in self.items.all())
+        return sum(item.quantity for item in self.items.all() if item.quantity)
 
     def get_amount(self):
         return sum(item.get_amount() for item in self.items.all())

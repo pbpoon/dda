@@ -1,0 +1,31 @@
+<ul class="collection">
+    {% for object in object_list %}
+        <li class="collection-item">
+            <span class="title">{{ object.name }}</span>
+            <p>{{ object.get_total_piece }}件/ {{ object.get_total_part_number }}夹 / {{ object.get_total_quantity }}
+                <button class="btn-small right" onclick="choice_draft_package_list('{{ object.id }}')">选择</button>
+            </p>
+        </li>
+    {% endfor %}
+</ul>
+<script>
+    function choice_draft_package_list(object_id) {
+        $.ajax({
+            url: '{% url "get_draft_package_list_info" %}',
+            data: {'pk': object_id},
+            success: function (data) {
+                if (data['status'] == 'success') {
+                    for (var x in data) {
+                        $('#item_form [name=' + x + ']').val(data[x])
+                    }
+                    md3.modal('close')
+                }
+                else {
+                    alert('错误')
+                }
+                ;
+            }
+        });
+        ;
+    }
+</script>

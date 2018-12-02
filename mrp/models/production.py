@@ -8,6 +8,7 @@ from django.urls import reverse
 from mrp.models import MrpOrderAbstract, OrderItemBase
 from product.models import Product
 from public.fields import OrderField
+
 # from stock.stock_operate import StockOperate
 
 UOM_CHOICES = (('t', '吨'), ('m3', '立方'), ('m2', '平方'))
@@ -61,6 +62,7 @@ class ProductionOrder(MrpOrderAbstract):
 
 class ProductionOrderRawItem(OrderItemBase):
     order = models.ForeignKey('ProductionOrder', on_delete=models.CASCADE, related_name='items')
+    piece = models.IntegerField('件', default=1, blank=True, null=True)
     quantity = models.DecimalField('数量', max_digits=5, decimal_places=2, null=True, blank=True)
     uom = models.CharField('计量单位', null=False, choices=UOM_CHOICES, max_length=10, default='t')
     price = models.DecimalField('单价', max_digits=8, decimal_places=2, blank=True, null=True)
@@ -126,6 +128,10 @@ class ProductionOrderProduceItem(OrderItemBase):
     thickness = models.DecimalField('厚度规格', max_digits=5, decimal_places=2, blank=True, null=True)
     quantity = models.DecimalField('数量', decimal_places=2, max_digits=10, null=True, blank=True)
     price = models.DecimalField('单价', max_digits=8, decimal_places=2, help_text='立方单价', null=True, blank=True)
+    draft_package_list = models.ForeignKey('product.DraftPackageList', on_delete=models.SET_NULL, blank=True, null=True,
+                                           verbose_name='草稿码单')
+    package_list = models.ForeignKey('product.PackageList', on_delete=models.SET_NULL, blank=True, null=True,
+                                     verbose_name='码单')
 
     class Meta:
         verbose_name = '生产单成品行'
@@ -139,7 +145,13 @@ class ProductionOrderProduceItem(OrderItemBase):
 
     def save(self, *args, **kwargs):
         self.order = self.raw_item.order
-        self.product = self.raw_item.product.create_product(type='semi_slab', thickness=self.thickness)
+        thickness = self.thickness or self.raw_item.product.thickness
+        self.product = self.raw_item.product.create_product(type=self.order.production_type.produce_item_type,
+                                                            thickness=thickness)
+        if self.draft_package_list:
+            self.package_list = self.draft_package_list.make_package_list(product=self.product)
+            self.piece = self.package_list.get_piece()
+            self.quantity = self.package_list.get_quantity()
         super().save(*args, **kwargs)
 
 
@@ -147,12 +159,26 @@ class ProductionOrderProduceItem(OrderItemBase):
 @receiver(post_save, sender=ProductionOrderProduceItem, dispatch_uid='dis')
 def production_produce_item_post_save_update_produces_quantity(sender, **kwargs):
     instance = kwargs['instance']
-    if instance.order.production_type.produce_item_type == 'semi_slab':
-        kwargs['instance'].raw_item.update_produces_quantity()
+    type = instance.order.production_type.produce_item_type
+    if type == 'semi_slab':
+        instance.raw_item.update_produces_quantity()
+    elif type == 'slab':
+        package_list = instance.package_list
+        if package_list:
+            instance.raw_item.piece = package_list.get_piece()
+            instance.raw_item.quantity = package_list.get_quantity()
+            instance.raw_item.save()
 
 
 @receiver(post_delete, sender=ProductionOrderProduceItem, dispatch_uid='sid')
 def production_produce_item_post_delete_update_produces_quantity(sender, **kwargs):
     instance = kwargs['instance']
-    if instance.order.production_type.produce_item_type == 'semi_slab':
-        kwargs['instance'].raw_item.update_produces_quantity()
+    type = instance.order.production_type.produce_item_type
+    if type == 'semi_slab':
+        instance.raw_item.update_produces_quantity()
+    elif type == 'slab':
+        package_list = instance.package_list
+        if package_list:
+            instance.raw_item.piece = None
+            instance.raw_item.quantity = None
+            instance.raw_item.save()

@@ -221,10 +221,12 @@ class ProductionOrderRawItemForm(forms.ModelForm):
 class ProductionOrderProduceItemForm(forms.ModelForm):
     class Meta:
         model = ProductionOrderProduceItem
-        fields = ('order', 'raw_item', 'thickness', 'piece', 'quantity', 'price')
+        fields = ('order', 'raw_item', 'thickness', 'piece', 'quantity', 'price', 'package_list', 'draft_package_list')
         widgets = {
             'order': forms.HiddenInput,
             'raw_item': forms.HiddenInput,
+            'draft_package_list': forms.HiddenInput,
+            'package_list': forms.HiddenInput,
         }
 
     def __init__(self, *args, **kwargs):

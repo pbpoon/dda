@@ -65,7 +65,7 @@ class OrderItemEditMixin(OrderFormInitialEntryMixin, ModelFormMixin, View):
             messages.success(self.request, msg)
             return JsonResponse({'status': 'SUCCESS'})
         msg += '失败'
-        return HttpResponse(render_to_string(self.template_name, {'item_form': form, 'error': msg}))
+        return HttpResponse(render_to_string(self.template_name, {'form': form, 'error': msg}))
 
 
 class OrderItemDeleteMixin(BaseDeleteView):
@@ -93,7 +93,7 @@ class StateChangeMixin:
         return super(StateChangeMixin, self).get_context_data(**kwargs)
 
     def make_invoice(self):
-        raise True
+        return True
 
     def post(self, *args, **kwargs):
         self.object = self.get_object()
@@ -115,7 +115,11 @@ class StateChangeMixin:
         raise ValueError('define confirm')
 
     def cancel(self):
-        raise ValueError('define cancel')
+        if self.object.state == 'draft':
+            self.object.state = 'cancel'
+            self.object.save()
+            return True, ''
+        return False, ''
 
     def draft(self):
         raise ValueError('define draft')

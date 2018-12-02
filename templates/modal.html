@@ -12,6 +12,9 @@
         </form>
     </div>
     <div class="modal-footer">
+        <button id="choice_btn" class='btn' style="display: none"
+                onclick='show_package_list("{% url 'get_draft_package_list' %}")'>选取码单
+        </button>
         <input type="submit" class="btn waves-effect waves-light" form="item_form" value="确定">
         <button class="modal-close waves-effect waves-green btn-flat">取消</button>
     </div>
@@ -27,7 +30,30 @@
         <button class="modal-close waves-effect waves-green btn-flat">取消</button>
     </div>
 </div>
+<!-- Modal Structure -->
+<div id="modal3" class="modal bottom-sheet">
+    <div class="modal-content">
+        <h4>码单草稿列表</h4>
+        <div class="list">
+            {% include 'choice_package_list.html' %}
+        </div>
+    </div>
+    <div class="modal-footer">
+        <a href="#!" class="modal-close waves-effect waves-green btn-flat">Agree</a>
+    </div>
+</div>
 <!--用语删去item的时候解决csrf token的问题-->
 <form id="post_form" style="display: none" action="" method="post">
     {% csrf_token %}
 </form>
+
+
+<div id="modal_package_list" class="modal modal-fixed-footer">
+    <div class="modal-content">
+        {% include 'package_list.html' %}
+    </div>
+    <div class="modal-footer">
+        <button id="confirm_btn" class="modal-close waves-effect waves-green btn-flat red">确定</button>
+        <button class="modal-close waves-effect waves-green btn-flat">取消</button>
+    </div>
+</div>

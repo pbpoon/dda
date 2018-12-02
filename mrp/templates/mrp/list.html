@@ -2,8 +2,9 @@
 {% block content %}
     <div class="collection">
         {% for object in object_list %}
-            <a href="{{ object.get_absolute_url }}" class="collection-item"><span
-                    class="new badge {% if object.state == 'draft' %}red{% elif object.state == 'cancel' %}default{% else %}blue{% endif %}"
+
+            <a href="{{ object.get_absolute_url }}" class="collection-item">
+                <span class="new badge {% if object.state == 'draft' %}red{% elif object.state == 'cancel' %}default{% else %}blue{% endif %}"
                     data-badge-caption="{{ object.get_state_display }}"></span>{{ object }}<span>@
                 {{ object.created|date:"SHORT_DATE_FORMAT" }}</span>
             </a>

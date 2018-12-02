@@ -6,6 +6,7 @@ from django.urls import reverse
 
 from public.fields import LineField
 from stock.models import Stock
+
 # from stock.stock_operate import StockOperate
 
 TYPE_CHOICES = (('block', '荒料'), ('semi_slab', '毛板'), ('slab', '板材'))
@@ -127,7 +128,7 @@ class SlabAbstract(models.Model):
     kh2 = models.SmallIntegerField(null=True, blank=True, verbose_name=u'高2')
     # quantity = models.DecimalField('面积(m2)', decimal_places=2, max_digits=4)
     part_number = models.SmallIntegerField('夹号')
-    line = LineField(verbose_name='序号', for_fields=['part_number'], blank=True)
+    line = models.SmallIntegerField('序号')
 
     class Meta:
         abstract = True
@@ -175,14 +176,23 @@ class PackageList(models.Model):
     class Meta:
         verbose_name = '码单'
 
-    def get_quantity(self):
-        return sum(item.slab.quantity for item in self.items.all())
+    def get_quantity(self, number=None):
+        qs = self.items.all()
+        if number:
+            qs = self.items.filter(part_number=number)
+        return sum(item.get_quantity() for item in qs)
 
     def get_part(self):
         return len({item.part_number for item in self.items.all()})
 
-    def get_piece(self):
-        return len(self.items.all())
+    def get_piece(self, number=None):
+        qs = self.items.all()
+        if number:
+            qs.filter(part_number=number)
+        return qs.count()
+
+    def get_part_number(self):
+        return {item.part_number for item in self.items.all()}
 
 
 class PackageListItem(models.Model):
@@ -193,6 +203,13 @@ class PackageListItem(models.Model):
 
     class Meta:
         verbose_name = '码单项'
+
+
+    def get_quantity(self):
+        return self.slab.get_quantity()
+
+    def __str__(self):
+        return str(self.slab)
 
 
 class DraftPackageList(models.Model):
@@ -230,6 +247,16 @@ class DraftPackageList(models.Model):
             qs = qs.filter(part_number=number)
         part = {item.part_number for item in qs}
         return len(part)
+
+    def make_package_list(self, product):
+        package_list = PackageList.objects.create(product=product)
+        name = ['long', 'height', 'kl1', 'kl2', 'kh1', 'kh2', 'part_number', 'line']
+        for item in self.items.all():
+            data = {i.name: getattr(item, i.name) for i in item._meta.fields if i.name in name}
+            slab = Slab.objects.create(**data)
+            PackageListItem.objects.create(slab=slab, part_number=slab.part_number,
+                                           line=slab.line, order=package_list)
+        return package_list
 
 
 class DraftPackageListItem(SlabAbstract):

@@ -1,5 +1,7 @@
 var md = $('#modal1').modal();//表单框
 var md2 = $('#modal2').modal();//删除提示框
+var md3 = $('#modal3').modal();//下面弹窗提示框
+var md_package_list = $('#modal_package_list').modal();//码单弹窗提示框
 
 //item的添加方法
 function add_item(order_id) {
@@ -137,7 +139,23 @@ function onchange_set_product_list(url, kwargs) {
     );
 }
 
-function add_produce_item(order_id, raw_item_id, url) {
+function show_package_list() {
+    $.ajax({
+        url: arguments[0],
+        method: 'GET',
+        success: function (data) {
+            $('#modal3 .list').html(data);
+            md3.modal('open')
+        }
+    })
+}
+
+function add_produce_item(order_id, raw_item_id, url, produce_type) {
+    if (produce_type == 'slab') {
+        $('#choice_btn').show()
+        // var footer = $('#modal1 .modal-footer');
+        // $('#modal1 .modal-footer').append("<button class='btn' onclick='choice_package_list()'>选取码单</button>")
+    }
     var $form = $('#item_form');
     var old_action = $form.attr('action');
     $('#modal1 h6').text('添加明细行');
@@ -162,4 +180,17 @@ function add_produce_item(order_id, raw_item_id, url) {
             $form.attr('action', old_action)
         }
     })
+}
+function open_package_list(url) {
+    $.ajax({
+        url: url,
+        method: 'GET',
+        success: function (data) {
+            $('#modal_package_list .modal-content').html(data);
+            md_package_list.modal('open')
+        },
+        error: function () {
+            alert("打开遇到错误！")
+        }
+    });
 }
