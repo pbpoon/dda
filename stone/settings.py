@@ -85,8 +85,8 @@ WSGI_APPLICATION = 'stone.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'stone',
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'stonedev',
         'USER': 'stone',
         'PASSWORD': 'password'
         # 'ENGINE': 'django.db.backends.sqlite3',

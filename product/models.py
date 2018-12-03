@@ -55,10 +55,8 @@ class Batch(models.Model):
         return self.name
 
 
-class Product(models.Model):
-    name = models.CharField('编号', max_length=20, db_index=True)
-    type = models.CharField('类型', max_length=10, choices=TYPE_CHOICES, default='block')
-    thickness = models.DecimalField('厚度规格', max_digits=5, decimal_places=2, null=True, blank=True)
+class Block(models.Model):
+    name = models.CharField('编号', max_length=20, db_index=True, unique=True)
     batch = models.ForeignKey('Batch', null=True, blank=True, on_delete=models.SET_NULL, verbose_name='批次')
     category = models.ForeignKey('Category', null=True, blank=True, verbose_name='品种名称', on_delete=models.SET_NULL)
     quarry = models.ForeignKey('Quarry', null=True, blank=True, verbose_name='矿口', on_delete=models.SET_NULL)
@@ -70,25 +68,12 @@ class Product(models.Model):
     uom = models.CharField('荒料计量单位', null=False, choices=UOM_CHOICES, max_length=10, default='t')
     updated = models.DateTimeField('更新日期', auto_now=True)
     created = models.DateTimeField('创建日期', auto_now_add=True)
-    activate = models.BooleanField('启用', default=False)
-    semi_slab_single_qty = models.DecimalField('毛板单件平方', null=True, max_digits=5, decimal_places=2, blank=True)
 
     class Meta:
-        verbose_name = '荒料编号'
-        verbose_name_plural = verbose_name
-        unique_together = ('name', 'type', 'thickness')
-
-    def __str__(self):
-        thickness = '({})'.format(self.thickness) if self.thickness else ''
-        return '{}{}{}'.format(self.name, self.get_type_display(), thickness)
-
-    def save(self, *args, **kwargs):
-        if self.type != 'block' and not self.thickness:
-            raise ValueError('产品类型不为荒料时，必须录入厚度规格')
-        return super(Product, self).save(*args, **kwargs)
+        verbose_name = '荒料资料'
 
     def get_m3(self):
-        if self.type == 'block' and self.uom == 't':
+        if self.uom == 't':
             m3 = self.weight / decimal.Decimal(2.8)
             return Decimal('{0:.2f}'.format(m3))
 
@@ -97,20 +82,77 @@ class Product(models.Model):
             return Decimal('{0:.2f}'.format(m3))
         return Decimal('{0:.2f}'.format(0))
 
+    @staticmethod
+    def create_product(type, defaults, thickness=None):
+        name = defaults.pop('name')
+        block, is_create = Block.objects.get_or_create(name=name, defaults=defaults)
+        product, is_create = Product.objects.get_or_create(block=block, type=type, thickness=thickness)
+        return product
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.m3:
+            self.m3 = self.get_m3()
+        super().save(*args, **kwargs)
+
+
+class Product(models.Model):
+    block = models.ForeignKey('Block', on_delete=models.CASCADE, verbose_name='荒料编号')
+    type = models.CharField('类型', max_length=10, choices=TYPE_CHOICES, default='block')
+    thickness = models.DecimalField('厚度规格', max_digits=5, decimal_places=2, null=True, blank=True)
+    updated = models.DateTimeField('更新日期', auto_now=True)
+    created = models.DateTimeField('创建日期', auto_now_add=True)
+    activate = models.BooleanField('启用', default=False)
+    semi_slab_single_qty = models.DecimalField('毛板单件平方', null=True, max_digits=5, decimal_places=2, blank=True)
+
+    class Meta:
+        verbose_name = '产品资料'
+        verbose_name_plural = verbose_name
+        unique_together = ('block', 'type', 'thickness')
+
+    @property
+    def name(self):
+        return self.block.name
+
+    def __str__(self):
+        thickness = '({})'.format(self.thickness) if self.thickness else ''
+        return '{}{}{}'.format(self.name, self.get_type_display(), thickness)
+
+    def save(self, *args, **kwargs):
+        if self.type != 'block' and not self.thickness:
+            raise ValueError('产品类型不为荒料时，必须录入厚度规格')
+        return super().save(*args, **kwargs)
+
+    def get_m3(self):
+        return self.block.get_m3()
+
     def get_absolute_url(self):
         return reverse('product_detail', args=[self.id])
 
     def get_uom(self):
-        return self.uom if self.type == 'block' else 'm2'
+        return self.block.uom if self.type == 'block' else 'm2'
 
-    def create_product(self, type, thickness):
+    @property
+    def uom(self):
+        return self.get_uom()
+
+    def create_product(self, type, thickness=None):
         if type == self.type:
             raise ValueError('后续产品类型不能相同！')
-        default = {f.name: getattr(self, f.name) for f in self._meta.fields if
-                   f.name not in ['id', 'name', 'type', 'thickness', 'updated', 'created', 'activate']}
-        product, is_create = self.__class__.objects.get_or_create(name=self.name, type=type, thickness=thickness,
-                                                                  defaults=default)
-        return product
+        if self.thickness:
+            thickness = self.thickness
+        block_fields = ('name', 'batch', 'category', 'quarry', 'weight', 'long', 'width', 'height', 'm3', 'uom')
+        defaults = {f.name: getattr(self.block, f.name) for f in self.block._meta.fields if f.name in block_fields}
+        return self.create(type=type, thickness=thickness, defaults=defaults)
+
+    @staticmethod
+    def create(type, defaults, thickness=None):
+        dfs = {k: v for k, v in
+               defaults.items() if
+               k in {'name', 'batch', 'category', 'quarry', 'weight', 'long', 'width', 'height', 'm3', 'uom'} and v}
+        return Block.create_product(type=type, thickness=thickness, defaults=dfs)
 
     def get_available(self, location=None):
         return Stock.get_available(product=self, location=location)
@@ -203,7 +245,6 @@ class PackageListItem(models.Model):
 
     class Meta:
         verbose_name = '码单项'
-
 
     def get_quantity(self):
         return self.slab.get_quantity()

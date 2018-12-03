@@ -12,7 +12,7 @@ from django.contrib import messages
 
 class PurchaseOrderListView(ListView):
     model = PurchaseOrder
-    template_name = 'purchase/order/list.html'
+    # template_name = 'purchase/order/list.html'
     paginate_by = 10
 
 
@@ -21,10 +21,11 @@ class PurchaseOrderDetailView(StateChangeMixin, DetailView):
     template_name = 'purchase/order/detail.html'
 
     def confirm(self):
-        products = (item.product for item in self.object.items.all())
-        for p in products:
-            p.activate = True
-            p.save()
+        # map(lambda x: x.confirm(), self.object.items.all())
+        for item in self.object.items.all():
+            item.confirm()
+            item.product.activate = True
+            item.product.save()
         obj = self.get_object()
         comment = '{}状态 =>'.format(obj.state)
         obj.state = 'confirm'
@@ -50,7 +51,6 @@ class PurchaseOrderDetailView(StateChangeMixin, DetailView):
 class PurchaseOrderEditMixin(OrderFormInitialEntryMixin):
     model = PurchaseOrder
     form_class = PurchaseOrderForm
-    # fields = ('date', 'partner', 'handler', 'currency', 'uom')
     template_name = 'form.html'
 
 

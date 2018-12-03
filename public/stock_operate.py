@@ -79,10 +79,10 @@ class StockOperate:
         # reserve_quantity = sum(available.quantity for available in available_stock)
         # return (piece - reserve_piece), (quantity - reserve_quantity)
 
-    def update_slab_stock(self, slabs, location, check_in=False):
+    def update_slab_stock(self, slabs, stock=None, check_in=False):
         # 更新板材的库位
         if check_in:
-            slabs.update(stock=location.id)
+            slabs.update(stock=stock)
             return True
         slabs.update(stock=None)
         return True
@@ -96,25 +96,21 @@ class StockOperate:
             available[0].save()
         else:
             self.stock_model.objects.create(product=product, piece=piece, quantity=quantity,
-                                            uom=product.uom if product.type == 'block' else 'm2',
-                                            location=location)
+                                            uom=product.uom, location=location)
         if slabs:
-            return self.update_slab_stock(slabs=slabs, location=location, check_in=True)
+            return self.update_slab_stock(slabs=slabs, stock=available[0], check_in=True)
         return True
 
     def check_out_stock(self, product, location, piece, quantity, slabs=None):
         # 出库
-        piece, quantity = map(abs, [piece, quantity])
-        # available_piece, available_quantity = self.get_available(product=product, location=location, slabs=slabs)
+        piece, quantity = list(map(abs, [piece, quantity]))
         # # 如果可以的件数大于需求的件数就继续执行
-        # if (available_piece + piece) < 0:
-        #     return False
         available = self._get_stock(product=product, location=location, slabs=slabs)
         if available:
             try:
                 for a in available:
-                    max_piece, max_quantity = max((a.piece - a.reserve_piece), piece), \
-                                              max((a.quantity - a.reserve_quantity), quantity)
+                    max_piece, max_quantity = min((a.piece - a.reserve_piece), piece), \
+                                              min((a.quantity - a.reserve_quantity), quantity)
                     a.piece -= max_piece
                     a.quantity -= max_quantity
                     piece -= max_piece
@@ -122,12 +118,15 @@ class StockOperate:
                     if a.piece == 0:
                         a.delete()
                     else:
+                        # 修正毛板的库存方数
+                        if a.product.type == 'semi_slab':
+                            a.quantity = a.piece * a.product.semi_slab_single_qty
                         a.save()
                     if piece == 0:
                         break
             except Exception as e:
-                max_piece, max_quantity = max((available.piece - available.reserve_piece), piece), \
-                                          max((available.quantity - available.reserve_quantity), quantity)
+                max_piece, max_quantity = min((available.piece - available.reserve_piece), piece), \
+                                          min((available.quantity - available.reserve_quantity), quantity)
                 available.piece -= max_piece
                 available.quantity -= max_quantity
                 piece -= max_piece
@@ -137,7 +136,7 @@ class StockOperate:
                 else:
                     available.save()
             if slabs:
-                return self.update_slab_stock(slabs=slabs, location=location)
+                return self.update_slab_stock(slabs=slabs)
             return True
         return False
 
@@ -165,11 +164,12 @@ class StockOperate:
                 if (av_piece - item.piece) < 0:
                     error.append('{product}#可以库存为:{av_piece}件/{av_quantity}{uom},超出需求{piece}件/{quantity}{uom}'.format(
                         product=item.product, av_piece=av_piece, av_quantity=av_quantity, piece=item.piece,
-                        quantity=item.quantity, uom=item.product.uom if item.product.type == 'block' else 'm2'))
+                        quantity=item.quantity, uom=item.product.uom))
         if error:
             return False, error
         return True, error
 
+    @transaction.atomic()
     def handle_stock(self):
         clean, error = self.clean_items()
         if clean:
@@ -183,21 +183,22 @@ class StockOperate:
                         id__in=package_list.items.values_list('id', flat=True)) if package_list else None
                     if not self.update_available(product=item.product, location=item.location, piece=-item.piece,
                                                  quantity=-item.quantity, slabs=slabs):
-                        transaction.rollback(sid)
                         break
                 # 操作入库
                 if not item.location_dest.is_virtual:
                     package_list = getattr(item, 'package_list', None)
-                    slabs = package_list.items.all() if package_list else None
+                    slabs = Slab.objects.filter(
+                        id__in=package_list.items.values_list('id', flat=True)) if package_list else None
                     if not self.update_available(product=item.product, location=item.location_dest,
                                                  piece=item.piece,
                                                  quantity=item.quantity, slabs=slabs):
-                        transaction.rollback(sid)
                         break
 
             else:
                 # 更新数据库
                 transaction.savepoint_commit(sid)
                 return True, '成功更新库存'
+            # 回滚数据库到保存点
+            transaction.rollback(sid)
             return False, '更新库存失败'
         return False, error

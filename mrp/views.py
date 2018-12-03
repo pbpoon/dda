@@ -65,7 +65,7 @@ class BlockCheckInOrderEditMixin:
         if already_check_in_items:
             purchase_order_items.exclude(product_id__in=[item.product.id for item in already_check_in_items])
         for item in purchase_order_items:
-            item, _ = BlockCheckInOrderItem.objects.get_or_create(product=item.product, piece=1, quantity=item.quantity,
+            item, _ = BlockCheckInOrderItem.objects.get_or_create(product=item.product, piece=item.piece, quantity=item.quantity,
                                                                   uom=item.uom, order=self.object)
         # items = BlockCheckInOrderItem.objects.filter(product_id__in=[item.product.id for item in purchase_order_items],
         #                                              order__isnull=True)

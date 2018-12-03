@@ -60,7 +60,7 @@ class Partner(models.Model):
         unique_together = ['phone', 'name']
 
     def get_title(self):
-        return '先生' if self.sex == 'male' else '女士'
+        return self.get_sex_display() or ""
 
     def __str__(self):
         if self.is_company:

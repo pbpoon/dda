@@ -24,6 +24,8 @@ INVOICE_USAGE_CHOICES = (
 class OrderAbstract(models.Model):
     state = models.CharField('状态', choices=STATE_CHOICES, max_length=20, default='draft')
     order = OrderField(order_str=None, max_length=26, default='New', db_index=True, unique=True, verbose_name='订单号码', )
+    partner = models.ForeignKey('partner.Partner', on_delete=models.SET_NULL, null=True, blank=True,
+                                verbose_name='业务伙伴')
     date = models.DateField('日期')
     created = models.DateField('创建日期', auto_now_add=True)
     updated = models.DateTimeField('更新时间', auto_now=True)
@@ -31,8 +33,6 @@ class OrderAbstract(models.Model):
                                 related_name='%(class)s_handler')
     entry = models.ForeignKey('auth.User', on_delete=models.CASCADE, verbose_name='登记人',
                               related_name='%(class)s_entry')
-    partner = models.ForeignKey('partner.Partner', on_delete=models.SET_NULL, null=True, blank=True,
-                                verbose_name='业务伙伴')
     comments = GenericRelation('comment.Comment')
     invoices = GenericRelation('invoice.OrderInvoiceThrough')
 

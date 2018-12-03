@@ -2,7 +2,7 @@ from decimal import Decimal
 
 from product.models import Product
 from public.models import OrderAbstract
-from public.fields import OrderField
+from public.fields import OrderField, LineField
 from datetime import datetime
 from django.db import models
 from django.contrib.auth.models import User
@@ -17,6 +17,8 @@ UOM_CHOICES = (('t', '吨'), ('m3', '立方'))
 
 
 class PurchaseOrder(OrderAbstract):
+    partner = models.ForeignKey('partner.Partner', on_delete=models.SET_NULL, null=True, blank=True,
+                                verbose_name='业务伙伴', limit_choices_to={'type': 'supplier', 'is_production': False})
     order = OrderField(order_str='PO', max_length=10, default='New', db_index=True, unique=True, verbose_name='订单号码', )
     currency = models.CharField('货币', choices=CURRENCY_CHOICE, max_length=10)
     uom = models.CharField('计量单位', null=False, choices=UOM_CHOICES, max_length=10)
@@ -42,23 +44,20 @@ class PurchaseOrder(OrderAbstract):
 
 
 class PurchaseOrderItem(models.Model):
-    # line = LineField(for_fields=['order'], blank=True, verbose_name='行')
+    line = LineField(for_fields=['order'], blank=True, verbose_name='行')
     name = models.CharField('编号', max_length=20, unique=True)
     type = models.CharField('类型', max_length=10, default='block')
-    # uom = models.CharField('计量单位', null=False, choices=UOM_CHOICES, max_length=10, default='t')
-    order = models.ForeignKey('PurchaseOrder', on_delete=models.CASCADE, related_name='items', verbose_name='订单',
-                              blank=True, null=True)
+    order = models.ForeignKey('PurchaseOrder', on_delete=models.CASCADE, related_name='items', verbose_name='订单')
     product = models.ForeignKey('product.Product', on_delete=models.CASCADE, verbose_name='编号', blank=True, null=True)
     price = models.DecimalField('单价', max_digits=8, decimal_places=2)
-    quantity = models.DecimalField('数量', max_digits=8, decimal_places=2, blank=True, null=True)
-    uom = models.CharField('计量单位', null=False, choices=UOM_CHOICES, max_length=10, default='t')
-    weight = models.DecimalField('重量', max_digits=5, decimal_places=2, null=True)
+    piece = models.IntegerField('件', default=1)
+    quantity = models.DecimalField('数量', max_digits=8, decimal_places=2)
+    uom = models.CharField('计量单位', choices=UOM_CHOICES, max_length=10, default='t')
+    weight = models.DecimalField('重量', max_digits=5, decimal_places=2, null=True, blank=True)
     long = models.IntegerField('长', null=True, blank=True)
     width = models.IntegerField('宽', null=True, blank=True)
     height = models.IntegerField('高', null=True, blank=True)
     m3 = models.DecimalField('立方', null=True, max_digits=5, decimal_places=2, blank=True)
-    entry = models.ForeignKey(User, related_name='%(class)s_entry',
-                              verbose_name='登记人', on_delete=models.SET_NULL, null=True, blank=True)
 
     class Meta:
         verbose_name = '采购订单行'
@@ -77,8 +76,13 @@ class PurchaseOrderItem(models.Model):
     def save(self, *args, **kwargs):
         self.uom = self.order.uom
         self.quantity = self.get_quantity()
-        p_fields = [f.name for f in Product._meta.fields]
-        p_kwarg = {f.name: getattr(self, f.name) for f in self._meta.fields if f.name in p_fields}
-        self.product = Product.objects.create(**p_kwarg)
-        # 日后product action 添加action记录
+        if not self.weight and not self.m3:
+            raise ValueError('重量及立方不能同时为空')
         super().save(*args, **kwargs)
+
+    def confirm(self):
+        block_fields = ('name', 'batch', 'category', 'quarry', 'weight', 'long', 'width', 'height', 'm3', 'uom')
+        p_kwarg = {f.name: getattr(self, f.name) for f in self._meta.fields if f.name in block_fields}
+        self.product = Product.create(type='block', defaults=p_kwarg)
+        # 日后product action 添加action记录
+        return self.save()
