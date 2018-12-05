@@ -2,6 +2,8 @@ var md = $('#modal1').modal();//表单框
 var md2 = $('#modal2').modal();//删除提示框
 var md3 = $('#modal3').modal();//下面弹窗提示框
 var md_package_list = $('#modal_package_list').modal();//码单弹窗提示框
+var md_cart = $('#modal_cart').modal();
+
 
 //item的添加方法
 function add_item(order_id) {
@@ -181,16 +183,72 @@ function add_produce_item(order_id, raw_item_id, url, produce_type) {
         }
     })
 }
+
 function open_package_list(url) {
     $.ajax({
         url: url,
         method: 'GET',
         success: function (data) {
             $('#modal_package_list .modal-content').html(data);
-            md_package_list.modal('open')
+            md_package_list.modal('open');
+            $('.tabs').tabs();
+
         },
         error: function () {
             alert("打开遇到错误！")
         }
     });
+}
+
+//!码单package_list页面
+$('input[name=select]').on('click', function (e) {
+    sum()
+});
+
+$('input[name=select_part]').click(function (e) {
+    var tb = $(this).parents('table');
+    tb.find(':checkbox').attr("checked", this.checked);
+    sum()
+});
+
+function sum() {
+    var display = "";
+    var m2 = Number(0);
+    var piece = 0;
+    $('input[name=select]').each(function (e) {
+        if (this.checked) {
+            m2 += Number($(this).data('quantity'));
+            piece += 1
+        }
+    });
+    display = "<span>选择了：" + piece + "件 / " + Math.round(m2 * 100) / 100 + "m2</span>"
+    $('#select_display').html(display)
+}
+
+function all_select() {
+    $(':checkbox').attr("checked", true);
+    sum()
+}
+
+function all_no_select() {
+    $(':checkbox').attr("checked", false);
+    sum();
+}
+
+function post_select() {
+    var $form = $('#select_slab_form');
+    var url = $form.attr('action');
+    $.ajax({
+        url: url,
+        data: $form.serialize(),
+        method: 'POST',
+        success: function (data) {
+            md_package_list.modal('close')
+        },
+        error: function (e) {
+            alert('网络遇到错误')
+        }
+
+
+    })
 }

@@ -1,6 +1,9 @@
+from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
 
+from cart.cart import Cart
+from product.models import Slab
 from public.forms import LocationForm
 from public.views import OrderItemEditMixin
 from .models import Warehouse, Location, Stock
@@ -56,3 +59,21 @@ class LocationDetail(DetailView):
 
 class StockListView(ListView):
     model = Stock
+
+
+class StockDetailView(DetailView):
+    model = Stock
+    template_name = 'stock/detail.html'
+
+    def post(self, *args, **kwargs):
+        slab_list = self.request.POST.getlist('select')
+        product_id = self.request.POST.get('product')
+        cart = Cart(self.request)
+        cart.add(product_id, slab_id_list=slab_list)
+        return JsonResponse({'state': 'ok'})
+
+
+class StockSlabsView(DetailView):
+    model = Stock
+    template_name = 'package_list.html'
+    context_object_name = 'package'

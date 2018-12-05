@@ -1,0 +1,61 @@
+{% load public %}
+{#<div class="row">#}
+    <div class="col s12">
+    {% if package.product == 'slab' %}
+        <div>
+            <p>{{ package.get_piece }}件 / {{ package.get_part_number|length }}夹 /
+                {{ package.get_quantity }}{{ package.product.get_uom }}</p>
+        </div>
+        <ul class="tabs">
+            {% for part_number in package.get_part_number %}
+                <li class="tab col s3"><a href="#{{ part_number }}">{{ part_number }}#</a></li>
+            {% endfor %}
+        </ul>
+        {% regroup package.slabs.all by part_number as package_list %}
+        {% for part_number in package_list %}
+            <div id="{{ part_number.grouper }}" class="col s12">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>规格</th>
+                        <th>面积</th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for item in part_number.list %}
+                        <tr>
+                            <td>{{ item.line }}</td>
+                            <td>{{ item }}</td>
+                            <td>{{ item.get_quantity }}</td>
+                            <td>
+                                <a href="#!"
+                                   onclick="edit_item({{ item.id }},'{% url 'package_list_draft_item_edit' %}')">
+                                    修改
+                                </a>
+                                <a href="#!"
+                                   onclick="item_remove({{ item.id }},'{% url 'package_list_draft_item_delete' 9999 %}')">
+                                    删除
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                    <tfoot>
+                    <tr>
+                        <td>第 {{ part_number.grouper }} 夹</td>
+                        <td>{{ package|add_arg:part_number.grouper|call:'get_piece' }}件</td>
+                        <td>{{ package|add_arg:part_number.grouper|call:'get_quantity' }}m2</td>
+                        <td></td>
+                    </tr>
+                    </tfoot>
+                </table>
+            </div>
+        {% endfor %}
+    {% endif %}
+    </div>
+{#</div>#}
+<script>
+    $('.tabs').tabs();
+</script>

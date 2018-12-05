@@ -1,0 +1,35 @@
+<ul class="collection">
+    {% for object in cart %}
+        <li class="collection-item">
+            <p>
+                <label>
+                    <input form="cart_form" type="checkbox"/>
+                    <span class="title">{{ object.product }}</span>
+                </label>
+                <button onclick="cart_remove_item('{% url 'cart_remove' object.product.id %}')"
+                        class="btn-small waves-light right red"><i class="material-icons">clear</i></button>
+            </p>
+
+            <p class="pull">{{ object.piece }}件/ {% if object.part %} {{ object.part|length }}夹/{% endif %}
+                {{ object.quantity }}{{ object.product.uom }}
+            </p>
+        </li>
+    {% endfor %}
+</ul>
+<form id="cart_form" action="" method="post"></form>
+<script>
+    function cart_remove_item() {
+        $.ajax({
+            url: arguments[0],
+            method: 'POST',
+            success: function (data) {
+                alert($(this));
+                {#$('#modal_cart .list').html(data);#}
+                {#md_cart.modal('close')#}
+            },
+            error: function () {
+                alert('网络错误')
+            }
+        })
+    }
+</script>

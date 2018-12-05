@@ -10,6 +10,8 @@
     <!--Import materialize.css-->
     <link rel="stylesheet" href="{% static 'css/materialize.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-rc.2/css/materialize.min.css">
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
     <style>
         header, main, footer {
             padding-left: 300px;
@@ -38,7 +40,18 @@
 
     {% endblock %}
 </main>
-<!--一下代码用于ajax crud-->
+<div id="modal_cart" class="modal bottom-sheet">
+    <div class="modal-content">
+        <h4>已选择项</h4>
+        <div class="list">
+            {% include 'cart_detail.html' %}
+        </div>
+    </div>
+    <div class="modal-footer">
+        <a href="#!" class="modal-close waves-effect waves-green btn-flat">Agree</a>
+    </div>
+</div>
+
 </body>
 <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
 {#<script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>#}
@@ -48,8 +61,22 @@
 {% block script %}
 
 {% endblock %}
-
+<script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
 <script>
+    var csrftoken = Cookies.get('csrftoken');
+
+    function csrfSafeMethon(method) {
+        // 如下的HTTP请求不需要设置CRSF信息
+        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+    }
+
+    $.ajaxSetup({
+        beforeSend: function (xhr, settings) {
+            if (!csrfSafeMethon(settings.type) && !this.crossDomain) {
+                xhr.setRequestHeader("X-CSRFToken", csrftoken);
+            }
+        }
+    });
     $(document).ready(function () {
         $('.sidenav').sidenav();
         $('.fixed-action-btn').floatingActionButton();

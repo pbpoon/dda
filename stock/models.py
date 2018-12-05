@@ -4,7 +4,6 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.urls import reverse
 from django.contrib import messages
 
-
 UOM_CHOICES = (('t', '吨'), ('m3', '立方'))
 
 USAGE_CHOICES = (('supplier', '供应商库位'), ('customer', '客户库位'),
@@ -124,8 +123,30 @@ class Stock(models.Model):
         verbose_name = '库存'
         unique_together = ('product', 'location')
 
+    def get_quantity(self, number=None):
+        qs = self.items.all()
+        if number:
+            qs = self.items.filter(part_number=number)
+        return sum(item.get_quantity() for item in qs)
+
+    def get_part(self):
+        return len({item.part_number for item in self.items.all()})
+
+    def get_piece(self, number=None):
+        qs = self.items.all()
+        if number:
+            qs.filter(part_number=number)
+        return qs.count()
+
+    def get_part_number(self):
+        return {item.part_number for item in self.items.all()}
+
     def __str__(self):
         return "{}@{}:{}件/{}{}".format(self.product, self.location, self.piece, self.quantity, self.uom)
+
+    def get_absolute_url(self):
+        return reverse('stock_detail', args=[self.id])
+
 
     @staticmethod
     def _get_stock(product, location=None, slabs=None, check_in=False):

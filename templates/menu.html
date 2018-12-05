@@ -21,6 +21,18 @@
                 </ul>
             </div>
         </li>
+    </ul>
+    <ul class="collapsible">
+        <li>
+            <div class="collapsible-header">销售</div>
+            <div class="collapsible-body">
+                <ul>
+                    <li><a href="{% url 'sales_order_list' %}">销售订单</a></li>
+                </ul>
+            </div>
+        </li>
+    </ul>
+    <ul class="collapsible">
         <li class="active">
             <div class="collapsible-header">出入库管理</div>
             <div class="collapsible-body">
@@ -36,6 +48,9 @@
                 </ul>
             </div>
         </li>
+    </ul>
+    <ul class="collapsible">
+
         <li>
             <div class="collapsible-header">采购</div>
             <div class="collapsible-body">
@@ -44,6 +59,9 @@
                 </ul>
             </div>
         </li>
+    </ul>
+    <ul class="collapsible">
+
         <li>
             <div class="collapsible-header">业务伙伴</div>
             <div class="collapsible-body">
@@ -52,11 +70,23 @@
                 </ul>
             </div>
         </li>
-
     </ul>
     <!--采购app-->
-    <li><a href="{% url 'cart_detail' %}">选择了：{{ cart|length }}项</a></li>
+    <li><a onclick="show_car_detail('{% url 'cart_detail' %}')">选择了：{{ cart|length }}项</a></li>
 </ul>
+<script>
+    function show_car_detail() {
+        $.ajax({
+            url: arguments[0],
+            method: 'GET',
+            success: function (data) {
+                $('#modal_cart .list').html(data);
+                md_cart.modal('open')
+            }
+        })
+    }
+
+</script>
 {#<ul class="right hide-on-med-and-down">#}
 {#    <li><a href="#!">First Sidebar Link</a></li>#}
 {#    <li><a href="#!">Second Sidebar Link</a></li>#}

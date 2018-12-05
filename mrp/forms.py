@@ -7,7 +7,7 @@ from django.urls import reverse, reverse_lazy
 from mrp.models import ProductionOrder, ProductionOrderRawItem, ProductionOrderProduceItem
 from product.models import Product
 from stock.models import Location
-from mrp.models import BlockCheckInOrder, KesOrderRawItem, KesOrderProduceItem, KesOrder, BlockCheckInOrderItem, \
+from mrp.models import BlockCheckInOrder,  BlockCheckInOrderItem, \
     MoveLocationOrder, MoveLocationOrderItem
 
 
@@ -46,62 +46,62 @@ class BlockCheckInOrderItemForm(forms.ModelForm):
             self.fields['product'].widget.attrs = {
                 'onchange': 'set_onchange({},"{}","quantity")'.format('this.value', url)}
 
+#
+# class KesOrderForm(forms.ModelForm):
+#     class Meta:
+#         model = KesOrder
+#         exclude = ('order', 'location', 'location_dest', 'state')
+#         widgets = {
+#             'entry': forms.HiddenInput,
+#         }
 
-class KesOrderForm(forms.ModelForm):
-    class Meta:
-        model = KesOrder
-        exclude = ('order', 'location', 'location_dest', 'state')
-        widgets = {
-            'entry': forms.HiddenInput,
-        }
-
-
-class KesOrderRawItemForm(forms.ModelForm):
-    class Meta:
-        model = KesOrderRawItem
-        exclude = ('location', 'location_dest')
-        widgets = {
-            'piece': forms.HiddenInput,
-            'order': forms.HiddenInput,
-        }
-
-    def __init__(self, *args, **kwargs):
-        kes_order = kwargs.pop('kes_order')
-        super(KesOrderRawItemForm, self).__init__(*args, **kwargs)
-        # 按order的原材料的type来筛选product的query_set
-        if kwargs.get('instance', None):
-            # 如果是编辑状态，就把本荒料编号添加上
-            qs = Product.objects.filter(id=kwargs.get('instance').product.id)
-        elif kes_order and kes_order.items.all():
-            # 如果是是新建状态，并且本order已经有原材料行，就把已经填写的原料的的产品剔出
-            qs = Product.objects.filter(type='block', stock__isnull=False).exclude(
-                pk__in=[int(item.product.id) for item in kes_order.items.all()])
-        else:
-            # 如果是完全新建状态，就直接按order的原材料的type来筛选product
-            qs = Product.objects.filter(type='block', stock__isnull=False)
-        # 把qs赋值到product的queryset
-        self.fields['product'].queryset = qs
-        # onchange的ajax取数据url
-        url = reverse_lazy('get_product_info')
-        self.fields['product'].widget.attrs = {
-            'onchange': 'onchange_set_product_info({},"{}","quantity")'.format('this.value', url)}
-
-
-class KesOrderProduceItemForm(forms.ModelForm):
-    class Meta:
-        model = KesOrderProduceItem
-        fields = ('order', 'raw_item', 'thickness', 'piece')
-        widgets = {
-            'order': forms.HiddenInput,
-            'raw_item': forms.HiddenInput,
-        }
-
-    def clean_thickness(self):
-        thickness = self.cleaned_data['thickness']
-        raw_item = KesOrderRawItem.objects.get(id=self.cleaned_data['raw_item'].id)
-        if thickness in {item.thickness for item in raw_item.produces.all()} and self.cleaned_data['product']:
-            raise forms.ValidationError('该编号{}#已有相同的的厚度毛板存在！同一编号不允许有重复厚度的毛板行！'.format(raw_item.product))
-        return thickness
+#
+# class KesOrderRawItemForm(forms.ModelForm):
+#     class Meta:
+#         model = KesOrderRawItem
+#         exclude = ('location', 'location_dest')
+#         widgets = {
+#             'piece': forms.HiddenInput,
+#             'order': forms.HiddenInput,
+#         }
+#
+#     def __init__(self, *args, **kwargs):
+#         kes_order = kwargs.pop('kes_order')
+#         super(KesOrderRawItemForm, self).__init__(*args, **kwargs)
+#         # 按order的原材料的type来筛选product的query_set
+#         if kwargs.get('instance', None):
+#             # 如果是编辑状态，就把本荒料编号添加上
+#             qs = Product.objects.filter(id=kwargs.get('instance').product.id)
+#         elif kes_order and kes_order.items.all():
+#             # 如果是是新建状态，并且本order已经有原材料行，就把已经填写的原料的的产品剔出
+#             qs = Product.objects.filter(type='block', stock__isnull=False).exclude(
+#                 pk__in=[int(item.product.id) for item in kes_order.items.all()])
+#         else:
+#             # 如果是完全新建状态，就直接按order的原材料的type来筛选product
+#             qs = Product.objects.filter(type='block', stock__isnull=False)
+#         # 把qs赋值到product的queryset
+#         self.fields['product'].queryset = qs
+#         # onchange的ajax取数据url
+#         url = reverse_lazy('get_product_info')
+#         self.fields['product'].widget.attrs = {
+#             'onchange': 'onchange_set_product_info({},"{}","quantity")'.format('this.value', url)}
+#
+#
+# class KesOrderProduceItemForm(forms.ModelForm):
+#     class Meta:
+#         model = KesOrderProduceItem
+#         fields = ('order', 'raw_item', 'thickness', 'piece')
+#         widgets = {
+#             'order': forms.HiddenInput,
+#             'raw_item': forms.HiddenInput,
+#         }
+#
+#     def clean_thickness(self):
+#         thickness = self.cleaned_data['thickness']
+#         raw_item = KesOrderRawItem.objects.get(id=self.cleaned_data['raw_item'].id)
+#         if thickness in {item.thickness for item in raw_item.produces.all()} and self.cleaned_data['product']:
+#             raise forms.ValidationError('该编号{}#已有相同的的厚度毛板存在！同一编号不允许有重复厚度的毛板行！'.format(raw_item.product))
+#         return thickness
 
 
 class MoveLocationOrderForm(forms.ModelForm):

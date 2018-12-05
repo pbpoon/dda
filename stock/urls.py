@@ -19,9 +19,9 @@ from . import views
 
 
 urlpatterns = [
-    # path('jsi18n/', JavaScriptCatalog.as_view(), name='javascript-catalog'),
-    #导入 admin。widget需要的url
-    path('stock/', views.StockListView.as_view(), name='stock_list'),
+    path('slabs/<pk>/', views.StockSlabsView.as_view(), name='stock_slabs_detail'),
+    path('<pk>/', views.StockDetailView.as_view(), name='stock_detail'),
+    path('', views.StockListView.as_view(), name='stock_list'),
     path('location/update/<pk>', views.LocationUpdateView.as_view(), name='location_edit'),
     path('location/create/<int:warehouse_id>', views.LocationCreateView.as_view(), name='location_create'),
     path('warehouse/update/<pk>/', views.WarehouseUpdateView.as_view(), name='warehouse_update'),

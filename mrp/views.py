@@ -3,18 +3,16 @@ from django.urls import reverse_lazy, reverse
 from django.views.generic import ListView, DetailView, TemplateView
 from django.views.generic.edit import ModelFormMixin, CreateView, UpdateView, DeleteView, BaseDeleteView
 from django.contrib import messages
-from django import forms
 
 from invoice.models import CreateInvoice
 from mrp.models import ProductionOrder, ProductionOrderRawItem, ProductionOrderProduceItem, ProductionType
-from product.models import Product
 from public.views import OrderItemEditMixin, OrderItemDeleteMixin, OrderFormInitialEntryMixin
 from purchase.models import PurchaseOrder
 from public.views import GetItemsMixin, StateChangeMixin
 from public.stock_operate import StockOperate
-from .models import BlockCheckInOrder, BlockCheckInOrderItem, KesOrder, KesOrderRawItem, KesOrderProduceItem, \
+from .models import BlockCheckInOrder, BlockCheckInOrderItem, \
     MoveLocationOrder, MoveLocationOrderItem
-from .forms import BlockCheckInOrderForm, KesOrderRawItemForm, KesOrderProduceItemForm, KesOrderForm, \
+from .forms import BlockCheckInOrderForm, \
     BlockCheckInOrderItemForm, MoveLocationOrderItemForm, MoveLocationOrderForm, ProductionOrderForm, \
     ProductionOrderRawItemForm, ProductionOrderProduceItemForm
 
@@ -65,7 +63,8 @@ class BlockCheckInOrderEditMixin:
         if already_check_in_items:
             purchase_order_items.exclude(product_id__in=[item.product.id for item in already_check_in_items])
         for item in purchase_order_items:
-            item, _ = BlockCheckInOrderItem.objects.get_or_create(product=item.product, piece=item.piece, quantity=item.quantity,
+            item, _ = BlockCheckInOrderItem.objects.get_or_create(product=item.product, piece=item.piece,
+                                                                  quantity=item.quantity,
                                                                   uom=item.uom, order=self.object)
         # items = BlockCheckInOrderItem.objects.filter(product_id__in=[item.product.id for item in purchase_order_items],
         #                                              order__isnull=True)
@@ -115,89 +114,89 @@ class BlockCheckInOrderItemDeleteView(OrderItemDeleteMixin):
 
 
 # ------------------------------ Kes Order ----------------------------------
-
-class KesOrderListView(ListView):
-    model = KesOrder
-
-
-class KesOrderDetailView(StateChangeMixin, GetItemsMixin, DetailView):
-    model = KesOrder
-
-    def confirm(self):
-        items = [i for i in self.object.items.all()]
-        items.extend([i for i in self.object.produce_items.all()])
-        stock = StockOperate(self.request, order=self.object, items=items)
-        return stock.handle_stock()
-
-    def make_invoice(self):
-        items = [{'item': str(item.product), 'quantity': item.quantity, 'price': item.price} for item in
-                 self.object.items.all()]
-        # CreateInvoice(self.object, self.object.partner, self.request.user, items)
-        # 写好其他再回来写
-        return True
-
-
-class KesOrderEditMixin(OrderFormInitialEntryMixin):
-    model = KesOrder
-    form_class = KesOrderForm
-    template_name = 'mrp/form.html'
-
-
-class KesOrderUpdateView(KesOrderEditMixin, UpdateView):
-    pass
-
-
-class KesOrderCreateView(KesOrderEditMixin, CreateView):
-    pass
-
-
-class KesOrderRawItemEditView(OrderItemEditMixin):
-    """
-    原材料（荒料）创建与编辑
-    """
-    form_class = KesOrderRawItemForm
-    model = KesOrderRawItem
-
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        order_id = self.request.GET.get('order_id', None)
-        order = None
-        if order_id:
-            order = KesOrder.objects.get(pk=order_id)
-        kwargs.update({'kes_order': order})
-        return kwargs
-
-
-class KesOrderRawItemDeleteView(BaseDeleteView):
-    """
-        原材料（荒料）删除
-    """
-    model = KesOrderRawItem
-
-    def get_success_url(self):
-        return self.request.META.get('HTTP_REFERER')
-
-
-class KesOrderProduceItemEditView(OrderItemEditMixin):
-    """
-        成品（毛板）创建与编辑
-    """
-    model = KesOrderProduceItem
-    form_class = KesOrderProduceItemForm
-
-    def get_initial(self):
-        initial = super(KesOrderProduceItemEditView, self).get_initial()
-        raw_item_id = self.request.GET.get('raw_item_id', None)
-        if raw_item_id:
-            initial['raw_item'] = raw_item_id
-        return initial
-
-
-class KesOrderProduceItemDeleteView(OrderItemDeleteMixin):
-    """
-       成品（毛板）删除
-    """
-    model = KesOrderProduceItem
+#
+# class KesOrderListView(ListView):
+#     model = KesOrder
+#
+#
+# class KesOrderDetailView(StateChangeMixin, GetItemsMixin, DetailView):
+#     model = KesOrder
+#
+#     def confirm(self):
+#         items = [i for i in self.object.items.all()]
+#         items.extend([i for i in self.object.produce_items.all()])
+#         stock = StockOperate(self.request, order=self.object, items=items)
+#         return stock.handle_stock()
+#
+#     def make_invoice(self):
+#         items = [{'item': str(item.product), 'quantity': item.quantity, 'price': item.price} for item in
+#                  self.object.items.all()]
+#         # CreateInvoice(self.object, self.object.partner, self.request.user, items)
+#         # 写好其他再回来写
+#         return True
+#
+#
+# class KesOrderEditMixin(OrderFormInitialEntryMixin):
+#     model = KesOrder
+#     form_class = KesOrderForm
+#     template_name = 'mrp/form.html'
+#
+#
+# class KesOrderUpdateView(KesOrderEditMixin, UpdateView):
+#     pass
+#
+#
+# class KesOrderCreateView(KesOrderEditMixin, CreateView):
+#     pass
+#
+#
+# class KesOrderRawItemEditView(OrderItemEditMixin):
+#     """
+#     原材料（荒料）创建与编辑
+#     """
+#     form_class = KesOrderRawItemForm
+#     model = KesOrderRawItem
+#
+#     def get_form_kwargs(self):
+#         kwargs = super().get_form_kwargs()
+#         order_id = self.request.GET.get('order_id', None)
+#         order = None
+#         if order_id:
+#             order = KesOrder.objects.get(pk=order_id)
+#         kwargs.update({'kes_order': order})
+#         return kwargs
+#
+#
+# class KesOrderRawItemDeleteView(BaseDeleteView):
+#     """
+#         原材料（荒料）删除
+#     """
+#     model = KesOrderRawItem
+#
+#     def get_success_url(self):
+#         return self.request.META.get('HTTP_REFERER')
+#
+#
+# class KesOrderProduceItemEditView(OrderItemEditMixin):
+#     """
+#         成品（毛板）创建与编辑
+#     """
+#     model = KesOrderProduceItem
+#     form_class = KesOrderProduceItemForm
+#
+#     def get_initial(self):
+#         initial = super(KesOrderProduceItemEditView, self).get_initial()
+#         raw_item_id = self.request.GET.get('raw_item_id', None)
+#         if raw_item_id:
+#             initial['raw_item'] = raw_item_id
+#         return initial
+#
+#
+# class KesOrderProduceItemDeleteView(OrderItemDeleteMixin):
+#     """
+#        成品（毛板）删除
+#     """
+#     model = KesOrderProduceItem
 
 
 # -----------------------------------move location--------------

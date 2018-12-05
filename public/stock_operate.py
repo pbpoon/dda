@@ -94,11 +94,12 @@ class StockOperate:
             available[0].piece += piece
             available[0].quantity += quantity
             available[0].save()
+            stock = available[0]
         else:
-            self.stock_model.objects.create(product=product, piece=piece, quantity=quantity,
-                                            uom=product.uom, location=location)
+            stock = self.stock_model.objects.create(product=product, piece=piece, quantity=quantity,
+                                                    uom=product.uom, location=location)
         if slabs:
-            return self.update_slab_stock(slabs=slabs, stock=available[0], check_in=True)
+            return self.update_slab_stock(slabs=slabs, stock=stock, check_in=True)
         return True
 
     def check_out_stock(self, product, location, piece, quantity, slabs=None):

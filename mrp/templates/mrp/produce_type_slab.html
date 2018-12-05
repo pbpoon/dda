@@ -59,7 +59,7 @@
                 <tr>
                     <td></td>
                     <td>{{ produce.product }}</td>
-                    <td><a onclick="open_package_list('{% url 'package_list' produce.package_list.id %}')">
+                    <td><a href="#" onclick="open_package_list('{% url 'package_list' produce.package_list.id %}')">
                         {{ produce.piece }}件/ {{ produce.package_list.get_part }}夹/
                         {{ produce.quantity }}{{ produce.product.get_uom }}</a></td>
                     <td>{{ produce.price }}</td>

@@ -3,6 +3,7 @@ from django.shortcuts import render, get_object_or_404, HttpResponse
 from django.template.loader import render_to_string
 from django.views.generic import ListView, DetailView, CreateView
 
+from cart.cart import Cart
 from product.forms import DraftPackageListItemForm
 from public.views import OrderItemEditMixin, OrderItemDeleteMixin
 from stock.models import Location
@@ -101,6 +102,17 @@ class PackageListDetail(DetailView):
     template_name = 'package_list.html'
 
     context_object_name = 'package'
+
+    # def get(self, *args, **kwargs):
+    #     package = self.get_object()
+    #     return HttpResponse(render_to_string(self.template_name, {'package': package}))
+
+    def post(self, *args, **kwargs):
+        slab_list = self.request.POST.getlist('select')
+        product_id = self.request.POST.get('product')
+        cart = Cart(self.request)
+        cart.add(product_id, slab_id_list=slab_list)
+        return JsonResponse({'state': 'ok'})
 
     # def get_context_data(self, **kwargs):
     #     context = super().get_context_data(**kwargs)

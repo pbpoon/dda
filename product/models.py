@@ -204,12 +204,15 @@ class SlabAbstract(models.Model):
 
 class Slab(SlabAbstract):
     stock = models.ForeignKey('stock.Stock', on_delete=models.SET_NULL, blank=True, null=True,
-                              limit_choices_to={'location__is_virtual': False}, related_name='slabs')
+                              limit_choices_to={'location__is_virtual': False}, related_name='items')
     reserve_stock = models.ForeignKey('stock.Stock', on_delete=models.SET_NULL, blank=True, null=True,
                                       limit_choices_to={'location__is_virtual': False}, related_name='reserve_slabs')
 
     verbose_name = '板材'
     verbose_name_plural = verbose_name
+
+    def get_slab_id(self):
+        return self.id
 
 
 class PackageList(models.Model):
@@ -236,6 +239,12 @@ class PackageList(models.Model):
     def get_part_number(self):
         return {item.part_number for item in self.items.all()}
 
+    def get_absolute_url(self):
+        return reverse('package_list', args=[self.id])
+
+    def __str__(self):
+        return str(self.product)
+
 
 class PackageListItem(models.Model):
     order = models.ForeignKey('PackageList', on_delete=models.CASCADE, related_name='items', verbose_name='码单')
@@ -248,6 +257,9 @@ class PackageListItem(models.Model):
 
     def get_quantity(self):
         return self.slab.get_quantity()
+
+    def get_slab_id(self):
+        return self.slab.id
 
     def __str__(self):
         return str(self.slab)

@@ -13,25 +13,16 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.conf.urls import url
-from django.contrib import admin
 from django.urls import path
 from django.urls import include
+from . import views
 
-from django.views.i18n import JavaScriptCatalog
 
 urlpatterns = [
-    # path('jsi18n/', JavaScriptCatalog.as_view(), name='javascript-catalog'),
-    # 导入 admin。widget需要的url
-    path('admin/', admin.site.urls),
-    path('cart/', include('cart.urls')),
-    path('product/', include('product.urls')),
-    path('purchase/', include('purchase.urls')),
-    path('partner/', include('partner.urls')),
-    path('stock/', include('stock.urls')),
-    path('invoice/', include('invoice.urls')),
-    path('mrp/', include('mrp.urls')),
-    path('sales/', include('sales.urls')),
-    # selectable
-
+    path('order/item/delete/<pk>', views.SalesOrderItemEditView.as_view(), name='sales_order_item_delete'),
+    path('order/item/edit/', views.SalesOrderItemEditView.as_view(), name='sales_order_item_edit'),
+    path('order/update/<pk>', views.SalesOrderUpdateView.as_view(), name='sales_order_update'),
+    path('order/create/', views.SalesOrderCreateView.as_view(), name='sales_order_create'),
+    path('order/<pk>', views.SalesOrderDetailView.as_view(), name='sales_order_detail'),
+    path('order/', views.SalesOrderListView.as_view(), name='sales_order_list'),
 ]

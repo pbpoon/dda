@@ -3,7 +3,7 @@
 from decimal import Decimal
 from django.conf import settings
 
-from product.models import Product, Slab
+from product.models import Product, Slab, PackageList
 
 
 class Cart:
@@ -14,28 +14,33 @@ class Cart:
             cart = self.session[settings.CART_SESSION_ID] = {}
         self.cart = cart
 
-    def add(self, product_id, piece=None, quantity=None, slab_id_list=None, update=False):
+    def add(self, product_id, piece=None, quantity=None, slab_id_list=None):
         product = Product.objects.get(pk=product_id)
-        if product.type == 'block':
-            piece = 1
-            quantity = product.weight if product.uom == 't' else product.get_m3()
-        elif product.type == 'slab':
+        if product.type == 'slab':
+            if not slab_id_list:
+                return False
             piece = len(slab_id_list)
-            quantity = sum(slab.quantity for slab in Slab.objects.filter(id__in=slab_id_list))
+            quantity = sum(slab.get_quantity() for slab in Slab.objects.filter(id__in=slab_id_list))
+        elif product.type == 'block':
+            piece = 1
+            quantity = quantity
         line = len(self.cart) + 1 if product_id not in self.cart else self.cart[product_id]['line']
-        self.cart[product_id] = {'line': line, 'piece': piece, 'quantity': str(quantity), 'slab_id_list': slab_id_list}
+        self.cart[product_id] = {'line': line, 'piece': piece, 'quantity': str(quantity),
+                                 'slab_id_list': slab_id_list}
         self.save()
 
     def save(self):
         self.session.modified = True
 
-    def remove(self, product_id, slab_id_list=None):
+    def get_select_slabs(self):
+        lst = []
+        for i in self.cart.values():
+            lst.extend(i['slab_id_list'])
+        return lst
+
+    def remove(self, product_id):
         if product_id in self.cart:
-            if slab_id_list:
-                lst = [i for i in self.cart[product_id][slab_id_list] if i in slab_id_list]
-                self.cart[product_id][slab_id_list] = lst
-            else:
-                del self.cart[product_id]
+            del self.cart[product_id]
             self.save()
 
     def clean(self):
@@ -49,7 +54,8 @@ class Cart:
         for product in products:
             cart[str(product.id)]['product'] = product
             if product.type == 'slab':
-                cart[str(product.id)]['slab'] = Slab.objects.filter(id__in=cart[str(product.id)]['slab_id_list'])
+                cart[str(product.id)]['part'] = {s.part_number for s in
+                                                 Slab.objects.filter(id__in=cart[str(product.id)]['slab_id_list'])}
 
         for item in cart.values():
             item['quantity'] = item['quantity']

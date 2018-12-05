@@ -1,0 +1,59 @@
+{% extends 'mrp/detail.html' %}
+{% load public %}
+{% load materializecss %}
+{{ form.media }}
+{% block content %}
+
+    <table>
+        <thead>
+        <tr>
+            <td>#</td>
+            <td>产品</td>
+            <td>数量</td>
+            <td>单价</td>
+            <td>金额</td>
+            <td></td>
+        </tr>
+        </thead>
+        <tbody>
+        {% for item in object.items.all %}
+            <tr>
+                <td>{{ item.line }}</td>
+                <td>{{ item.product }}</td>
+                <td>{{ item.piece }}件 / {% if item.package_list %} {{ item.package_list.get_part }}夹
+                    / {% endif %}{{ item.quantity }}</td>
+                <td>{{ item.price }}</td>
+                <td>{{ item.amount }}</td>
+                <td>{% if object.state == 'draft' %}
+                    <!-- Dropdown Trigger -->
+
+                    <a class='dropdown-trigger btn-floating grey' href='#' data-target='dropdown1'> <i
+                            class="material-icons">more_vert</i></a>
+
+                    <!-- Dropdown Structure -->
+                    <ul id='dropdown1' class='dropdown-content'>
+                        <li>
+                            <a onclick="edit_item({{ item.id }}, '{% url 'sales_order_item_edit' %}')">修改
+                            </a>
+                        </li>
+                        <li>
+                            <a onclick="item_remove({{ item.id }},'{% url 'sales_order_item_delete' 9999 %}')">
+                                删除
+                            </a>
+                        </li>
+                    </ul>
+                {% endif %}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <!--右下角浮动按钮组-->
+{% endblock %}
+
+{% block headline %}
+    {{ object.get_state_display }}{{ object.order }}
+{% endblock %}
+{% block subheadline %}
+    业务伙伴：{{ object.partner }} / 经办人:{{ object.handler }}
+{% endblock %}
+
