@@ -47,18 +47,6 @@ class StockOperate:
 
     def _get_stock(self, product, location, slabs=None, check_in=False):
         # 取得库存的记录
-        # location_child_id_list = [l.id for l in location.child.all()] if location.child.all() else []
-        # qs = self.stock_model.objects.filter(product_id=product.id)
-        # if slabs:
-        #     return qs.filter(slabs__in=[s.id for s in slabs])
-        # if check_in:
-        #     try:
-        #         return qs.get(location_id=location.id)
-        #     except Exception as e:
-        #         return None
-        # if location_child_id_list:
-        #     return qs.filter(location_id__in=location_child_id_list)
-        # return qs.filter(location_id=location.id)
         return Stock._get_stock(product, location, slabs, check_in=check_in)
 
     def get_available(self, product, location, slabs=None):
@@ -72,14 +60,8 @@ class StockOperate:
 
         """
         return Stock.get_available(product=product, location=location, slabs=slabs)
-        # available_stock = self._get_stock(product=product, location=location, slabs=slabs)
-        # piece = sum(available.piece for available in available_stock)
-        # reserve_piece = sum(available.reserve_piece for available in available_stock)
-        # quantity = sum(available.quantity for available in available_stock)
-        # reserve_quantity = sum(available.quantity for available in available_stock)
-        # return (piece - reserve_piece), (quantity - reserve_quantity)
 
-    def update_slab_stock(self, slabs, stock=None, check_in=False):
+    def update_slab_stock(self, slabs, stock=None, check_in=False, update_reserve=False):
         # 更新板材的库位
         if check_in:
             slabs.update(stock=stock)
@@ -155,6 +137,39 @@ class StockOperate:
             return self.check_out_stock(product=product, location=location, piece=piece, quantity=quantity,
                                         slabs=slabs)
 
+    def update_reserve(self, product, location, piece, quantity, slabs=None):
+        # # 如果可以的件数大于需求的件数就继续执行
+        available = self._get_stock(product=product, location=location, slabs=slabs)
+        if available:
+            for a in available:
+                if piece > 0:
+                    # 锁库
+                    max_piece, max_quantity = min((a.piece - a.reserve_piece), piece), \
+                                              min((a.quantity - a.reserve_quantity), quantity)
+                    a.reserve_piece += max_piece
+                    a.reserve_quantity += max_quantity
+                    piece -= max_piece
+                    quantity -= max_quantity
+                    a.save()
+                    if piece == 0:
+                        if slabs:
+                            slabs.update(is_reserve=True)
+                        return True
+                else:
+                    # 解库
+                    max_piece, max_quantity = min((a.piece - a.reserve_piece), abs(piece)), \
+                                              min((a.quantity - a.reserve_quantity), abs(quantity))
+                    a.reserve_piece -= max_piece
+                    a.reserve_quantity -= max_quantity
+                    piece += max_piece
+                    quantity += max_quantity
+                    a.save()
+                    if piece == 0:
+                        if slabs:
+                            slabs.update(is_reserve=False)
+                        return True
+        return False
+
     def clean_items(self):
         # 循环检查item的product的需求是否超出可以数量,
         # 如果超出就记载日error list，用作message返回
@@ -171,6 +186,29 @@ class StockOperate:
         return True, error
 
     @transaction.atomic()
+    def reserve_stock(self, unlock=False):
+        state = -1 if unlock else 1
+        clean, error = self.clean_items()
+        if clean:
+            # 创建数据库事务保存点
+            sid = transaction.savepoint()
+            for item in self.items:
+                if not item.location.is_virtual:
+                    package_list = getattr(item, 'package_list', None)
+                    slabs = Slab.objects.filter(
+                        id__in=package_list.items.values_list('slab', flat=True)) if package_list else None
+                    if not self.update_reserve(product=item.product, location=item.location, piece=state * item.piece,
+                                               quantity=state * item.quantity, slabs=slabs):
+                        break
+            else:
+                transaction.savepoint_commit(sid)
+                return True, '成功锁定库存'
+                # 回滚数据库到保存点
+            transaction.rollback(sid)
+            return False, '锁定库存失败'
+        return False, error
+
+    @transaction.atomic()
     def handle_stock(self):
         clean, error = self.clean_items()
         if clean:
@@ -181,7 +219,7 @@ class StockOperate:
                 if not item.location.is_virtual:
                     package_list = getattr(item, 'package_list', None)
                     slabs = Slab.objects.filter(
-                        id__in=package_list.items.values_list('id', flat=True)) if package_list else None
+                        id__in=package_list.items.values_list('slab', flat=True)) if package_list else None
                     if not self.update_available(product=item.product, location=item.location, piece=-item.piece,
                                                  quantity=-item.quantity, slabs=slabs):
                         break
@@ -189,7 +227,7 @@ class StockOperate:
                 if not item.location_dest.is_virtual:
                     package_list = getattr(item, 'package_list', None)
                     slabs = Slab.objects.filter(
-                        id__in=package_list.items.values_list('id', flat=True)) if package_list else None
+                        id__in=package_list.items.values_list('slab', flat=True)) if package_list else None
                     if not self.update_available(product=item.product, location=item.location_dest,
                                                  piece=item.piece,
                                                  quantity=item.quantity, slabs=slabs):

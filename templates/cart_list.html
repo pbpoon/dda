@@ -1,0 +1,60 @@
+<ul class="collection">
+    {% for object in cart %}
+        <li class="collection-item">
+            <p>
+                <label>
+                    <input form="cart_form" type="checkbox" name="select_product"
+                           value="{{ object.product.id }}"/>
+                    <span class="title">{{ object.product }}</span>
+                </label>
+                <button data-url="{% url 'cart_remove' %}"
+                        class="btn-small remove_item waves-light right red"><i class="material-icons">clear</i></button>
+            </p>
+
+            <p class="pull">{{ object.piece }}件/ {% if object.part %} {{ object.part|length }}夹/{% endif %}
+                {{ object.quantity }}{{ object.product.uom }}
+            </p>
+        </li>
+    {% endfor %}
+</ul>
+<form id="cart_form" action="{% url 'sales_order_quick_create' %}" method="get"></form>
+<script>
+    $('.remove_item').on('click', function () {
+        var url = $(this).data('url');
+        var $li = $(this).parent().parent();
+        var product_id = $(this).siblings().children(':checkbox').val();
+        console.log(product_id);
+        $.ajax({
+            url: url,
+            method: 'POST',
+            data: {'product_id': product_id},
+            success: function (data) {
+                if (data['state'] == 'ok') {
+                    $li.remove()
+                }
+            },
+            error: function () {
+                alert('网络错误')
+            }
+        });
+    });
+
+    {#function cart_remove_item() {#}
+    {#    $.ajax({#}
+    {#        url: arguments[0],#}
+    {#        method: 'POST',#}
+    {#        success: function (data) {#}
+    {#            if (data['state'] == 'ok') {#}
+    {#                $(this).remove();#}
+    {#    alert($li.html())#}
+    {#$('#modal_cart .list').html("");#}
+    {#md_cart.modal('close');#}
+    {#            }#}
+    {#md_cart.modal('open')#}
+    {##}
+    {#        },#}
+    {#        error: function () {#}
+    {#            alert('网络错误')#}
+    {#        }#}
+    {#    })#}
+</script>

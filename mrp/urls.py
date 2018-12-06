@@ -5,12 +5,14 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    # ------------------------------------------------kes order
+    path('move_order/item/create/<order_id>/', views.MoveLocationOrderItemEditView.as_view(),
+         name='move_location_order_item_create'),
     path('move_order/item/delete/<pk>', views.MoveLocationOrderItemDeleteView.as_view(),
          name='move_location_order_delete'),
-    path('move_order/create/', views.MoveLocationOrderCreateView.as_view(), name='move_location_order_create'),
-    path('move_order/item/edit/', views.MoveLocationOrderItemEditView.as_view(), name='move_location_order_item_edit'),
+    path('move_order/item/edit/<pk>/', views.MoveLocationOrderItemEditView.as_view(),
+         name='move_location_order_item_edit'),
     path('move_order/update/<pk>/', views.MoveLocationOrderUpdateView.as_view(), name='move_location_order_update'),
+    path('move_order/create/', views.MoveLocationOrderCreateView.as_view(), name='move_location_order_create'),
     path('move_order/<pk>/', views.MoveLocationOrderDetailView.as_view(), name='move_location_order_detail'),
     path('move_order/', views.MoveLocationOrderListView.as_view(), name='move_location_order_list'),
     # ------------------------------------------------block check in order
@@ -27,10 +29,18 @@ urlpatterns = [
     path('block_check_in/', views.BlockCheckInOrderListView.as_view(), name='block_check_in_list'),
 
     # ------------------------------------------------production order
-    path('production/produce_item/delete/<pk>', views.ProductionOrderProduceItemDeleteView.as_view(), name='production_produce_item_delete'),
-    path('production/produce_item/edit/', views.ProductionOrderProduceItemEditView.as_view(), name='production_produce_item_edit'),
-    path('production/raw_item/delete/<pk>', views.ProductionOrderRawItemDeleteView.as_view(), name='production_raw_item_delete'),
-    path('production/raw_item/edit/', views.ProductionOrderRawItemEditView.as_view(), name='production_raw_item_edit'),
+    path('production/produce_item/create/<order_id>/<item_id>/', views.ProductionOrderProduceItemEditView.as_view(),
+         name='production_produce_item_create'),
+    path('production/produce_item/delete/<pk>/', views.ProductionOrderProduceItemDeleteView.as_view(),
+         name='production_produce_item_delete'),
+    path('production/produce_item/edit/<pk>/', views.ProductionOrderProduceItemEditView.as_view(),
+         name='production_produce_item_edit'),
+    path('production/raw_item/delete/<pk>/', views.ProductionOrderRawItemDeleteView.as_view(),
+         name='production_raw_item_delete'),
+    path('production/raw_item/edit/<pk>/', views.ProductionOrderRawItemEditView.as_view(),
+         name='production_raw_item_edit'),
+    path('production/raw_item/create/<order_id>/', views.ProductionOrderRawItemEditView.as_view(),
+         name='production_raw_item_create'),
     path('production/update/<pk>/', views.ProductionOrderUpdateView.as_view(), name='production_update'),
     path('production/create/', views.ProductionOrderCreateView.as_view(), name='production_create'),
     path('production/<pk>/', views.ProductionOrderDetailView.as_view(), name='production_detail'),

@@ -5,17 +5,13 @@
     </a>
     <ul>
         {% if object.state == 'draft' %}
-        {% if object.get_update_url %}
-            <li>
-                <a href="{{ object.get_update_url }}" class="btn-floating red waves-effect waves-light btn"><i
-                        class="material-icons">edit</i></a>
-            </li>
-        {% endif %}
+            {% if object.get_update_url %}
+                <li>
+                    <a href="{{ object.get_update_url }}" class="btn-floating red waves-effect waves-light btn"><i
+                            class="material-icons">edit</i></a>
+                </li>
+            {% endif %}
 
-            <li>
-                <button onclick="add_item({{ object.id }})" class="btn-floating red waves-effect waves-light btn"><i
-                        class="material-icons">insert_chart</i></button>
-            </li>
         {% endif %}
         <li>
             <button class="btn-floating yellow darken-1"><i class="material-icons">format_quote</i></button>

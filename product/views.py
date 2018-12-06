@@ -1,5 +1,5 @@
 from django.http import JsonResponse
-from django.shortcuts import render, get_object_or_404, HttpResponse
+from django.shortcuts import get_object_or_404, HttpResponse
 from django.template.loader import render_to_string
 from django.views.generic import ListView, DetailView, CreateView
 
@@ -7,9 +7,9 @@ from cart.cart import Cart
 from product.forms import DraftPackageListItemForm
 from public.views import OrderItemEditMixin, OrderItemDeleteMixin
 from stock.models import Location
-from utils import obj_to_dict, qs_to_dict
+from public.utils import qs_to_dict, Package
 
-from .models import Product, Category, Slab, PackageList, DraftPackageList, DraftPackageListItem
+from .models import Product, PackageList, DraftPackageList, DraftPackageListItem, Slab
 
 
 def get_product_info(request):
@@ -101,23 +101,57 @@ class PackageListDetail(DetailView):
     model = PackageList
     template_name = 'package_list.html'
 
-    context_object_name = 'package'
+    # context_object_name = 'package'
 
-    # def get(self, *args, **kwargs):
-    #     package = self.get_object()
-    #     return HttpResponse(render_to_string(self.template_name, {'package': package}))
+    def get(self, *args, **kwargs):
+        state = self.request.GET.get('state')
+        self.object = self.get_object()
+
+        slabs = [item.slab for item in self.object.items.all().order_by('part_number', 'line')]
+        package_slabs_ids = [s.get_slab_id() for s in slabs]
+
+        if state == 'draft':
+            slabs = [item for stock in self.object.product.stock.all() for item in
+                     stock.items.all().order_by('part_number', 'line')]
+        package = Package(self.object.product, slabs)
+
+        cart = Cart(self.request)
+        edit_url = self.object.get_absolute_url
+        data = {'package': package, 'cart': cart, 'package_slabs_ids': package_slabs_ids, 'edit_url': edit_url,
+                'state': state}
+        return HttpResponse(render_to_string(self.template_name, data))
 
     def post(self, *args, **kwargs):
+        self.object = self.get_object()
         slab_list = self.request.POST.getlist('select')
-        product_id = self.request.POST.get('product')
-        cart = Cart(self.request)
-        cart.add(product_id, slab_id_list=slab_list)
+        package = self.object.update(self.object, slab_list)
         return JsonResponse({'state': 'ok'})
 
-    # def get_context_data(self, **kwargs):
-    #     context = super().get_context_data(**kwargs)
-    #     return context
-    #
-    # def get(self, *args, **kwargs):
-    #     self.object = self.get_object()
-    #     return HttpResponse(render_to_string(self.template_name, self.get_context_data(**kwargs)))
+
+class SalseOrderPackageListDetailView(DetailView):
+    model = Product
+    template_name = 'package_list.html'
+
+    def get(self, *args, **kwargs):
+        state = self.request.GET.get('state')
+        self.object = self.get_object()
+
+        slabs = self.object.items.all().order_by('part_number', 'line')
+        package_slabs_ids = [s.get_slab_id() for s in slabs]
+
+        if state == 'draft':
+            slabs = [item for stock in self.object.product.stock.all() for item in
+                     stock.items.all().order_by('part_number', 'line')]
+        package = Package(self.object.product, slabs)
+
+        cart = Cart(self.request)
+        edit_url = self.object.get_absolute_url
+        data = {'package': package, 'cart': cart, 'package_slabs_ids': package_slabs_ids, 'edit_url': edit_url,
+                'state': state}
+        return HttpResponse(render_to_string(self.template_name, data))
+
+    def post(self, *args, **kwargs):
+        self.object = self.get_object()
+        slab_list = self.request.POST.getlist('select')
+        package = self.object.update(self.object, slab_list)
+        return JsonResponse({'state': 'ok'})

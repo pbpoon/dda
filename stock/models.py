@@ -85,6 +85,15 @@ class Location(models.Model):
     def __str__(self):
         return self.get_full_name()
 
+    def get_main_location(self):
+        if self.is_main:
+            return self
+        parent = self.parent
+        while parent:
+            if parent.is_main:
+                return parent
+            parent = parent.parent
+
 
 class StockTrace(models.Model):
     """
@@ -147,7 +156,6 @@ class Stock(models.Model):
     def get_absolute_url(self):
         return reverse('stock_detail', args=[self.id])
 
-
     @staticmethod
     def _get_stock(product, location=None, slabs=None, check_in=False):
         # 取得库存的记录
@@ -159,7 +167,7 @@ class Stock(models.Model):
             location_id_list.append(location.id)
             qs.filter(location_id__in=location_id_list)
         if slabs:
-            qs.filter(slabs__in=[s.id for s in slabs])
+            qs.filter(items__in=[s.id for s in slabs])
         return qs
 
     @staticmethod

@@ -36,8 +36,8 @@ class PurchaseOrder(OrderAbstract):
     def get_amount(self):
         return sum(item.get_amount() for item in self.items.all())
 
-    def get_item_edit_url(self):
-        return reverse('purchase_order_item_edit')
+    def get_create_item_url(self):
+        return reverse('purchase_order_item_create')
 
     def get_update_url(self):
         return reverse('purchase_order_update', args=[self.id])

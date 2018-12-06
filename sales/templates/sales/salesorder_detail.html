@@ -20,8 +20,9 @@
             <tr>
                 <td>{{ item.line }}</td>
                 <td>{{ item.product }}</td>
-                <td>{{ item.piece }}件 / {% if item.package_list %} {{ item.package_list.get_part }}夹
-                    / {% endif %}{{ item.quantity }}</td>
+                <td><a href="#" onclick="open_package_list('{{ item.package_list.get_absolute_url }}','{{ object.state }}')">
+                    {{ item.piece }}件 / {% if item.package_list %} {{ item.package_list.get_part }}夹
+                    / {% endif %}{{ item.quantity }}</a></td>
                 <td>{{ item.price }}</td>
                 <td>{{ item.amount }}</td>
                 <td>{% if object.state == 'draft' %}
@@ -33,7 +34,7 @@
                     <!-- Dropdown Structure -->
                     <ul id='dropdown1' class='dropdown-content'>
                         <li>
-                            <a onclick="edit_item({{ item.id }}, '{% url 'sales_order_item_edit' %}')">修改
+                            <a onclick="edit_item({{ item.id }}, '{% url 'sales_order_item_edit' item.id %}')">修改
                             </a>
                         </li>
                         <li>

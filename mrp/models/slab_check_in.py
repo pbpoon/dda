@@ -19,8 +19,8 @@ class SlabCheckInOrder(MrpOrderAbstract):
     def get_location_dest(self):
         return self.warehouse.get_main_location()
 
-    def get_item_edit_url(self):
-        return reverse('slab_check_in_item_edit')
+    def get_create_item_url(self):
+        return reverse('slab_check_in_item_create')
 
     def get_absolute_url(self):
         return reverse('slab_check_in_detail', args=[self.id])

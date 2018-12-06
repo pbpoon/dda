@@ -113,93 +113,6 @@ class BlockCheckInOrderItemDeleteView(OrderItemDeleteMixin):
     model = BlockCheckInOrderItem
 
 
-# ------------------------------ Kes Order ----------------------------------
-#
-# class KesOrderListView(ListView):
-#     model = KesOrder
-#
-#
-# class KesOrderDetailView(StateChangeMixin, GetItemsMixin, DetailView):
-#     model = KesOrder
-#
-#     def confirm(self):
-#         items = [i for i in self.object.items.all()]
-#         items.extend([i for i in self.object.produce_items.all()])
-#         stock = StockOperate(self.request, order=self.object, items=items)
-#         return stock.handle_stock()
-#
-#     def make_invoice(self):
-#         items = [{'item': str(item.product), 'quantity': item.quantity, 'price': item.price} for item in
-#                  self.object.items.all()]
-#         # CreateInvoice(self.object, self.object.partner, self.request.user, items)
-#         # 写好其他再回来写
-#         return True
-#
-#
-# class KesOrderEditMixin(OrderFormInitialEntryMixin):
-#     model = KesOrder
-#     form_class = KesOrderForm
-#     template_name = 'mrp/form.html'
-#
-#
-# class KesOrderUpdateView(KesOrderEditMixin, UpdateView):
-#     pass
-#
-#
-# class KesOrderCreateView(KesOrderEditMixin, CreateView):
-#     pass
-#
-#
-# class KesOrderRawItemEditView(OrderItemEditMixin):
-#     """
-#     原材料（荒料）创建与编辑
-#     """
-#     form_class = KesOrderRawItemForm
-#     model = KesOrderRawItem
-#
-#     def get_form_kwargs(self):
-#         kwargs = super().get_form_kwargs()
-#         order_id = self.request.GET.get('order_id', None)
-#         order = None
-#         if order_id:
-#             order = KesOrder.objects.get(pk=order_id)
-#         kwargs.update({'kes_order': order})
-#         return kwargs
-#
-#
-# class KesOrderRawItemDeleteView(BaseDeleteView):
-#     """
-#         原材料（荒料）删除
-#     """
-#     model = KesOrderRawItem
-#
-#     def get_success_url(self):
-#         return self.request.META.get('HTTP_REFERER')
-#
-#
-# class KesOrderProduceItemEditView(OrderItemEditMixin):
-#     """
-#         成品（毛板）创建与编辑
-#     """
-#     model = KesOrderProduceItem
-#     form_class = KesOrderProduceItemForm
-#
-#     def get_initial(self):
-#         initial = super(KesOrderProduceItemEditView, self).get_initial()
-#         raw_item_id = self.request.GET.get('raw_item_id', None)
-#         if raw_item_id:
-#             initial['raw_item'] = raw_item_id
-#         return initial
-#
-#
-# class KesOrderProduceItemDeleteView(OrderItemDeleteMixin):
-#     """
-#        成品（毛板）删除
-#     """
-#     model = KesOrderProduceItem
-
-
-# -----------------------------------move location--------------
 class MoveLocationOrderListView(ListView):
     model = MoveLocationOrder
 
@@ -239,18 +152,9 @@ class MoveLocationOrderItemEditView(OrderItemEditMixin):
     model = MoveLocationOrderItem
     form_class = MoveLocationOrderItemForm
 
-    def get_order(self):
-        order = None
-        order_id = self.get_order_id()
-        if self.object:
-            order = self.object.order
-        elif order_id:
-            order = MoveLocationOrder.objects.get(pk=order_id)
-        return order
-
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs['move_order'] = self.get_order()
+        kwargs['move_order'] = self.order
         return kwargs
 
 
@@ -312,20 +216,18 @@ class ProductionOrderUpdateView(ProductionOrderEditMixin, UpdateView):
 
 
 class ProductionOrderItemEditMixin(OrderItemEditMixin):
-
-    def get_order(self):
-        order = None
-        order_id = self.get_order_id()
-        if self.object:
-            order = self.object.order
-        elif order_id:
-            order = ProductionOrder.objects.get(pk=order_id)
-        return order
+    item_id = None
+    item_model = None
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs['production_order'] = self.get_order()
+        kwargs['production_order'] = self.order
         return kwargs
+
+    def dispatch(self, request, *args, **kwargs):
+        if kwargs.get('item_id'):
+            self.item_id = kwargs.get('item_id')
+        return super().dispatch(request, *args, **kwargs)
 
 
 class ProductionOrderRawItemEditView(ProductionOrderItemEditMixin):
@@ -334,23 +236,23 @@ class ProductionOrderRawItemEditView(ProductionOrderItemEditMixin):
 
     def get_initial(self):
         initial = super().get_initial()
-        initial['location'] = self.get_order().location.id
+        initial['location'] = self.order.location.id
         return initial
 
 
 class ProductionOrderRawItemDeleteView(OrderItemDeleteMixin):
     model = ProductionOrderRawItem
+    item_model = ProductionOrderRawItem
 
 
 class ProductionOrderProduceItemEditView(ProductionOrderItemEditMixin):
     model = ProductionOrderProduceItem
     form_class = ProductionOrderProduceItemForm
+    item_model = ProductionOrderRawItem
 
     def get_initial(self):
         initial = super().get_initial()
-        raw_item_id = self.request.GET.get('raw_item_id', None)
-        if raw_item_id:
-            initial['raw_item'] = raw_item_id
+        initial['raw_item'] = self.item_id if self.item_id else self.object.raw_item
         return initial
 
 

@@ -21,8 +21,8 @@ class BlockCheckInOrder(MrpOrderAbstract):
     def get_absolute_url(self):
         return reverse('block_check_in_detail', args=[self.id])
 
-    def get_item_edit_url(self):
-        return reverse('block_check_in_item_edit')
+    def get_create_item_url(self):
+        return reverse('block_check_in_item_create')
 
     def get_location(self):
         return self.purchase_order.partner.get_location()

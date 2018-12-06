@@ -16,30 +16,51 @@
         {% for item in object_list %}
             <tr id="block_list_tr">
                 <td>{{ item.product }}</td>
-                <td>{{ item.piece }}件|{{ item.quantity }}{{ item.uom }}</td>
+                <td>{% if item.package_list %}
+                    <a href="#"
+                       onclick="open_package_list('{{ item.package_list.get_absolute_url }}','{{ object.state }}')">
+                        {{ item.package_list.get_part }}夹/ {{ item.piece }}件/
+                        {{ item.quantity }}{{ item.product.get_uom }}</a>
+                {% else %}
+                    {{ item.piece }}件/
+                    {{ item.quantity }}{{ item.product.get_uom }}
+                {% endif %}
+                </td>
                 <td>{{ item.location }}=>{{ item.location_dest }}</td>
                 <td>{% if object.state == 'draft' %}
-                        <!-- Dropdown Trigger -->
+                    <!-- Dropdown Trigger -->
 
-                        <a class='dropdown-trigger btn-floating grey' href='#' data-target='dropdown1'> <i
-                                class="material-icons">more_vert</i></a>
+                    <a class='dropdown-trigger btn-floating grey' href='#' data-target='dropdown1'> <i
+                            class="material-icons">more_vert</i></a>
 
-                        <!-- Dropdown Structure -->
-                        <ul id='dropdown1' class='dropdown-content'>
-                            <li>
-                                <a onclick="edit_item({{ item.id }}, '{% url 'move_location_order_item_edit' %}')">修改
-                                </a>
-                            </li>
-                            <li>
-                                <a onclick="item_remove({{ item.id }},'{% url 'move_location_order_delete' 9999 %}')">
-                                    删除
-                                </a>
-                            </li>
-                        </ul>
-                    {% endif %}</td>
+                    <!-- Dropdown Structure -->
+                    <ul id='dropdown1' class='dropdown-content'>
+                        <li>
+                            <a onclick="edit_item({{ item.id }}, '{% url 'move_location_order_item_edit' item.id %}')">修改
+                            </a>
+                        </li>
+                        <li>
+                            <a onclick="item_remove({{ item.id }},'{% url 'move_location_order_delete' 9999 %}')">
+                                删除
+                            </a>
+                        </li>
+                    </ul>
+                {% endif %}</td>
             </tr>
 
         {% endfor %}
+        <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>
+                <li>
+                    <a onclick="add_item('{{ object.get_create_item_url }}')">
+                        添加
+                    </a>
+                </li>
+            </td>
+        </tr>
         </tbody>
         <tfoot>
         <tr>

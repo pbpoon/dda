@@ -75,5 +75,6 @@ class StockDetailView(DetailView):
 
 class StockSlabsView(DetailView):
     model = Stock
-    template_name = 'package_list.html'
+    template_name = 'stock/package_list.html'
     context_object_name = 'package'
+

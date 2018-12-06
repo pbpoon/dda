@@ -1,4 +1,6 @@
 # _*_ coding:utf-8 _*_
+from product.models import PackageListItem
+
 __author__ = 'pb'
 __date__ = '2017/6/21 15:46'
 from django import forms
@@ -6,6 +8,35 @@ import re
 import xlrd
 from decimal import Decimal
 import json
+
+
+class Package:
+    def __init__(self, product, slabs):
+        self.items = slabs
+        self.product = product
+
+    def get_piece(self, number=None):
+        items = self.items
+        if number:
+            items = [item for item in self.items if item.part_number == number]
+        return len(items)
+
+    def get_part_number(self, number=None):
+        if number:
+            items = {item.part_number for item in self.items if item.part_number == number}
+        else:
+            items = {item.part_number for item in self.items}
+        return items
+
+    def get_quantity(self, number=None):
+        if number:
+            quantity = sum(item.get_quantity() for item in self.items if item.part_number == number)
+        else:
+            quantity = sum(item.get_quantity() for item in self.items)
+        return quantity
+
+
+
 
 
 def obj_to_dict(obj):

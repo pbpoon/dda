@@ -30,25 +30,25 @@ class OrderFormInitialEntryMixin:
 class OrderItemEditMixin(OrderFormInitialEntryMixin, ModelFormMixin, View):
     template_name = 'item_form.html'
     model = None
-
-    def get_order_id(self):
-        return self.request.GET.get('order_id', None) or self.request.POST.get('order', None)
+    order = None
 
     def get_initial(self):
-        # 当是新建的item项目的时候，有个order_id的参数在js函数add_item()传入
         initial = super().get_initial()
-        order_id = self.get_order_id()
-        if order_id:
-            initial['order'] = order_id
+        initial['order'] = self.order
         return initial
 
+    def get_order(self, **kwargs):
+        if kwargs.get('order_id'):
+            # 取得model的某个field是ForeignKey的model
+            return self.model._meta.get_field('order').remote_field.model.objects.get(pk=kwargs.get('order_id'))
+        return self.object.order
+
     def dispatch(self, request, *args, **kwargs):
-        pk = self.request.GET.get('item_id', None) or self.request.POST.get('item_id', None)
-        if pk:
-            self.kwargs.update({'pk': pk})
+        if kwargs.get('pk'):
             self.object = self.get_object()
         else:
             self.object = None
+        self.order = self.get_order(**kwargs)
         return super().dispatch(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
@@ -60,7 +60,6 @@ class OrderItemEditMixin(OrderFormInitialEntryMixin, ModelFormMixin, View):
         msg = '修改' if self.object else '添加'
         if form.is_valid():
             form.save()
-            # path = self.request.META.get('HTTP_REFERER')
             msg += '成功'
             messages.success(self.request, msg)
             return JsonResponse({'status': 'SUCCESS'})

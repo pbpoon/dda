@@ -1,11 +1,11 @@
 {% load materializecss %}
 {% if form %}
-    {{ form|materializecss }}
-
+        {{ form|materializecss }}
+        <!--导入外部的form动态渲染-->
     {% block script %}
         <script>
-        $('.datepicker').datepicker({'format': 'yyyy-mm-dd'});
-        $('select').formSelect();
+            $('.datepicker').datepicker({'format': 'yyyy-mm-dd'});
+            $('select').formSelect();
             {% if error %}
                 M.toast({html: '{{ error }}'}, 4000);
             {% endif %}

@@ -10,11 +10,10 @@
     </div>
     <ul class="tabs">
         {% for part_number in package.get_part_number %}
-            <li class="tab col s3 "><a class="{% if forloop.first %}active{% endif %}"
-                                       href="#{{ part_number }}">{{ part_number }}#</a></li>
+            <li class="tab col s3"><a href="#{{ part_number }}">{{ part_number }}#</a></li>
         {% endfor %}
     </ul>
-    {% regroup package.items by part_number as package_list %}
+    {% regroup package.items.all by part_number as package_list %}
     {% with select_slabs=cart.get_select_slabs %}
 
         {% for part_number in package_list %}
@@ -37,17 +36,14 @@
                     </thead>
                     <tbody>
                     {% for item in part_number.list %}
-                        <tr {% if item.get_slab_id not in package_slabs_ids %}class="green-text"{% endif %}>
+                        <tr>
                             <td>
-
                                 <p>
                                     <label>
                                         <input form="select_slab_form" data-quantity="{{ item.get_quantity }}"
                                                type="checkbox" name="select"
-                                                {% if state != 'draft' %}
-                                               disabled
-                                                {% endif %}
-                                                {% if item.get_slab_id in package_slabs_ids %}
+                                               {% if item.is_reserve %}disabled="1"{% endif %}
+                                                {% if item.get_slab_id|stringformat:"i" in select_slabs %}
                                                checked="checked"
                                                 {% endif %}
                                                value="{{ item.get_slab_id }}"/>
@@ -62,7 +58,7 @@
                                 </a>
                             </td>
                             <td>{{ item.get_quantity }}</td>
-                            <td>{{ item.get_location }}
+                            <td>
                             </td>
                         </tr>
                     {% endfor %}
@@ -81,17 +77,15 @@
 
         {% endfor %}
     {% endwith %}
-    {% if state == 'draft' %}
-        <form id="select_slab_form" action="{{ edit_url }}" method="post">
-            <input type="hidden" name="product"
-                   value="{{ package.product.id }}">
-            <input type="hidden" name="package_list_id"
-                   value="{{ package.id }}">
-        </form>
-    {% endif %}
+
+    <form id="select_slab_form" action="{% url 'cart_add' %}">
+        <input type="hidden" name="location" value="{{ object.location_id }}">
+        <input type="hidden" name="product"
+               value="{{ package.product.id }}">
+    </form>
+
 </div>
 <script>
-    //码单的checkbox选择相关
     $('input[name=select]').on('click', function (e) {
         sum()
     });
@@ -102,15 +96,15 @@
         sum()
     });
     $('#all_select').on('click', function () {
-        var $btn = $(this);
-        if ($btn.text() == '全选') {
-            $btn.text('全不选');
-            $(':checkbox').attr("checked", true);
+            var $btn = $(this);
+            if ($btn.text() == '全选') {
+                $btn.text('全不选');
+                $(':checkbox').attr("checked", true);
 
-        } else {
-            $btn.text('全选');
-            $(':checkbox').attr("checked", false);
-        }
-        sum()
-    });
+            } else {
+                $btn.text('全选');
+                $(':checkbox').attr("checked", false);
+            }
+            sum()
+        });
 </script>

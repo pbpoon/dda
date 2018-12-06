@@ -29,7 +29,7 @@
                 <!-- Dropdown Structure -->
                 <ul id='dropdown1' class='dropdown-content'>
                     <li>
-                        <a onclick="edit_item({{ item.id }}, '{% url 'production_raw_item_edit' %}')">修改
+                        <a onclick="edit_item({{ item.id }}, '{% url 'production_raw_item_edit' item.id %}')">修改
                         </a>
                     </li>
                     <li>
@@ -38,7 +38,7 @@
                         </a>
                     </li>
                     <li>
-                        <a onclick="add_produce_item({{ object.id }},{{ item.id }}, '{% url 'production_produce_item_edit' %}','{{ object.production_type.produce_item_type }}')">
+                        <a onclick="add_produce_item('{% url 'production_produce_item_create' object.id item.id %}','{{ object.production_type.produce_item_type }}')">
                             添加成品
                         </a>
                     </li>
@@ -61,7 +61,7 @@
                         <!-- Dropdown Structure -->
                         <ul id='dropdown2' class='dropdown-content'>
                             <li>
-                                <a onclick="edit_item({{ produce.id }}, '{% url 'production_produce_item_edit' %}')">
+                                <a onclick="edit_item({{ produce.id }}, '{% url 'production_produce_item_edit' produce.id  %}')">
                                     修改</a></li>
                             <li>
                                 <a onclick="item_remove({{ produce.id }},'{% url 'production_produce_item_delete' 9999 %}')">
@@ -73,6 +73,16 @@
             {% endfor %}
         {% endif %}
     {% endfor %}
+    <tr>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td>
+            <a href="#" onclick="add_item('{{ object.get_create_item_url }}')">添加</a>
+        </td>
+    </tr>
     </tbody>
     <tfoot>
     <tr>

@@ -1,13 +1,12 @@
 from decimal import Decimal
 
 import decimal
-from django.db import models
+from django.db import models, transaction
 from django.urls import reverse
 
 from public.fields import LineField
+from sales.models import SalesOrderItem
 from stock.models import Stock
-
-# from stock.stock_operate import StockOperate
 
 TYPE_CHOICES = (('block', '荒料'), ('semi_slab', '毛板'), ('slab', '板材'))
 UOM_CHOICES = (('t', '吨'), ('m3', '立方'))
@@ -205,14 +204,18 @@ class SlabAbstract(models.Model):
 class Slab(SlabAbstract):
     stock = models.ForeignKey('stock.Stock', on_delete=models.SET_NULL, blank=True, null=True,
                               limit_choices_to={'location__is_virtual': False}, related_name='items')
-    reserve_stock = models.ForeignKey('stock.Stock', on_delete=models.SET_NULL, blank=True, null=True,
-                                      limit_choices_to={'location__is_virtual': False}, related_name='reserve_slabs')
-
+    is_reserve = models.BooleanField('锁库', default=False)
     verbose_name = '板材'
     verbose_name_plural = verbose_name
 
     def get_slab_id(self):
         return self.id
+
+    def get_location(self):
+        if self.stock:
+            return str(self.stock.location)
+        else:
+            return '没有库存'
 
 
 class PackageList(models.Model):
@@ -240,14 +243,37 @@ class PackageList(models.Model):
         return {item.part_number for item in self.items.all()}
 
     def get_absolute_url(self):
-        return reverse('package_list', args=[self.id])
+        return reverse('package_detail', args=[self.id])
 
     def __str__(self):
         return str(self.product)
 
+    @staticmethod
+    def make_package_from_list(product_id, lst):
+        with transaction.atomic():
+            order = PackageList.objects.create(product_id=product_id)
+            for id in lst:
+                slab = Slab.objects.get(pk=id)
+                PackageListItem.objects.create(slab=slab, part_number=slab.part_number, order=order)
+            return order
+
+    @staticmethod
+    def update(package_list, slab_id_lst):
+        new_items = []
+        slabs = Slab.objects.filter(id__in=slab_id_lst)
+        with transaction.atomic():
+            package_list.items.all().delete()
+            for slab in slabs:
+                new_items.append(
+                    PackageListItem.objects.create(slab=slab, part_number=slab.part_number, order=package_list))
+            package_list.items.set(new_items)
+            package_list.save()
+            return package_list
+
 
 class PackageListItem(models.Model):
-    order = models.ForeignKey('PackageList', on_delete=models.CASCADE, related_name='items', verbose_name='码单')
+    order = models.ForeignKey('PackageList', on_delete=models.CASCADE, related_name='items', verbose_name='码单',
+                              blank=True, null=True)
     slab = models.ForeignKey('Slab', on_delete=models.CASCADE, related_name='package_list', verbose_name='板材')
     part_number = models.SmallIntegerField('夹号')
     line = LineField(verbose_name='序号', for_fields=['order', 'part_number'], blank=True)
@@ -255,14 +281,17 @@ class PackageListItem(models.Model):
     class Meta:
         verbose_name = '码单项'
 
+    def __str__(self):
+        return str(self.slab)
+
     def get_quantity(self):
         return self.slab.get_quantity()
 
     def get_slab_id(self):
         return self.slab.id
 
-    def __str__(self):
-        return str(self.slab)
+    def get_location(self):
+        return self.slab.get_location()
 
 
 class DraftPackageList(models.Model):

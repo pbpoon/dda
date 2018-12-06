@@ -38,7 +38,6 @@
             <div class="collapsible-body">
                 <ul>
                     <li><a href="{% url 'block_check_in_list' %}">荒料入库单</a></li>
-                    <li><a href="{% url 'kes_order_list' %}">界石单</a></li>
                     <li><a href="{% url 'move_location_order_list' %}">移库单</a></li>
                     <li><a href="{% url 'production_list' %}">生产订单</a></li>
                     <li>
@@ -74,19 +73,6 @@
     <!--采购app-->
     <li><a onclick="show_car_detail('{% url 'cart_detail' %}')">选择了：{{ cart|length }}项</a></li>
 </ul>
-<script>
-    function show_car_detail() {
-        $.ajax({
-            url: arguments[0],
-            method: 'GET',
-            success: function (data) {
-                $('#modal_cart .list').html(data);
-                md_cart.modal('open')
-            }
-        })
-    }
-
-</script>
 {#<ul class="right hide-on-med-and-down">#}
 {#    <li><a href="#!">First Sidebar Link</a></li>#}
 {#    <li><a href="#!">Second Sidebar Link</a></li>#}

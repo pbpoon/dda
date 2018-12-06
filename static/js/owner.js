@@ -6,15 +6,14 @@ var md_cart = $('#modal_cart').modal();
 
 
 //item的添加方法
-function add_item(order_id) {
+function add_item(url) {
     $('#modal1 h6').text('添加明细行');
-    var $form = $('#item_form');
     $.ajax({
-        url: $form.attr('action'),
-        data: {'order_id': order_id},
+        url: url,
         method: 'GET',
         success: function (data) {
             $('#modal1 .container').html(data);
+            $('#item_form').attr('action', url);
             md.modal('open')
         }
     })
@@ -27,7 +26,6 @@ function edit_item(val, url) {
     $.ajax({
         method: 'GET',
         url: url,
-        data: {item_id: val},
         success: function (data) {
             $('#modal1 .container').html(data);
             md.modal('open')
@@ -152,7 +150,7 @@ function show_package_list() {
     })
 }
 
-function add_produce_item(order_id, raw_item_id, url, produce_type) {
+function add_produce_item(url, produce_type) {
     if (produce_type == 'slab') {
         $('#choice_btn').show()
         // var footer = $('#modal1 .modal-footer');
@@ -169,10 +167,6 @@ function add_produce_item(order_id, raw_item_id, url, produce_type) {
     $form.attr('action', url);
     $.ajax({
         url: $form.attr('action'),
-        data: {
-            'order_id': order_id,
-            'raw_item_id': raw_item_id
-        },
         method: 'GET',
         success: function (data) {
             $('#modal1 .container').html(data);
@@ -184,15 +178,17 @@ function add_produce_item(order_id, raw_item_id, url, produce_type) {
     })
 }
 
-function open_package_list(url) {
+function open_package_list(url, state) {
     $.ajax({
         url: url,
         method: 'GET',
+        data: {'state': state},
         success: function (data) {
             $('#modal_package_list .modal-content').html(data);
             md_package_list.modal('open');
             $('.tabs').tabs();
-
+            sum()
+            // $('#select_slab_form').attr('action', url);
         },
         error: function () {
             alert("打开遇到错误！")
@@ -201,54 +197,37 @@ function open_package_list(url) {
 }
 
 //!码单package_list页面
-$('input[name=select]').on('click', function (e) {
-    sum()
-});
+// function select_part(part_number) {
+//     var $('div #'+part_number+
+//     // $('div #'+part_number+' :checkbox').attr('checked',this.checked);
+//     sum()
+// }
 
-$('input[name=select_part]').click(function (e) {
-    var tb = $(this).parents('table');
-    tb.find(':checkbox').attr("checked", this.checked);
-    sum()
-});
 
 function sum() {
     var display = "";
     var m2 = Number(0);
     var piece = 0;
     $('input[name=select]').each(function (e) {
+        var $input = $(this);
         if (this.checked) {
-            m2 += Number($(this).data('quantity'));
+            console.log($input.data('quantity'), $input.val());
+            m2 += Number($input.data('quantity'));
             piece += 1
         }
     });
-    display = "<span>选择了：" + piece + "件 / " + Math.round(m2 * 100) / 100 + "m2</span>"
+    display = "<span>选择了：" + piece + "件 / " + Math.round(m2 * 100) / 100 + "m2</span>";
     $('#select_display').html(display)
 }
 
-function all_select() {
-    $(':checkbox').attr("checked", true);
-    sum()
-}
 
-function all_no_select() {
-    $(':checkbox').attr("checked", false);
-    sum();
-}
-
-function post_select() {
-    var $form = $('#select_slab_form');
-    var url = $form.attr('action');
+function show_car_detail() {
     $.ajax({
-        url: url,
-        data: $form.serialize(),
-        method: 'POST',
+        url: arguments[0],
+        method: 'GET',
         success: function (data) {
-            md_package_list.modal('close')
-        },
-        error: function (e) {
-            alert('网络遇到错误')
+            $('#modal_cart .list').html(data);
+            md_cart.modal('open')
         }
-
-
     })
 }

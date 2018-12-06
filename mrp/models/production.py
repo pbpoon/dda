@@ -50,8 +50,8 @@ class ProductionOrder(MrpOrderAbstract):
     def get_update_url(self):
         return reverse('production_update', args=[self.id])
 
-    def get_item_edit_url(self):
-        return reverse('production_raw_item_edit')
+    def get_create_item_url(self):
+        return reverse('production_raw_item_create', args=[self.id])
 
     def get_location(self):
         return self.warehouse.get_main_location()

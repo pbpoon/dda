@@ -25,8 +25,8 @@ class MoveLocationOrder(MrpOrderAbstract):
     def get_location_dest(self):
         return self.warehouse_dest.get_main_location()
 
-    def get_item_edit_url(self):
-        return reverse('move_location_order_item_edit')
+    def get_create_item_url(self):
+        return reverse('move_location_order_item_create', args=[self.id])
 
     def get_absolute_url(self):
         return reverse('move_location_order_detail', args=[self.id])

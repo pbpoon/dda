@@ -4,6 +4,7 @@ from decimal import Decimal
 from django.conf import settings
 
 from product.models import Product, Slab, PackageList
+from stock.models import Location
 
 
 class Cart:
@@ -14,7 +15,7 @@ class Cart:
             cart = self.session[settings.CART_SESSION_ID] = {}
         self.cart = cart
 
-    def add(self, product_id, piece=None, quantity=None, slab_id_list=None):
+    def add(self, product_id, location_id, piece=None, quantity=None, slab_id_list=None):
         product = Product.objects.get(pk=product_id)
         if product.type == 'slab':
             if not slab_id_list:
@@ -26,7 +27,7 @@ class Cart:
             quantity = quantity
         line = len(self.cart) + 1 if product_id not in self.cart else self.cart[product_id]['line']
         self.cart[product_id] = {'line': line, 'piece': piece, 'quantity': str(quantity),
-                                 'slab_id_list': slab_id_list}
+                                 'slab_id_list': slab_id_list, 'location_id': location_id}
         self.save()
 
     def save(self):
@@ -39,6 +40,7 @@ class Cart:
         return lst
 
     def remove(self, product_id):
+        product_id = str(product_id)
         if product_id in self.cart:
             del self.cart[product_id]
             self.save()

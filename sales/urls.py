@@ -19,10 +19,12 @@ from . import views
 
 
 urlpatterns = [
-    path('order/item/delete/<pk>', views.SalesOrderItemEditView.as_view(), name='sales_order_item_delete'),
-    path('order/item/edit/', views.SalesOrderItemEditView.as_view(), name='sales_order_item_edit'),
-    path('order/update/<pk>', views.SalesOrderUpdateView.as_view(), name='sales_order_update'),
+    path('order/item/delete/<pk>/', views.SalesOrderItemDeleteView.as_view(), name='sales_order_item_delete'),
+    path('order/item/edit/<pk>/', views.SalesOrderItemEditView.as_view(), name='sales_order_item_edit'),
+    path('order/item/edit/', views.SalesOrderItemEditView.as_view(), name='sales_order_item_create'),
+    path('order/update/<pk>/', views.SalesOrderUpdateView.as_view(), name='sales_order_update'),
+    path('order/quick/create/', views.SalesOrderQuickCreateView.as_view(), name='sales_order_quick_create'),
     path('order/create/', views.SalesOrderCreateView.as_view(), name='sales_order_create'),
-    path('order/<pk>', views.SalesOrderDetailView.as_view(), name='sales_order_detail'),
+    path('order/<pk>/', views.SalesOrderDetailView.as_view(), name='sales_order_detail'),
     path('order/', views.SalesOrderListView.as_view(), name='sales_order_list'),
 ]
