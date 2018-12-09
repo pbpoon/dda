@@ -11,9 +11,9 @@ UOM_CHOICES = (('t', '吨'), ('m2', '平方'))
 
 class SalesOrder(OrderAbstract):
     order = OrderField(order_str='SO', max_length=26, default='New', db_index=True, unique=True, verbose_name='订单号码', )
-    partner = models.ForeignKey('partner.Partner', on_delete=models.SET_NULL, null=True, blank=True,
-                                limit_choices_to={'type': 'customer'},
+    partner = models.ForeignKey('partner.Partner', on_delete=models.CASCADE, limit_choices_to={'type': 'customer'},
                                 verbose_name='客户名称')
+
     class Meta:
         verbose_name = '销售订单'
 
@@ -21,7 +21,7 @@ class SalesOrder(OrderAbstract):
         return reverse('sales_order_detail', args=[self.id])
 
     def get_create_item_url(self):
-        return reverse('sales_order_item_create')
+        return reverse('sales_order_item_create', args=[self.id])
 
     def get_update_url(self):
         return reverse('sales_order_update', args=[self.id])
@@ -29,6 +29,22 @@ class SalesOrder(OrderAbstract):
     @property
     def amount(self):
         return sum(item.amount for item in self.items.all())
+
+    def get_piece(self):
+        return sum(item.piece for item in self.items.all() if item.piece)
+
+    @property
+    def quantity(self):
+        return sum(item.quantity for item in self.items.all() if item.quantity)
+
+    def get_out_order_progress(self):
+        out_order_total_quantity = sum(
+            item.quantity for order in self.in_out_order.filter(state='done') for item in order.items.all())
+        if self.get_piece() - sum(
+                item.piece for order in self.in_out_order.filter(state='done') for item in order.items.all()) == 0:
+            return 1
+        number = (out_order_total_quantity / self.quantity)
+        return number
 
     def __str__(self):
         return self.order
@@ -55,7 +71,9 @@ class SalesOrderItem(models.Model):
 
     @property
     def amount(self):
-        return Decimal('{0:.2f}'.format(self.quantity * self.price))
+        if self.quantity:
+            return Decimal('{0:.2f}'.format(self.quantity * self.price))
+        return 0
 
     def save(self, *args, **kwargs):
         self.location_dest = self.order.partner.get_location()
@@ -64,6 +82,3 @@ class SalesOrderItem(models.Model):
             self.piece = self.package_list.get_piece()
             self.quantity = self.package_list.get_quantity()
         super().save(*args, **kwargs)
-
-
-

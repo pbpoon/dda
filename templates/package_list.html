@@ -47,6 +47,9 @@
                                                 {% if state != 'draft' %}
                                                disabled
                                                 {% endif %}
+                                                {% if item.is_reserve %}
+                                               disabled
+                                                {% endif %}
                                                 {% if item.get_slab_id in package_slabs_ids %}
                                                checked="checked"
                                                 {% endif %}
@@ -113,4 +116,22 @@
         }
         sum()
     });
+        $('#select_slab_form_submit').on('click', function () {
+            var $form = $('#select_slab_form');
+            var url = $form.attr('action');
+            $.ajax({
+                url: url,
+                data: $form.serialize(),
+                method: 'POST',
+                success: function (data) {
+                    md_package_list.modal('close')
+                    window.location.reload()
+                },
+                error: function (e) {
+                    alert('网络遇到错误')
+                }
+            })
+        });
+
+
 </script>

@@ -2,14 +2,12 @@
 
 <!--标题块相关-->
 {% block header %}
-    <div class="container">
-    <div class="section s12 m12 l12">
-        <h5>{% block headline %}{% endblock %}</h5>
+    <div  class="section s12 m12 l12">
+        <h5 style="margin-left: 20px">{% block headline %}{% endblock %}</h5>
         <div class="divider"></div>
 
         <p>{% block subheadline %}
         {% endblock %}</p>
-    </div>
     </div>
 {% endblock %}
 

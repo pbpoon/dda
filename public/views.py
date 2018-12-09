@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 # Created by pbpoon on 2018/11/23
 from django.contrib import messages
+from django.db import transaction
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render_to_response, redirect
 from django.template import RequestContext
@@ -62,7 +63,7 @@ class OrderItemEditMixin(OrderFormInitialEntryMixin, ModelFormMixin, View):
             form.save()
             msg += '成功'
             messages.success(self.request, msg)
-            return JsonResponse({'status': 'SUCCESS'})
+            return JsonResponse({'state': 'ok'})
         msg += '失败'
         return HttpResponse(render_to_string(self.template_name, {'form': form, 'error': msg}))
 
@@ -94,11 +95,14 @@ class StateChangeMixin:
     def make_invoice(self):
         return True
 
+    @transaction.atomic()
     def post(self, *args, **kwargs):
         self.object = self.get_object()
         form = self.state_form(self.request.POST)
         if form.is_valid():
+            # 创建数据库事务保存点
             state = self.request.POST.get('state')
+            sid = transaction.savepoint()
             is_done, msg = getattr(self, state)()
             if is_done:
                 msg += ',成功设置状态为:{}'.format(state)
@@ -106,6 +110,9 @@ class StateChangeMixin:
                 self.object.state = state
                 self.object.save()
                 self.make_invoice()
+                return redirect(self.get_success_url())
+            # 回滚数据库到保存点
+            transaction.savepoint_rollback(sid)
             msg += ',设置状态为:{} 失败'.format(state)
             messages.error(self.request, msg)
         return redirect(self.get_success_url())

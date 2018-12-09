@@ -1,0 +1,19 @@
+{% extends 'list.html' %}
+{% block content %}
+<ul class="collection with-header">
+    <li class="collection-header"><h4>费用列表</h4></li>
+    {% for object in object_list %}
+        <li class="collection-item">
+            <div>{{ object }}<a href="#" onclick="edit_item('{% url 'expenses_item_update' object.id %}')" class="secondary-content"><i
+                    class="material-icons">edit</i></a></div>
+        </li>
+    {% endfor %}
+</ul>
+
+<div class="fixed-action-btn">
+    <a href="#" onclick="add_item('{% url "expenses_item_create" %}')" class="btn-floating btn-large red">
+        <i class="large material-icons">add</i>
+    </a>
+</div>
+    {% include 'modal.html' %}
+{% endblock %}

@@ -8,19 +8,20 @@ var md_cart = $('#modal_cart').modal();
 //item的添加方法
 function add_item(url) {
     $('#modal1 h6').text('添加明细行');
+    $('#item_form').attr('action', url);
     $.ajax({
         url: url,
         method: 'GET',
         success: function (data) {
             $('#modal1 .container').html(data);
-            $('#item_form').attr('action', url);
             md.modal('open')
+
         }
     })
 }
 
 //item的编辑方法
-function edit_item(val, url) {
+function edit_item(url) {
     $('#modal1 h6').text('修改明细行');
     $('#item_form').attr('action', url);
     $.ajax({
@@ -29,6 +30,7 @@ function edit_item(val, url) {
         success: function (data) {
             $('#modal1 .container').html(data);
             md.modal('open')
+
         }
     });
 }
@@ -41,7 +43,7 @@ $('#item_form').on('submit', function (e) {
         method: 'POST',
         data: $form.serialize(),
         success: function (data) {
-            if (data['status'] == 'SUCCESS') {
+            if (data['state'] == 'ok') {
                 md.modal('close');
                 window.location.reload()
             }
@@ -183,6 +185,24 @@ function open_package_list(url, state) {
         url: url,
         method: 'GET',
         data: {'state': state},
+        success: function (data) {
+            $('#modal_package_list .modal-content').html(data);
+            $('#select_slab_form').attr('action', url);
+            md_package_list.modal('open');
+            $('.tabs').tabs();
+            sum()
+            // $('#select_slab_form').attr('action', url);
+        },
+        error: function () {
+            alert("打开遇到错误！")
+        }
+    });
+}
+
+function open_package_list_by_stock(url) {
+    $.ajax({
+        url: url,
+        method: 'GET',
         success: function (data) {
             $('#modal_package_list .modal-content').html(data);
             md_package_list.modal('open');

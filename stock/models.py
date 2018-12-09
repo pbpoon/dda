@@ -171,7 +171,7 @@ class Stock(models.Model):
         return qs
 
     @staticmethod
-    def get_available(product, location, slabs=None):
+    def get_available(product, location=None, slabs=None):
         """
         Args:
             product: object产品
@@ -182,8 +182,18 @@ class Stock(models.Model):
 
         """
         available_stock = Stock._get_stock(product=product, location=location, slabs=slabs)
-        piece = sum(available.piece for available in available_stock)
-        reserve_piece = sum(available.reserve_piece for available in available_stock)
-        quantity = sum(available.quantity for available in available_stock)
-        reserve_quantity = sum(available.reserve_quantity for available in available_stock)
+        if slabs:
+            items = [item for available in available_stock for item in
+                     available.items.filter(is_reserve=False)]
+            reserve_items = [item for available in available_stock for item in
+                             available.items.filter(is_reserve=True)]
+            piece = len(items)
+            quantity = sum(item.get_quantity() for item in items)
+            reserve_piece = len(reserve_items)
+            reserve_quantity = sum(item.get_quantity() for item in reserve_items)
+        else:
+            piece = sum(available.piece for available in available_stock)
+            reserve_piece = sum(available.reserve_piece for available in available_stock)
+            quantity = sum(available.quantity for available in available_stock)
+            reserve_quantity = sum(available.reserve_quantity for available in available_stock)
         return (piece - reserve_piece), (quantity - reserve_quantity)

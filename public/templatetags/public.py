@@ -13,6 +13,9 @@ def model_name(obj):
     except AttributeError:
         return None
 
+@register.filter
+def percentage(value):
+    return format(value, "%")
 
 # template_filters.py
 

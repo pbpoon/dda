@@ -1,4 +1,3 @@
-
 from django.db import models
 from django.urls import reverse
 
@@ -13,6 +12,7 @@ class BlockCheckInOrder(MrpOrderAbstract):
     counter = models.IntegerField('货柜数', blank=True, null=True)
     purchase_order = models.ForeignKey('purchase.PurchaseOrder', on_delete=models.CASCADE, verbose_name='采购订单',
                                        related_name='block_check_in_order')
+
     warehouse = models.ForeignKey('stock.Warehouse', on_delete=models.CASCADE, verbose_name='卸货仓库')
 
     class Meta:
@@ -22,7 +22,7 @@ class BlockCheckInOrder(MrpOrderAbstract):
         return reverse('block_check_in_detail', args=[self.id])
 
     def get_create_item_url(self):
-        return reverse('block_check_in_item_create')
+        return reverse('block_check_in_item_create', args=[self.id])
 
     def get_location(self):
         return self.purchase_order.partner.get_location()
@@ -40,4 +40,3 @@ class BlockCheckInOrderItem(OrderItemBase):
 
     class Meta:
         verbose_name = '荒料到货入库单明细行'
-

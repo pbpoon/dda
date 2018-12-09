@@ -14,7 +14,7 @@
             url: '{% url "get_draft_package_list_info" %}',
             data: {'pk': object_id},
             success: function (data) {
-                if (data['status'] == 'success') {
+                if (data['state'] == 'ok') {
                     for (var x in data) {
                         $('#item_form [name=' + x + ']').val(data[x])
                     }

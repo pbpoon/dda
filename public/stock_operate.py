@@ -176,7 +176,10 @@ class StockOperate:
         error = []
         for item in self.items:
             if not item.location.is_virtual:
-                av_piece, av_quantity = self.get_available(product=item.product, location=item.location)
+                package_list = getattr(item, 'package_list', None)
+                slabs = Slab.objects.filter(
+                    id__in=package_list.items.values_list('slab', flat=True)) if package_list else None
+                av_piece, av_quantity = self.get_available(product=item.product, location=item.location, slabs=slabs)
                 if (av_piece - item.piece) < 0:
                     error.append('{product}#可以库存为:{av_piece}件/{av_quantity}{uom},超出需求{piece}件/{quantity}{uom}'.format(
                         product=item.product, av_piece=av_piece, av_quantity=av_quantity, piece=item.piece,
@@ -185,13 +188,17 @@ class StockOperate:
             return False, error
         return True, error
 
-    @transaction.atomic()
+    # @transaction.atomic()
     def reserve_stock(self, unlock=False):
         state = -1 if unlock else 1
-        clean, error = self.clean_items()
+
+        if not unlock:
+            clean, error = self.clean_items()
+        else:
+            clean = True
         if clean:
             # 创建数据库事务保存点
-            sid = transaction.savepoint()
+            # sid = transaction.savepoint()
             for item in self.items:
                 if not item.location.is_virtual:
                     package_list = getattr(item, 'package_list', None)
@@ -201,19 +208,19 @@ class StockOperate:
                                                quantity=state * item.quantity, slabs=slabs):
                         break
             else:
-                transaction.savepoint_commit(sid)
+                # transaction.savepoint_commit(sid)
                 return True, '成功锁定库存'
                 # 回滚数据库到保存点
-            transaction.rollback(sid)
+            # transaction.rollback(sid)
             return False, '锁定库存失败'
         return False, error
 
-    @transaction.atomic()
+    # @transaction.atomic()
     def handle_stock(self):
         clean, error = self.clean_items()
         if clean:
             # 创建数据库事务保存点
-            sid = transaction.savepoint()
+            # sid = transaction.savepoint()
             # 操作出库
             for item in self.items:
                 if not item.location.is_virtual:
@@ -235,9 +242,9 @@ class StockOperate:
 
             else:
                 # 更新数据库
-                transaction.savepoint_commit(sid)
+                # transaction.savepoint_commit(sid)
                 return True, '成功更新库存'
             # 回滚数据库到保存点
-            transaction.rollback(sid)
+            # transaction.rollback(sid)
             return False, '更新库存失败'
         return False, error

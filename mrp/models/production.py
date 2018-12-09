@@ -119,7 +119,7 @@ class ProductionOrderRawItem(OrderItemBase):
 
 class ProductionOrderProduceItem(OrderItemBase):
     order = models.ForeignKey(ProductionOrder, on_delete=models.CASCADE, related_name='produce_items',
-                              verbose_name='对应界石单')
+                              verbose_name='对应生产单')
     raw_item = models.ForeignKey('ProductionOrderRawItem', on_delete=models.CASCADE, related_name='produces',
 
                                  verbose_name='原材料')
@@ -127,7 +127,7 @@ class ProductionOrderProduceItem(OrderItemBase):
                                 null=True)
     thickness = models.DecimalField('厚度规格', max_digits=5, decimal_places=2, blank=True, null=True)
     quantity = models.DecimalField('数量', decimal_places=2, max_digits=10, null=True, blank=True)
-    price = models.DecimalField('单价', max_digits=8, decimal_places=2, help_text='立方单价', null=True, blank=True)
+    price = models.DecimalField('单价', max_digits=8, decimal_places=2, null=True, blank=True)
     draft_package_list = models.ForeignKey('product.DraftPackageList', on_delete=models.SET_NULL, blank=True, null=True,
                                            verbose_name='草稿码单')
     package_list = models.ForeignKey('product.PackageList', on_delete=models.SET_NULL, blank=True, null=True,

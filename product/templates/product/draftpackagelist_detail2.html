@@ -36,7 +36,7 @@
                                 <td>{{ item }}</td>
                                 <td>{{ item.get_quantity }}</td>
                                 <td>
-                                    <a href="#!" onclick="edit_item({{ item.id }},'{% url 'package_list_draft_item_edit' %}')">
+                                    <a href="#!" onclick="edit_item('{% url 'package_list_draft_item_edit' %}')">
                                         修改
                                     </a>
                                     <a href="#!" onclick="item_remove({{ item.id }},'{% url 'package_list_draft_item_delete' 9999 %}')">

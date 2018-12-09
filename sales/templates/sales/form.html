@@ -1,5 +1,6 @@
 {% extends 'list.html' %}
 {% load materializecss %}
+{% load static %}
 {% block content %}
     <form action="" method="post">
         <ul>
@@ -9,7 +10,9 @@
                 </li>
             {% endfor %}
         </ul>
-        {{ form|materializecss }}
+        {{ form.media.css }}
+        {{ form.as_p }}
+        {{ form.meida.js }}
         {% csrf_token %}
         {% if formset %}
 
@@ -46,4 +49,7 @@
         <input class="btn btn-block" type="submit" value="确定">
 
     </form>
+     <script src="{% static 'select2-materialize/select2.js' %}"></script>
+        <script type="text/javascript" src="{% static 'admin/js/vendor/jquery/jquery.js' %}"></script>
+
 {% endblock %}

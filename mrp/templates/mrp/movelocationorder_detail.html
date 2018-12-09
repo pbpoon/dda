@@ -1,5 +1,6 @@
 {% extends 'mrp/detail.html' %}
 {% load materializecss %}
+{% load public %}
 {{ form.media }}
 {% block content %}
     <table class="table table-sm">
@@ -11,20 +12,23 @@
             <th>编辑</th>
         </tr>
         </thead>
-
         <tbody>
         {% for item in object_list %}
             <tr id="block_list_tr">
                 <td>{{ item.product }}</td>
-                <td>{% if item.package_list %}
-                    <a href="#"
-                       onclick="open_package_list('{{ item.package_list.get_absolute_url }}','{{ object.state }}')">
-                        {{ item.package_list.get_part }}夹/ {{ item.piece }}件/
-                        {{ item.quantity }}{{ item.product.get_uom }}</a>
-                {% else %}
-                    {{ item.piece }}件/
-                    {{ item.quantity }}{{ item.product.get_uom }}
-                {% endif %}
+                <td>
+                    {% if item.package_list %}
+                        <a href="#"
+                           onclick="open_package_list('{{ item.package_list.get_absolute_url }}','{{ object.state }}')">
+                            {{ item.package_list.get_part }}夹/ {{ item.piece }}件/
+                            {{ item.quantity }}{{ item.product.get_uom }}</a>
+                    {% elif item.product.type == 'slab' %}
+                        <a href="#"
+                           onclick="open_package_list('{% url 'order_item_package_create' item|model_name item.id item.product.id item.location.id %}')">挑选货品</a>
+                    {% else %}
+                        {{ item.piece }}件/
+                        {{ item.quantity }}{{ item.product.get_uom }}
+                    {% endif %}
                 </td>
                 <td>{{ item.location }}=>{{ item.location_dest }}</td>
                 <td>{% if object.state == 'draft' %}
@@ -36,7 +40,7 @@
                     <!-- Dropdown Structure -->
                     <ul id='dropdown1' class='dropdown-content'>
                         <li>
-                            <a onclick="edit_item({{ item.id }}, '{% url 'move_location_order_item_edit' item.id %}')">修改
+                            <a onclick="edit_item('{% url 'move_location_order_item_edit' item.id %}')">修改
                             </a>
                         </li>
                         <li>

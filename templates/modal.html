@@ -60,24 +60,5 @@
 </div>
 
 {% block script %}
-    <script>
-        $('#select_slab_form_submit').on('click', function () {
-            var $form = $('#select_slab_form');
-            var url = $form.attr('action');
-            $.ajax({
-                url: url,
-                data: $form.serialize(),
-                method: 'POST',
-                success: function (data) {
-                    md_package_list.modal('close')
-                    window.location.reload()
-                },
-                error: function (e) {
-                    alert('网络遇到错误')
-                }
-            })
-        });
 
-
-    </script>
 {% endblock %}

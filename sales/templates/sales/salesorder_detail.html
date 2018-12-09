@@ -20,7 +20,8 @@
             <tr>
                 <td>{{ item.line }}</td>
                 <td>{{ item.product }}</td>
-                <td><a href="#" onclick="open_package_list('{{ item.package_list.get_absolute_url }}','{{ object.state }}')">
+                <td><a href="#"
+                       onclick="open_package_list('{{ item.package_list.get_absolute_url }}','{{ object.state }}')">
                     {{ item.piece }}件 / {% if item.package_list %} {{ item.package_list.get_part }}夹
                     / {% endif %}{{ item.quantity }}</a></td>
                 <td>{{ item.price }}</td>
@@ -34,7 +35,7 @@
                     <!-- Dropdown Structure -->
                     <ul id='dropdown1' class='dropdown-content'>
                         <li>
-                            <a onclick="edit_item({{ item.id }}, '{% url 'sales_order_item_edit' item.id %}')">修改
+                            <a onclick="edit_item( '{% url 'sales_order_item_edit' item.id %}')">修改
                             </a>
                         </li>
                         <li>
@@ -53,8 +54,23 @@
 
 {% block headline %}
     {{ object.get_state_display }}{{ object.order }}
+    <div class="progress">
+        <div class="determinate" style="width: {{ object.get_out_order_progress|percentage }}"></div>
+    </div>
 {% endblock %}
 {% block subheadline %}
     业务伙伴：{{ object.partner }} / 经办人:{{ object.handler }}
+    {% if object.get_out_order_progress < 1 %}
+        <a class="right" href="{% url 'sales_order_out_order' object.id %}">提货</a>
+    {% endif %}
+{% endblock %}
+{% block sidebar %}
+    <div class="collection">
+        <a href="#!" class="collection-item">相关提货单</a>
+        {% for order in object.in_out_order.all %}
+            <a href="{{ order.get_absolute_url }}" class="collection-item">{{ order }}</a>
+        {% endfor %}
+
+    </div>
 {% endblock %}
 

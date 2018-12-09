@@ -220,9 +220,13 @@ class Slab(SlabAbstract):
 
 class PackageList(models.Model):
     product = models.ForeignKey('Product', on_delete=models.CASCADE, related_name='package_listed', verbose_name='产品')
+    from_package_list = models.ForeignKey('self', on_delete=models.SET_NULL, verbose_name='创建自', blank=True, null=True)
 
     class Meta:
         verbose_name = '码单'
+
+    def __str__(self):
+        return str(self.product)
 
     def get_quantity(self, number=None):
         qs = self.items.all()
@@ -245,13 +249,10 @@ class PackageList(models.Model):
     def get_absolute_url(self):
         return reverse('package_detail', args=[self.id])
 
-    def __str__(self):
-        return str(self.product)
-
     @staticmethod
-    def make_package_from_list(product_id, lst):
+    def make_package_from_list(product_id, lst, from_package_list=None):
         with transaction.atomic():
-            order = PackageList.objects.create(product_id=product_id)
+            order = PackageList.objects.create(product_id=product_id, from_package_list=from_package_list)
             for id in lst:
                 slab = Slab.objects.get(pk=id)
                 PackageListItem.objects.create(slab=slab, part_number=slab.part_number, order=order)
@@ -283,6 +284,10 @@ class PackageListItem(models.Model):
 
     def __str__(self):
         return str(self.slab)
+
+    @property
+    def is_reserve(self):
+        return self.slab.is_reserve
 
     def get_quantity(self):
         return self.slab.get_quantity()

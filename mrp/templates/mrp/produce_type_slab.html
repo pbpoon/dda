@@ -16,11 +16,11 @@
         <tr id="block_list_tr">
             <td>原料</td>
             <td>{{ item.product }}</td>
-                <td>
-                    {% with available=item.product|add_arg:object.location|call:"get_available" %}
-                        {{ available.0 }}件 / {{ available.1 }}{{ item.product.get_uom }}(可用)
-                    {% endwith %}
-                </td>
+            <td>
+                {% with available=item.product|add_arg:object.location|call:"get_available" %}
+                    {{ available.0 }}件 / {{ available.1 }}{{ item.product.get_uom }}(可用)
+                {% endwith %}
+            </td>
             <td></td>
             <td></td>
             <td>{% if object.state == 'draft' %}
@@ -32,7 +32,7 @@
                 <!-- Dropdown Structure -->
                 <ul id='dropdown1' class='dropdown-content'>
                     <li>
-                        <a onclick="edit_item({{ item.id }}, '{% url 'production_raw_item_edit' item.id %}')">修改
+                        <a onclick="edit_item('{% url 'production_raw_item_edit' item.id %}')">修改
                         </a>
                     </li>
                     <li>
@@ -54,13 +54,14 @@
                     <td></td>
                     <td>{{ produce.product }}</td>
                     <td>{% if produce.package_list %}
-                        <a href="#" onclick="open_package_list('{{ produce.package_list.get_absolute_url }}','{{ object.state }}')">
-                        {{ produce.package_list.get_part }}夹/ {{ produce.piece }}件/
-                        {{ produce.quantity }}{{ produce.product.get_uom }}</a>
-                        {% else %}
+                        <a href="#"
+                           onclick="open_package_list('{{ produce.package_list.get_absolute_url }}','{{ object.state }}')">
+                            {{ produce.package_list.get_part }}夹/ {{ produce.piece }}件/
+                            {{ produce.quantity }}{{ produce.product.get_uom }}</a>
+                    {% else %}
                         {{ produce.piece }}件/
                         {{ produce.quantity }}{{ produce.product.get_uom }}
-                        {% endif %}
+                    {% endif %}
                     </td>
                     <td>{{ produce.price }}</td>
                     <td>{{ produce.get_amount }}</td>
@@ -70,10 +71,10 @@
                         <!-- Dropdown Structure -->
                         <ul id='dropdown2' class='dropdown-content'>
                             <li>
-                                <a onclick="edit_item({{ produce.id }}, '{% url 'production_produce_item_edit' produce.id %}')">
+                                <a onclick="edit_item( '{% url 'production_produce_item_edit' produce.id %}')">
                                     修改</a></li>
                             <li>
-                                <a onclick="item_remove({{ produce.id }},'{% url 'production_produce_item_delete' 9999 %}')">
+                                <a onclick="item_remove({{ item.id }},'{% url 'production_produce_item_delete' 9999 %}')">
                                     删除</a></li>
                         </ul>
                     {% endif %}

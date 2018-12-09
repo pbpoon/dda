@@ -4,104 +4,48 @@
 from django import forms
 from django.urls import reverse, reverse_lazy
 
-from mrp.models import ProductionOrder, ProductionOrderRawItem, ProductionOrderProduceItem
+from mrp.models import ProductionOrder, ProductionOrderRawItem, ProductionOrderProduceItem, InOutOrder, InOutOrderItem, \
+    Expenses
 from product.models import Product
-from stock.models import Location
-from mrp.models import BlockCheckInOrder,  BlockCheckInOrderItem, \
-    MoveLocationOrder, MoveLocationOrderItem
+from stock.models import Location, Warehouse
+from mrp.models import MoveLocationOrder, MoveLocationOrderItem
 
-
-class BlockCheckInOrderForm(forms.ModelForm):
-    class Meta:
-        model = BlockCheckInOrder
-        exclude = ('location', 'location_dest')
-        widgets = {
-            'entry': forms.HiddenInput,
-            'purchase_order': forms.HiddenInput,
-            'order': forms.HiddenInput,
-            'state': forms.HiddenInput,
-        }
-
-
-class BlockCheckInOrderItemForm(forms.ModelForm):
-    class Meta:
-        model = BlockCheckInOrderItem
-        exclude = ('location', 'location_dest')
-        widgets = {
-            'order': forms.HiddenInput,
-        }
-
-    def __init__(self, *args, **kwargs):
-        order = kwargs.pop('block_check_in_order')
-        super(BlockCheckInOrderItemForm, self).__init__(*args, **kwargs)
-        if kwargs.get('instance', None) is None:
-            already_check_in_products = [i.product.id for i in order.purchase_order.items.filter(
-                order__block_check_in_order__state__in=('confirm', 'done'))]
-            already_check_in_products.extend([i.product.id for i in order.items.all()])
-            products = [i.product.id for i in order.purchase_order.items.all() if
-                        i.product.id not in already_check_in_products]
-            qs = Product.objects.filter(id__in=products)
-            url = reverse_lazy('get_product_info')
-            self.fields['product'].queryset = qs
-            self.fields['product'].widget.attrs = {
-                'onchange': 'set_onchange({},"{}","quantity")'.format('this.value', url)}
 
 #
-# class KesOrderForm(forms.ModelForm):
+# class BlockCheckInOrderForm(forms.ModelForm):
 #     class Meta:
-#         model = KesOrder
-#         exclude = ('order', 'location', 'location_dest', 'state')
-#         widgets = {
-#             'entry': forms.HiddenInput,
-#         }
-
-#
-# class KesOrderRawItemForm(forms.ModelForm):
-#     class Meta:
-#         model = KesOrderRawItem
+#         model = BlockCheckInOrder
 #         exclude = ('location', 'location_dest')
 #         widgets = {
-#             'piece': forms.HiddenInput,
+#             'entry': forms.HiddenInput,
+#             'purchase_order': forms.HiddenInput,
+#             'order': forms.HiddenInput,
+#             'state': forms.HiddenInput,
+#         }
+#
+#
+# class BlockCheckInOrderItemForm(forms.ModelForm):
+#     class Meta:
+#         model = BlockCheckInOrderItem
+#         exclude = ('location', 'location_dest')
+#         widgets = {
 #             'order': forms.HiddenInput,
 #         }
 #
 #     def __init__(self, *args, **kwargs):
-#         kes_order = kwargs.pop('kes_order')
-#         super(KesOrderRawItemForm, self).__init__(*args, **kwargs)
-#         # 按order的原材料的type来筛选product的query_set
-#         if kwargs.get('instance', None):
-#             # 如果是编辑状态，就把本荒料编号添加上
-#             qs = Product.objects.filter(id=kwargs.get('instance').product.id)
-#         elif kes_order and kes_order.items.all():
-#             # 如果是是新建状态，并且本order已经有原材料行，就把已经填写的原料的的产品剔出
-#             qs = Product.objects.filter(type='block', stock__isnull=False).exclude(
-#                 pk__in=[int(item.product.id) for item in kes_order.items.all()])
-#         else:
-#             # 如果是完全新建状态，就直接按order的原材料的type来筛选product
-#             qs = Product.objects.filter(type='block', stock__isnull=False)
-#         # 把qs赋值到product的queryset
-#         self.fields['product'].queryset = qs
-#         # onchange的ajax取数据url
-#         url = reverse_lazy('get_product_info')
-#         self.fields['product'].widget.attrs = {
-#             'onchange': 'onchange_set_product_info({},"{}","quantity")'.format('this.value', url)}
-#
-#
-# class KesOrderProduceItemForm(forms.ModelForm):
-#     class Meta:
-#         model = KesOrderProduceItem
-#         fields = ('order', 'raw_item', 'thickness', 'piece')
-#         widgets = {
-#             'order': forms.HiddenInput,
-#             'raw_item': forms.HiddenInput,
-#         }
-#
-#     def clean_thickness(self):
-#         thickness = self.cleaned_data['thickness']
-#         raw_item = KesOrderRawItem.objects.get(id=self.cleaned_data['raw_item'].id)
-#         if thickness in {item.thickness for item in raw_item.produces.all()} and self.cleaned_data['product']:
-#             raise forms.ValidationError('该编号{}#已有相同的的厚度毛板存在！同一编号不允许有重复厚度的毛板行！'.format(raw_item.product))
-#         return thickness
+#         order = kwargs.pop('block_check_in_order')
+#         super(BlockCheckInOrderItemForm, self).__init__(*args, **kwargs)
+#         if kwargs.get('instance', None) is None:
+#             already_check_in_products = [i.product.id for i in order.purchase_order.items.filter(
+#                 order__block_check_in_order__state__in=('confirm', 'done'))]
+#             already_check_in_products.extend([i.product.id for i in order.items.all()])
+#             products = [i.product.id for i in order.purchase_order.items.all() if
+#                         i.product.id not in already_check_in_products]
+#             qs = Product.objects.filter(id__in=products)
+#             url = reverse_lazy('get_product_info')
+#             self.fields['product'].queryset = qs
+#             self.fields['product'].widget.attrs = {
+#                 'onchange': 'set_onchange({},"{}","quantity")'.format('this.value', url)}
 
 
 class MoveLocationOrderForm(forms.ModelForm):
@@ -120,6 +64,15 @@ class MoveLocationOrderItemForm(forms.ModelForm):
         widgets = {
             'order': forms.HiddenInput,
         }
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if not instance.package_list and instance.product.type == 'slab':
+            instance.piece = 0
+            instance.quantity = 0
+        if commit:
+            instance.save()
+        return instance
 
     def __init__(self, *args, **kwargs):
         order = kwargs.pop('move_order')
@@ -253,3 +206,49 @@ class ProductionOrderProduceItemForm(forms.ModelForm):
         if thickness in {item.thickness for item in raw_item.produces.all()} and self.cleaned_data.get('product'):
             raise forms.ValidationError('该编号{}#已有相同的的厚度毛板存在！同一编号不允许有重复厚度的毛板行！'.format(raw_item.product))
         return thickness
+
+
+class InOutOrderForm(forms.ModelForm):
+    class Meta:
+        model = InOutOrder
+        exclude = ('location', 'location_dest')
+        widgets = {
+            'entry': forms.HiddenInput,
+            'purchase_order': forms.HiddenInput,
+            'sales_order': forms.HiddenInput,
+            'order': forms.HiddenInput,
+            'state': forms.HiddenInput,
+            'type': forms.HiddenInput,
+            'partner': forms.HiddenInput,
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        sales_order = kwargs['initial'].get('sales_order')
+        if sales_order:
+            self.fields['counter'].widget = forms.HiddenInput()
+            qs = Warehouse.objects.filter(id__in=[item.location.warehouse.id for item in sales_order.items.all()])
+            self.fields['warehouse'].queryset = qs
+        else:
+            self.fields['cart_number'].widget = forms.HiddenInput()
+            self.fields['pickup_staff'].widget = forms.HiddenInput()
+
+
+class InOutOrderItemForm(forms.ModelForm):
+    class Meta:
+        model = InOutOrderItem
+        exclude = ('location', 'location_dest')
+        widgets = {
+            'order': forms.HiddenInput,
+            'package_list': forms.HiddenInput,
+        }
+
+
+class MrpItemExpensesForm(forms.ModelForm):
+    class Meta:
+        model = Expenses
+        fields = '__all__'
+        widgets = {
+            'content_type': forms.HiddenInput,
+            'object_id': forms.HiddenInput,
+        }

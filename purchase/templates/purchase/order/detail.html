@@ -4,7 +4,7 @@
 {% block headline %}{{ object.get_state_display }}{{ object.order }}{% endblock %}
 {% block subheadline %}
     供应商：{{ object.partner }} / 经办人：{{ object.handler }}
-    <a href="{% url 'block_check_in_create' object.id %}" class="float-right">收货</a>
+    <a href="{% url 'purchase_order_in_order' object.id %}" class="float-right">收货</a>
 {% endblock %}
 {% block btn %}
 
@@ -42,7 +42,7 @@
                     {% if object.state == 'draft' %}
                         <div class="btn-group">
                             <button class="btn btn-outline-primary"
-                                    onclick="edit_item({{ item.id }}, '{% url 'purchase_order_item_edit' %}')">修改
+                                    onclick="edit_item('{% url 'purchase_order_item_edit' item.id %}')">修改
                             </button>
                             <button class="btn btn-outline-danger"
                                     onclick="item_remove({{ item.id }},'{% url 'purchase_order_item_delete' 9999 %}')">
@@ -56,7 +56,9 @@
         </tbody>
         <tfoot>
         <tr>
-            <td></td>
+            <td>
+                <a href="#" onclick="add_item('{{ object.get_create_item_url }}')">添加</a>
+            </td>
             <td></td>
             <td></td>
             <td></td>

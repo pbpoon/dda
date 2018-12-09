@@ -29,7 +29,7 @@
                 <!-- Dropdown Structure -->
                 <ul id='dropdown1' class='dropdown-content'>
                     <li>
-                        <a onclick="edit_item({{ item.id }}, '{% url 'production_raw_item_edit' item.id %}')">修改
+                        <a onclick="edit_item('{% url 'production_raw_item_edit' item.id %}')">修改
                         </a>
                     </li>
                     <li>
@@ -61,10 +61,10 @@
                         <!-- Dropdown Structure -->
                         <ul id='dropdown2' class='dropdown-content'>
                             <li>
-                                <a onclick="edit_item({{ produce.id }}, '{% url 'production_produce_item_edit' produce.id  %}')">
+                                <a onclick="edit_item( '{% url 'production_produce_item_edit' produce.id  %}')">
                                     修改</a></li>
                             <li>
-                                <a onclick="item_remove({{ produce.id }},'{% url 'production_produce_item_delete' 9999 %}')">
+                                <a onclick="item_remove({{ item.id }},'{% url 'production_produce_item_delete' 9999 %}')">
                                     删除</a></li>
                         </ul>
                     {% endif %}

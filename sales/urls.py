@@ -14,14 +14,13 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.urls import path
-from django.urls import include
 from . import views
 
 
 urlpatterns = [
     path('order/item/delete/<pk>/', views.SalesOrderItemDeleteView.as_view(), name='sales_order_item_delete'),
     path('order/item/edit/<pk>/', views.SalesOrderItemEditView.as_view(), name='sales_order_item_edit'),
-    path('order/item/edit/', views.SalesOrderItemEditView.as_view(), name='sales_order_item_create'),
+    path('order/item/create/<order_id>/', views.SalesOrderItemEditView.as_view(), name='sales_order_item_create'),
     path('order/update/<pk>/', views.SalesOrderUpdateView.as_view(), name='sales_order_update'),
     path('order/quick/create/', views.SalesOrderQuickCreateView.as_view(), name='sales_order_quick_create'),
     path('order/create/', views.SalesOrderCreateView.as_view(), name='sales_order_create'),

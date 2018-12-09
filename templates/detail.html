@@ -17,7 +17,6 @@
     {% block action_btn %}
         {% include 'float_btn.html' %}
     {% endblock %}
-    {% include 'modal.html' %}
 {% endblock %}
 
 {% block main %}
@@ -31,10 +30,15 @@
             </div>
         </div>
         <div class="col s12 m4 l4">
-{#            <div class="card-panel white">#}
-                {% block sidebar %}
-                {% endblock %}
-{#            </div>#}
+            {#            <div class="card-panel white">#}
+            {% block sidebar %}
+            {% endblock %}
+            {#            </div>#}
         </div>
     </div>
+        {% include 'modal.html' %}
+
+{% endblock %}
+{% block footer %}
+    {{ block.super }}
 {% endblock %}

@@ -5,14 +5,16 @@
 
             <a href="{{ object.get_absolute_url }}" class="collection-item">
                 <span class="new badge {% if object.state == 'draft' %}red{% elif object.state == 'cancel' %}default{% else %}blue{% endif %}"
-                    data-badge-caption="{{ object.get_state_display }}"></span>{{ object }}<span>@
+                      data-badge-caption="{{ object.get_state_display }}"></span>{{ object }}<span>@
                 {{ object.created|date:"SHORT_DATE_FORMAT" }}</span>
             </a>
         {% endfor %}
     </div>
-    <div class="fixed-action-btn">
-        <a href="{% block add_url %}{% endblock %}" class="btn-floating btn-large red">
-            <i class="large material-icons">add</i>
-        </a>
-    </div>
+    {% block action_btn %}
+        <div class="fixed-action-btn">
+            <a href="{% block add_url %}{% endblock %}" class="btn-floating btn-large red">
+                <i class="large material-icons">add</i>
+            </a>
+        </div>
+    {% endblock %}
 {% endblock %}

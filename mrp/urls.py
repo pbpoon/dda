@@ -5,6 +5,20 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    # ------------------------------------------------expenses
+
+    path('expenses_item_update/<pk>/', views.MrpExpenseItemUpdateView.as_view(),
+         name='expenses_item_update'),
+    path('expenses_item_create/', views.MrpExpenseItemCreateView.as_view(),
+         name='expenses_item_create'),
+    path('expenses_item/', views.MrpExpensesItemListView.as_view(),
+         name='expenses_item_list'),
+    path('expenses_edit/<item_model>/<item_id>/<pk>/', views.MrpItemExpenseEditView.as_view(),
+         name='mrp_item_expenses_edit'),
+    path('expenses_create/<item_model>/<item_id>/', views.MrpItemExpenseEditView.as_view(),
+         name='mrp_item_expenses_create'),
+    # ------------------------------------------------move order
+
     path('move_order/item/create/<order_id>/', views.MoveLocationOrderItemEditView.as_view(),
          name='move_location_order_item_create'),
     path('move_order/item/delete/<pk>', views.MoveLocationOrderItemDeleteView.as_view(),
@@ -15,18 +29,6 @@ urlpatterns = [
     path('move_order/create/', views.MoveLocationOrderCreateView.as_view(), name='move_location_order_create'),
     path('move_order/<pk>/', views.MoveLocationOrderDetailView.as_view(), name='move_location_order_detail'),
     path('move_order/', views.MoveLocationOrderListView.as_view(), name='move_location_order_list'),
-    # ------------------------------------------------block check in order
-
-    path('block_check_in/create/<int:purchase_order_id>', views.BlockCheckInOrderCreateView.as_view(),
-         name='block_check_in_create'),
-    path('block_check_in/<int:pk>/<int:purchase_order_id>', views.BlockCheckInOrderUpdateView.as_view(),
-         name='block_check_in_update'),
-    path('block_check_in/<int:pk>/', views.BlockCheckInOrderDetailView.as_view(), name='block_check_in_detail'),
-
-    path('block_check_in/item/edit/', views.BlockCheckInOrderItemEditView.as_view(), name='block_check_in_item_edit'),
-    path('block_check_in/item/delete/<pk>', views.BlockCheckInOrderItemDeleteView.as_view(),
-         name='block_check_in_item_delete'),
-    path('block_check_in/', views.BlockCheckInOrderListView.as_view(), name='block_check_in_list'),
 
     # ------------------------------------------------production order
     path('production/produce_item/create/<order_id>/<item_id>/', views.ProductionOrderProduceItemEditView.as_view(),
@@ -50,4 +52,17 @@ urlpatterns = [
     path('production_type/create/', views.ProductionTypeCreateView.as_view(), name='production_type_create'),
     path('production_type/<pk>/', views.ProductionTypeDetailView.as_view(), name='production_type_detail'),
     path('production_type/', views.ProductionTypeListView.as_view(), name='production_type_list'),
+    # ------------------------------------------------In Out Order
+
+    path('in_order/purchase_order/create/<int:purchase_order_id>/', views.PurchaseOrderInOrderCreateView.as_view(),
+         name='purchase_order_in_order'),
+    path('out_order/sales_order/<int:sales_order_id>/', views.SalesOrderInOrderCreateView.as_view(),
+         name='sales_order_out_order'),
+    path('in_out_order/item/delete/<pk>/', views.InOutOrderItemDeleteView.as_view(), name='in_out_order_item_delete'),
+    path('in_out_order/item/create/<order_id>/', views.InOutOrderItemEditView.as_view(),
+         name='in_out_order_item_create'),
+    path('in_out_order/item/edit/<pk>/', views.InOutOrderItemEditView.as_view(), name='in_out_order_item_edit'),
+    path('in_out_order/<pk>/', views.InOutOrderDetailView.as_view(), name='in_out_order_detail'),
+    path('in_out_order/', views.InOutOrderListView.as_view(), name='in_out_order_list'),
+
 ]
