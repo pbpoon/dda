@@ -9,11 +9,12 @@
                     {{ error }}:{{ error.label_tag }}
                 </li>
             {% endfor %}
+            <script src="{% static 'js/autocomplete.js' %}"></script>
+
+            {{ form.as_ul }}
+            {{ form.meida }}
+            {% csrf_token %}
         </ul>
-        {{ form.media.css }}
-        {{ form.as_p }}
-        {{ form.meida.js }}
-        {% csrf_token %}
         {% if formset %}
 
             <table class="table">
@@ -49,7 +50,55 @@
         <input class="btn btn-block" type="submit" value="确定">
 
     </form>
-     <script src="{% static 'select2-materialize/select2.js' %}"></script>
-        <script type="text/javascript" src="{% static 'admin/js/vendor/jquery/jquery.js' %}"></script>
+    <script src="{% static 'js/jquery.cityselect.js' %}"></script>
+    <script type="text/javascript" src="{% static 'admin/js/vendor/jquery/jquery.js' %}"></script>
 
 {% endblock %}
+<script>
+    var ajax_url;
+    var iNum1;
+    var iNum2;
+    var aProvince = ['湖北', '江苏', '安徽'];
+    var aCity = [['武汉', '黄冈', '荆门'], ['南京', '无锡', '镇江'], ['合肥', '安庆', '黄山']];
+    var aCountry = [[['武汉1', '武汉2'], ['黄冈1', '黄冈2'], ['荆门1', '荆门2']], [['南京1', '南京2'], ['无锡1', '无锡2'], ['镇江1', '镇江2']], [['合肥1', '合肥2'], ['安庆1', '安庆2'], ['黄山1', '黄山2']]];
+    var DATA
+
+    function get_address() {
+        $.ajax({
+            url: ajax_url,
+            method: 'GET',
+            data: {
+                'prov': $('input.prov').val(),
+                'city': $('input.city').val()
+            },
+            success: function (data) {
+                DATA = data
+            }
+        })
+    }
+
+
+    $(function () {
+        {#for (var i = 0; i < aProvince.length; i++) {#}
+        {#    $('#selProvince').append('<option>' + aProvince[i] + '</option>');#}
+        //}
+        {#;#}
+        $('.prov').change(function () {
+            var $prov = $('input.prov').val();
+            $('.city').children().not(':eq(0)').remove();
+            {#iNum1 = $(this).children('option:selected').index();#}
+            for (var c in DATA[$prov]['city']) {
+                $('#selCity').append('<option value=' + c['id'] + '>' + c['name'] + '</option>');
+            }
+        });
+        $('#selCity').change(function () {
+            $('#selCountry').children().not(':eq(0)').remove();
+            iNum2 = $(this).children('option:selected').index();
+            var aaCountry = aCountry[iNum1 - 1][iNum2 - 1];
+            for (var k = 0; k < aaCountry.length; k++) {
+                $('#selCountry').append('<option>' + aaCountry[k] + '</option>');
+            }
+        })
+    })
+
+</script>

@@ -26,7 +26,7 @@ class SalesOrderDetailView(StateChangeMixin, DetailView):
 class SalesOrderEditMixin(OrderFormInitialEntryMixin):
     model = SalesOrder
     form_class = SalesOrderForm
-    template_name = 'form.html'
+    template_name = 'sales/form.html'
 
 
 class SalesOrderCreateView(SalesOrderEditMixin, CreateView):

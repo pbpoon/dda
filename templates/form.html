@@ -1,8 +1,8 @@
 {% extends 'list.html' %}
 {% load materializecss %}
 {% block content %}
-    <form action="" method="post">
-        {{ form|materializecss }}
+    <form enctype="multipart/form-data" action="" method="post">
+        {{ form.as_p }}
         <input class="btn" type="submit" value="确定">
         {% csrf_token %}
     </form>

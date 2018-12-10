@@ -13,6 +13,17 @@ class SalesOrder(OrderAbstract):
     order = OrderField(order_str='SO', max_length=26, default='New', db_index=True, unique=True, verbose_name='订单号码', )
     partner = models.ForeignKey('partner.Partner', on_delete=models.CASCADE, limit_choices_to={'type': 'customer'},
                                 verbose_name='客户名称')
+    province = models.ForeignKey('partner.Province', verbose_name='省份', null=True, blank=True, on_delete=models.SET_NULL)
+    city = models.ForeignKey('partner.City', verbose_name='城市', null=True, blank=True, on_delete=models.SET_NULL)
+    area = models.ForeignKey('partner.Area', verbose_name='地区', null=True, blank=True, on_delete=models.SET_NULL)
+
+    def get_address(self):
+        if self.province:
+            address = self.province.name
+            address += '/{}'.format(self.city if self.city else self.province.get_city()[0].name)
+            address += '/{}'.format(self.area if self.area else self.province.get_city()[0].get_area()[0])
+            return address
+        return self.partner.get_address()
 
     class Meta:
         verbose_name = '销售订单'

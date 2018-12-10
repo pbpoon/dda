@@ -11,26 +11,48 @@ PARTNER_TYPE_CHOICES = (
 
 
 class Province(models.Model):
-    id = models.SmallIntegerField('id', primary_key=True)
+    # id = models.IntegerField('id')
     name = models.CharField('名称', max_length=20)
-    province_id = models.SmallIntegerField('省份id', help_text='用于与市级联动')
+    code = models.IntegerField(primary_key=True, verbose_name='省份id', help_text='用于与市级联动')
 
     class Meta:
         verbose_name = '省份列表'
         verbose_name_plural = verbose_name
+        ordering = ('code',)
 
     def __str__(self):
         return self.name
 
+    def get_city(self):
+        return City.objects.filter(code=self.code)
+
 
 class City(models.Model):
-    id = models.SmallIntegerField('id', primary_key=True)
+    id = models.IntegerField('id', primary_key=True)
     name = models.CharField('名称', max_length=20)
-    father_id = models.SmallIntegerField('对应省份id')
+    code = models.IntegerField('对应省份id')
 
     class Meta:
         verbose_name = '城市列表'
         verbose_name_plural = verbose_name
+        ordering = ('code', 'id')
+
+    def __str__(self):
+        return self.name
+
+    def get_area(self):
+        return Area.objects.filter(city=self.id)
+
+
+class Area(models.Model):
+    id = models.IntegerField('id', primary_key=True)
+    name = models.CharField('名称', max_length=20)
+    city = models.IntegerField('对应市id')
+
+    class Meta:
+        verbose_name = '地区'
+        verbose_name_plural = verbose_name
+        ordering = ('city', 'id')
 
     def __str__(self):
         return self.name
@@ -45,6 +67,7 @@ class Partner(models.Model):
     sex = models.CharField('性别', choices=(('male', '先生'), ('female', '女士')), null=True, blank=True, max_length=10)
     province = models.ForeignKey('Province', verbose_name='省份', null=True, blank=True, on_delete=models.SET_NULL)
     city = models.ForeignKey('City', verbose_name='城市', null=True, blank=True, on_delete=models.SET_NULL)
+    area = models.ForeignKey('Area', verbose_name='地区', null=True, blank=True, on_delete=models.SET_NULL)
     created = models.DateField('创建日期', auto_now_add=True)
     updated = models.DateTimeField('更新时间', auto_now=True)
     entry = models.ForeignKey(User, related_name='%(class)s_entry',
@@ -58,6 +81,14 @@ class Partner(models.Model):
     class Meta:
         verbose_name = '伙伴资料'
         unique_together = ['phone', 'name']
+
+    def get_address(self):
+        if self.province:
+            address = self.province.name
+            address += '/{}'.format(self.city if self.city else self.province.get_city()[0].name)
+            address += '/{}'.format(self.area if self.area else self.province.get_city()[0].get_area()[0])
+            return address
+        return None
 
     def get_title(self):
         return self.get_sex_display() or ""

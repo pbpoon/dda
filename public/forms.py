@@ -17,3 +17,7 @@ class LocationForm(forms.ModelForm):
         widgets = {
             'warehouse': forms.HiddenInput,
         }
+
+
+class AddExcelForm(forms.Form):
+    file = forms.FileField(label='上传文件')

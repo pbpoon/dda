@@ -38,7 +38,7 @@ def get_product_list(request):
     product_text = request.POST.get('product_autocomplete')
     if product_text:
         qs = qs.filter(block__name__icontains=product_text)
-    data = {str(p.name)+p.get_type_display(): {"id": p.id} for p in qs}
+    data = {str(p.name) + p.get_type_display(): {"id": p.id} for p in qs}
     return JsonResponse(data, safe=False)
 
 
@@ -165,9 +165,10 @@ class OrderItemPackageListCreateView(View):
     def post(self, *args, **kwargs):
         slab_list = self.request.POST.getlist('select')
         product_id = self.kwargs.get('product_id')
-        model_name = self.kwargs.get('model_name')
+        app_label_lower = self.kwargs.get('app_label_lower')
+        app_label, model_name = app_label_lower.split('.')
         package = PackageList.make_package_from_list(product_id, slab_list)
-        item = apps.get_model(app_label='mrp', model_name=model_name).objects.get(pk=self.kwargs.get('item_id'))
+        item = apps.get_model(app_label=app_label, model_name=model_name).objects.get(pk=self.kwargs.get('item_id'))
         item.package_list = package
         item.piece = package.get_piece()
         item.quantity = package.get_quantity()

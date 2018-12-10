@@ -20,10 +20,20 @@
             <tr>
                 <td>{{ item.line }}</td>
                 <td>{{ item.product }}</td>
-                <td><a href="#"
-                       onclick="open_package_list('{{ item.package_list.get_absolute_url }}','{{ object.state }}')">
-                    {{ item.piece }}件 / {% if item.package_list %} {{ item.package_list.get_part }}夹
-                    / {% endif %}{{ item.quantity }}</a></td>
+                <td>
+                    {% if item.package_list %}
+                        <a href="#"
+                           onclick="open_package_list('{{ item.package_list.get_absolute_url }}','{{ object.state }}')">
+                            {{ item.package_list.get_part }}夹/ {{ item.piece }}件/
+                            {{ item.quantity }}{{ item.product.get_uom }}</a>
+                    {% elif item.product.type == 'slab' %}
+                        <a href="#"
+                           onclick="open_package_list('{% url 'order_item_package_create' item|label_name item.id item.product.id item.location.id %}')">挑选货品</a>
+                    {% else %}
+                        {{ item.piece }}件/
+                        {{ item.quantity }}{{ item.product.get_uom }}
+                    {% endif %}
+                </td>
                 <td>{{ item.price }}</td>
                 <td>{{ item.amount }}</td>
                 <td>{% if object.state == 'draft' %}
@@ -54,23 +64,28 @@
 
 {% block headline %}
     {{ object.get_state_display }}{{ object.order }}
+    {% if object.in_out_order.all %}
     <div class="progress">
         <div class="determinate" style="width: {{ object.get_out_order_progress|percentage }}"></div>
     </div>
+    {% endif %}
 {% endblock %}
 {% block subheadline %}
     业务伙伴：{{ object.partner }} / 经办人:{{ object.handler }}
-    {% if object.get_out_order_progress < 1 %}
-        <a class="right" href="{% url 'sales_order_out_order' object.id %}">提货</a>
+    {% if object.state == 'confirm' %}
+        {% if object.get_out_order_progress < 1 %}
+            <a class="right" href="{% url 'sales_order_out_order' object.id %}">提货</a>
+        {% endif %}
     {% endif %}
 {% endblock %}
 {% block sidebar %}
-    <div class="collection">
-        <a href="#!" class="collection-item">相关提货单</a>
-        {% for order in object.in_out_order.all %}
-            <a href="{{ order.get_absolute_url }}" class="collection-item">{{ order }}</a>
-        {% endfor %}
-
-    </div>
+    {% if object.in_out_order.all %}
+        <div class="collection">
+            <a href="#!" class="collection-item">相关提货单</a>
+            {% for order in object.in_out_order.all %}
+                <a href="{{ order.get_absolute_url }}" class="collection-item">{{ order }}</a>
+            {% endfor %}
+        </div>
+    {% endif %}
 {% endblock %}
 
