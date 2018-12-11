@@ -17,8 +17,9 @@
     {% block action_btn %}
         {% include 'float_btn.html' %}
     {% endblock %}
-{% endblock %}
+    {% include 'modal.html' %}
 
+{% endblock %}
 {% block main %}
     <div class="row">
         <!--内容块，分content及sidebar-->
@@ -36,8 +37,6 @@
             {#            </div>#}
         </div>
     </div>
-        {% include 'modal.html' %}
-
 {% endblock %}
 {% block footer %}
     {{ block.super }}

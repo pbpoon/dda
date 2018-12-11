@@ -15,13 +15,11 @@ class SalesOrder(OrderAbstract):
                                 verbose_name='客户名称')
     province = models.ForeignKey('partner.Province', verbose_name='省份', null=True, blank=True, on_delete=models.SET_NULL)
     city = models.ForeignKey('partner.City', verbose_name='城市', null=True, blank=True, on_delete=models.SET_NULL)
-    area = models.ForeignKey('partner.Area', verbose_name='地区', null=True, blank=True, on_delete=models.SET_NULL)
 
     def get_address(self):
         if self.province:
             address = self.province.name
             address += '/{}'.format(self.city if self.city else self.province.get_city()[0].name)
-            address += '/{}'.format(self.area if self.area else self.province.get_city()[0].get_area()[0])
             return address
         return self.partner.get_address()
 
@@ -68,7 +66,7 @@ class SalesOrderItem(models.Model):
                                       on_delete=models.DO_NOTHING, blank=True, null=True)
     order = models.ForeignKey('SalesOrder', on_delete=models.CASCADE, related_name='items', verbose_name='销售订单')
     line = LineField(for_fields=['order'], blank=True, verbose_name='行')
-    product = models.ForeignKey('product.Product', on_delete=models.CASCADE, verbose_name='product')
+    product = models.ForeignKey('product.Product', on_delete=models.CASCADE, verbose_name='产品')
     piece = models.IntegerField('件', blank=True, null=True)
     quantity = models.DecimalField('数量', decimal_places=2, max_digits=10, blank=True, null=True)
     uom = models.CharField('计量单位', null=False, choices=UOM_CHOICES, max_length=10, default='t')

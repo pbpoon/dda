@@ -1,7 +1,7 @@
 function set_product(val) {
     $('input[name=product]').val(val)
     $.ajax({
-        url: '/product/product_info/',
+        url: '/product/product_info',
         method: 'GET',
         data: {'product': val},
         success: function (data) {
@@ -14,7 +14,7 @@ function set_product(val) {
 
 var DATA;//用来保存get到的数据
 // 实例化autocomplete组件
-var $ap = $('.autocomplete').autocomplete({
+var $ap = $('input.autocomplete').autocomplete({
     onAutocomplete: function (input) {
         // alert("aa" + DATA[input]['id'] + input);
 
@@ -28,7 +28,7 @@ var $ap = $('.autocomplete').autocomplete({
 });
 
 function get_autocomplete(url) {
-    var $form = $('#item_form');
+    var $form = $('form');
 
     $.ajax({
         url: url,

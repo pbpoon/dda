@@ -19,25 +19,30 @@ def get_product_info(request):
     product_id = request.GET.get('product')
     location_id = request.GET.get('location')
     product = get_object_or_404(Product, pk=product_id)
-    location = get_object_or_404(Location, pk=location_id) or None
+    location = get_object_or_404(Location, pk=location_id) if location_id else None
     piece, quantity = product.get_available(location=location)
     data = {'piece': piece, 'quantity': quantity}
     return JsonResponse(data)
 
 
 def get_product_list(request):
-    loc_id = request.POST.get('location')
-    wh_id = request.POST.get('warehouse')
+    loc_id = request.POST.get('location')  # production form 传来
+    wh_id = request.POST.get('warehouse')  # sale_order form 传来
+    type = request.POST.get('type', None)  # production form 传来
+
     if wh_id:
         loc_id = Warehouse.objects.get(pk=wh_id).get_main_location().id
         loc_childs = Location.objects.get(pk=loc_id).child.all()
         loc_id = [loc_id, ]
         if loc_childs:
             loc_id = [c.id for c in loc_childs].append(loc_id)
-    qs = Product.objects.filter(stock__location_id__in=loc_id).exclude(type='semi_slab')
+    if type:
+        qs = Product.objects.filter(stock__location_id__in=loc_id, type=type)
+    else:
+        qs = Product.objects.filter(stock__location_id__in=loc_id).exclude(type='semi_slab')
     product_text = request.POST.get('product_autocomplete')
     if product_text:
-        qs = qs.filter(block__name__icontains=product_text)
+        qs.filter(block__name__icontains=product_text)
     data = {str(p.name) + p.get_type_display(): {"id": p.id} for p in qs}
     return JsonResponse(data, safe=False)
 
@@ -166,7 +171,7 @@ class OrderItemPackageListCreateView(View):
         slab_list = self.request.POST.getlist('select')
         product_id = self.kwargs.get('product_id')
         app_label_lower = self.kwargs.get('app_label_lower')
-        app_label, model_name = app_label_lower.split('.')
+        app_label, model_name = app_label.split('.')
         package = PackageList.make_package_from_list(product_id, slab_list)
         item = apps.get_model(app_label=app_label, model_name=model_name).objects.get(pk=self.kwargs.get('item_id'))
         item.package_list = package

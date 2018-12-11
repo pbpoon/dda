@@ -10,9 +10,10 @@ def cart_add(request):
     slab_list = request.POST.getlist('select')
     product_id = request.POST.get('product')
     location_id = request.POST.get('location')
+    quantity = request.POST.get('quantity', None)
     if product_id and location_id:
         cart = Cart(request)
-        cart.add(product_id, location_id, slab_id_list=slab_list)
+        cart.add(product_id, location_id, slab_id_list=slab_list, quantity=quantity)
     return JsonResponse({'state': 'ok'})
 
 

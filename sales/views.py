@@ -50,7 +50,7 @@ class SalesOrderQuickCreateView(SalesOrderEditMixin, CreateView):
     template_name = 'sales/form.html'
 
     def get_formset(self, extra=0):
-        return inlineformset_factory(SalesOrder, SalesOrderItem, form=SalesOrderItemQuickForm, extra=extra)
+        return inlineformset_factory(SalesOrder, SalesOrderItem, form=SalesOrderItemQuickForm, extra=extra,can_delete=False)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

@@ -9,12 +9,13 @@
     <link href="http://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <!--Import materialize.css-->
     <link rel="stylesheet" href="{% static 'css/materialize.css' %}">
-{#    <link rel="stylesheet" href="{% static 'select2-materialize/select2-materialize.css' %}">#}
+    {#    <link rel="stylesheet" href="{% static 'select2-materialize/select2-materialize.css' %}">#}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-rc.2/css/materialize.min.css">
 
     <style>
         .ui-autocomplete {
-            z-index: 215000000 !important;}
+            z-index: 215000000 !important;
+        }
 
         header, main, footer {
             padding-left: 300px;
@@ -43,12 +44,13 @@
 
     {% endblock %}
 </main>
+{% include 'cart_detail.html' %}
 {% block footer %}
     <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
     {#<script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>#}
-    <script src="{% static 'js/materialize.min.js' %}"></script>
-    {#    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-rc.1/js/materialize.min.js"></script>#}
-    <script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
+    {#    <script src="{% static 'js/materialize.min.js' %}"></script>#}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-rc.1/js/materialize.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script><!--设置csrftoken需要-->
     <script>
         var csrftoken = Cookies.get('csrftoken');
 
@@ -67,7 +69,6 @@
     </script>
     <script src="{% static "js/owner.js" %}"></script>
 {% endblock %}
-{% include 'cart_detail.html' %}
 </body>
 <script>
     $(document).ready(function () {

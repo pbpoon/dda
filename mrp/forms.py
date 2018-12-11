@@ -7,6 +7,7 @@ from django.urls import reverse, reverse_lazy
 from mrp.models import ProductionOrder, ProductionOrderRawItem, ProductionOrderProduceItem, InOutOrder, InOutOrderItem, \
     Expenses
 from product.models import Product
+from public.widgets import AutocompleteWidget
 from stock.models import Location, Warehouse
 from mrp.models import MoveLocationOrder, MoveLocationOrderItem
 
@@ -119,24 +120,35 @@ class ProductionOrderForm(forms.ModelForm):
 
 
 class ProductionOrderRawItemForm(forms.ModelForm):
+    product_autocomplete = forms.CharField(label='产品编号', widget=AutocompleteWidget(url='get_product_list'))
+    type = forms.CharField(widget=forms.HiddenInput)
+
     class Meta:
         model = ProductionOrderRawItem
-        fields = '__all__'
+        fields = (
+            'product_autocomplete', 'type', 'product', 'location', 'location_dest', 'order', 'line', 'piece',
+            'quantity',
+            'uom', 'price')
         widgets = {
             'location': forms.HiddenInput,
             'location_dest': forms.HiddenInput,
             'order': forms.HiddenInput,
+            'line': forms.HiddenInput,
+            'product': forms.HiddenInput,
         }
 
     def __init__(self, *args, **kwargs):
         order = kwargs.pop('production_order')
         super().__init__(*args, **kwargs)
+        instance = kwargs.get('instance')
         # 按order的原材料的type来筛选product的query_set
         this_product_id = None
         product_type = order.production_type.raw_item_type
         qs = Product.objects.filter(stock__location_id=order.location.id, type=product_type)
-        if kwargs.get('instance', None):
+        self.fields['type'].initial = product_type
+        if instance:
             # 如果是编辑状态，就把本荒料编号添加上
+            self.fields['product_autocomplete'].initial = instance.product.name + instance.product.get_type_display()
             qs = qs.filter(id=kwargs.get('instance').product.id)
             this_product_id = qs[0].id
         elif order and order.items.all():
@@ -144,9 +156,9 @@ class ProductionOrderRawItemForm(forms.ModelForm):
             exclude_product_ids = [int(item.product.id) for item in order.items.all()]
             if this_product_id:
                 exclude_product_ids = filter(lambda p: p != this_product_id, exclude_product_ids)
-            qs = qs.filter(type=product_type).exclude(pk__in=exclude_product_ids)
+                qs.filter(type=product_type).exclude(pk__in=exclude_product_ids)
         # 把qs赋值到product的queryset
-        self.fields['product'].queryset = qs
+        # self.fields['product'].queryset = qs
 
         # onchange的ajax取数据url
         url = reverse_lazy('get_product_info')

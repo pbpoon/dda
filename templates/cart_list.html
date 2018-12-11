@@ -39,22 +39,4 @@
         });
     });
 
-    {#function cart_remove_item() {#}
-    {#    $.ajax({#}
-    {#        url: arguments[0],#}
-    {#        method: 'POST',#}
-    {#        success: function (data) {#}
-    {#            if (data['state'] == 'ok') {#}
-    {#                $(this).remove();#}
-    {#    alert($li.html())#}
-    {#$('#modal_cart .list').html("");#}
-    {#md_cart.modal('close');#}
-    {#            }#}
-    {#md_cart.modal('open')#}
-    {##}
-    {#        },#}
-    {#        error: function () {#}
-    {#            alert('网络错误')#}
-    {#        }#}
-    {#    })#}
 </script>

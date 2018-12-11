@@ -160,7 +160,6 @@ class ImportData:
                 lst.append(item)
         return lst
 
-
 def default_decimal(obj):
     if isinstance(obj, Decimal):
         return float(obj)

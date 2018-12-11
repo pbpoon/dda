@@ -217,12 +217,6 @@ function open_package_list_by_stock(url) {
 }
 
 //!码单package_list页面
-// function select_part(part_number) {
-//     var $('div #'+part_number+
-//     // $('div #'+part_number+' :checkbox').attr('checked',this.checked);
-//     sum()
-// }
-
 
 function sum() {
     var display = "";

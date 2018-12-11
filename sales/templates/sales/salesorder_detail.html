@@ -71,7 +71,10 @@
     {% endif %}
 {% endblock %}
 {% block subheadline %}
-    业务伙伴：{{ object.partner }} / 经办人:{{ object.handler }}
+    客户名称：{{ object.partner.get_full_name }} / {{ object.partner.phone }}<br/>
+    发往：{{ object.get_address }}<br/>
+    <hr>
+    经办人:{{ object.handler }}
     {% if object.state == 'confirm' %}
         {% if object.get_out_order_progress < 1 %}
             <a class="right" href="{% url 'sales_order_out_order' object.id %}">提货</a>

@@ -90,9 +90,9 @@
         {% endif %}
     <form id="select_slab_form" action="{% url 'cart_add' %}">
         <input type="hidden" name="location" value="{{ object.location_id }}">
-        {% if package.product.type == 'slab' %}
-            <input type="hidden" name="product"
-                   value="{{ package.product.id }}">
+        <input type="hidden" name="product" value="{{ package.product.id }}">
+        {% if package.product.type == 'block' %}
+            <input type="hidden" name="quantity" value="{{ package.quantity }}">
         {% endif %}
     </form>
 

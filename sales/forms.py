@@ -4,69 +4,48 @@
 from django import forms
 from django.urls import reverse, reverse_lazy
 
-from partner.models import City, Area
+from partner.models import City
 from product.models import Product, PackageList
+from public.widgets import CheckBoxWidget, AutocompleteWidget
 from sales.models import SalesOrder, SalesOrderItem
 from stock.models import Warehouse
 from dal import autocomplete as dal_autocomplete
 
 
-class AutocompleteWidget(forms.TextInput):
-    url = None
-
-    class Media:
-        js = ('js/autocomplete.js',)
-
-    def __init__(self, url=None, *args, **kwargs):
-        self.url = url
-        super().__init__(*args, **kwargs)
-
-    def build_attrs(self, *args, **kwargs):
-        """Build HTML attributes for the widget."""
-        attrs = super().build_attrs(*args, **kwargs)
-
-        if self.url is not None:
-            attrs['class'] = 'autocomplete'
-            attrs['onkeyup'] = 'get_autocomplete("{}")'.format(self.url)
-
-        return attrs
-
-    def _get_url(self):
-        if self._url is None:
-            return None
-
-        if '/' in self._url:
-            return self._url
-
-        return reverse(self._url)
-
-    def _set_url(self, url):
-        self._url = url
-
-    url = property(_get_url, _set_url)
-
-
 class SalesOrderForm(forms.ModelForm):
-    is_default_address = forms.BooleanField(label='默认地址', widget=forms.CheckboxInput)
-    partner_autocomplete = forms.CharField(widget=AutocompleteWidget(url='get_product_list'), label='客户')
+    is_default_address = forms.BooleanField(label='默认地址', required=False, widget=CheckBoxWidget,
+                                            help_text='此项开启后，下面地址所选无效。发货地址将会用客户默认地址')
+    partner_autocomplete = forms.CharField(widget=AutocompleteWidget(url='get_partner_list'), label='客户')
 
     class Meta:
         model = SalesOrder
-        fields = ('date', 'handler', 'partner', 'partner_autocomplete', 'province', 'city', 'area')
+        fields = (
+            'date', 'partner', 'partner_autocomplete', 'is_default_address', 'province', 'city', 'handler', 'entry')
         # exclude = ('state', 'order')
         widgets = {
+            'date': forms.DateInput(attrs={'class': 'datepicker'}),
             'entry': forms.HiddenInput,
             'partner': forms.HiddenInput,
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['is_default_address'].initial = True
-        self.fields['city'].queryset = City.objects.none()
-        self.fields['area'].queryset = Area.objects.none()
-        self.fields['city'].widget.att = {'class': 'city'}
-        self.fields['area'].widget.att = {'class': 'dist'}
-        self.fields['province'].widget.att = {'class': 'prov'}
+        if not kwargs.get('instance'):
+            self.fields['city'].queryset = City.objects.none()
+            self.fields['handler'].initial = kwargs['initial'].get('entry')
+            self.fields['is_default_address'].initial = True
+            self.fields['city'].widget.attrs = {'class': 'city s6'}
+            self.fields['province'].widget.attrs = {'class': 'prov s6'}
+
+    def save(self, commit=True):
+        is_default_address = self.cleaned_data.get('is_default_address')
+        instance = super().save(commit=False)
+        if is_default_address:
+            instance.province = instance.partner.province
+            instance.city = instance.partner.city
+        if commit:
+            instance.save()
+        return instance
 
 
 class SalesOrderItemForm(forms.ModelForm):
@@ -132,7 +111,7 @@ class SalesOrderItemForm(forms.ModelForm):
 
 
 class SalesOrderItemQuickForm(forms.ModelForm):
-    slab_id_list = forms.CharField(widget=forms.HiddenInput())
+    slab_id_list = forms.CharField(widget=forms.HiddenInput(), required=False)
 
     class Meta:
         model = SalesOrderItem
@@ -149,10 +128,11 @@ class SalesOrderItemQuickForm(forms.ModelForm):
     def save(self, commit=True):
         instance = super().save(commit=False)
         cd = self.cleaned_data
-        slab_id_list = cd.get('slab_id_list')
-        product_id = cd.get('product').id
-        slab_id_list = slab_id_list.split(',')
-        instance.package_list = PackageList.make_package_from_list(product_id=product_id, lst=slab_id_list)
+        product = cd.get('product')
+        if product.type == 'slab':
+            slab_id_list = cd.get('slab_id_list')
+            slab_id_list = slab_id_list.split(',')
+            instance.package_list = PackageList.make_package_from_list(product_id=product.id, lst=slab_id_list)
         if commit:
             instance.save()
         return instance

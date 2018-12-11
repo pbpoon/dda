@@ -21,3 +21,5 @@ class LocationForm(forms.ModelForm):
 
 class AddExcelForm(forms.Form):
     file = forms.FileField(label='上传文件')
+
+

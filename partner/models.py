@@ -1,5 +1,4 @@
 from django.db import models
-from django.contrib.auth.models import User
 from django.urls import reverse
 
 from stock.models import Location
@@ -39,23 +38,24 @@ class City(models.Model):
 
     def __str__(self):
         return self.name
+    #
+    # def get_area(self):
+    #     return Area.objects.filter(city=self.id)
 
-    def get_area(self):
-        return Area.objects.filter(city=self.id)
 
-
-class Area(models.Model):
-    id = models.IntegerField('id', primary_key=True)
-    name = models.CharField('名称', max_length=20)
-    city = models.IntegerField('对应市id')
-
-    class Meta:
-        verbose_name = '地区'
-        verbose_name_plural = verbose_name
-        ordering = ('city', 'id')
-
-    def __str__(self):
-        return self.name
+#
+# class Area(models.Model):
+#     id = models.IntegerField('id', primary_key=True)
+#     name = models.CharField('名称', max_length=20)
+#     city = models.IntegerField('对应市id')
+#
+#     class Meta:
+#         verbose_name = '地区'
+#         verbose_name_plural = verbose_name
+#         ordering = ('city', 'id')
+#
+#     def __str__(self):
+#         return self.name
 
 
 class Partner(models.Model):
@@ -67,10 +67,9 @@ class Partner(models.Model):
     sex = models.CharField('性别', choices=(('male', '先生'), ('female', '女士')), null=True, blank=True, max_length=10)
     province = models.ForeignKey('Province', verbose_name='省份', null=True, blank=True, on_delete=models.SET_NULL)
     city = models.ForeignKey('City', verbose_name='城市', null=True, blank=True, on_delete=models.SET_NULL)
-    area = models.ForeignKey('Area', verbose_name='地区', null=True, blank=True, on_delete=models.SET_NULL)
     created = models.DateField('创建日期', auto_now_add=True)
     updated = models.DateTimeField('更新时间', auto_now=True)
-    entry = models.ForeignKey(User, related_name='%(class)s_entry',
+    entry = models.ForeignKey('auth.User', related_name='%(class)s_entry',
                               verbose_name='登记人', on_delete=models.SET_NULL, null=True, blank=True)
     is_activate = models.BooleanField('启用', default=True)
     company = models.ForeignKey('self', related_name='members', limit_choices_to={'is_company': True},
@@ -80,13 +79,12 @@ class Partner(models.Model):
 
     class Meta:
         verbose_name = '伙伴资料'
-        unique_together = ['phone', 'name']
+        # unique_together = ['phone', 'name']
 
     def get_address(self):
         if self.province:
             address = self.province.name
             address += '/{}'.format(self.city if self.city else self.province.get_city()[0].name)
-            address += '/{}'.format(self.area if self.area else self.province.get_city()[0].get_area()[0])
             return address
         return None
 
@@ -94,10 +92,16 @@ class Partner(models.Model):
         return self.get_sex_display() or ""
 
     def __str__(self):
+        return self.get_full_name()
+
+    def get_full_name(self):
         if self.is_company:
             return '{}'.format(self.name)
         else:
-            return '{} {}'.format(self.name, self.get_title())
+            company = ''
+            if self.company:
+                company = '({}) '.format(self.company.name)
+            return '{}{} {}'.format(company, self.name, self.get_title())
 
     def get_absolute_url(self):
         return reverse('partner_detail', args=[self.id])
