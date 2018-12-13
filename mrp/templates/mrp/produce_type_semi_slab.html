@@ -23,17 +23,17 @@
             <td>{% if object.state == 'draft' %}
                 <!-- Dropdown Trigger -->
 
-                <a class='dropdown-trigger btn-floating grey' href='#' data-target='dropdown1'> <i
+                <a class='dropdown-trigger btn-floating grey' href='#' data-target='dropdown{{ forloop.counter }}'> <i
                         class="material-icons">more_vert</i></a>
 
                 <!-- Dropdown Structure -->
-                <ul id='dropdown1' class='dropdown-content'>
+                <ul id='dropdown{{ forloop.counter }}' class='dropdown-content'>
                     <li>
                         <a onclick="edit_item('{% url 'production_raw_item_edit' item.id %}')">修改
                         </a>
                     </li>
                     <li>
-                        <a onclick="item_remove({{ item.id }},'{% url 'production_raw_item_delete' 9999 %}')">
+                        <a onclick="item_remove('{% url 'production_raw_item_delete' item.id %}')">
                             删除
                         </a>
                     </li>
@@ -55,16 +55,16 @@
                     <td></td>
                     <td>{% if object.state == 'draft' %}
 
-                        <a class='dropdown-trigger btn-floating grey' href='#' data-target='dropdown2'> <i
+                        <a class='dropdown-trigger btn-floating grey' href='#' data-target='dropdown{{ forloop.parentloop.counter }}produce'> <i
                                 class="material-icons">more_vert</i></a>
 
                         <!-- Dropdown Structure -->
-                        <ul id='dropdown2' class='dropdown-content'>
+                        <ul id='dropdown{{ forloop.parentloop.counter }}produce' class='dropdown-content'>
                             <li>
-                                <a onclick="edit_item( '{% url 'production_produce_item_edit' produce.id  %}')">
+                                <a onclick="edit_item( '{% url 'production_produce_item_edit' produce.id %}')">
                                     修改</a></li>
                             <li>
-                                <a onclick="item_remove({{ item.id }},'{% url 'production_produce_item_delete' 9999 %}')">
+                                <a onclick="item_remove('{% url 'production_produce_item_delete'  produce.id %}')">
                                     删除</a></li>
                         </ul>
                     {% endif %}
@@ -73,16 +73,6 @@
             {% endfor %}
         {% endif %}
     {% endfor %}
-    <tr>
-        <td></td>
-        <td></td>
-        <td></td>
-        <td></td>
-        <td></td>
-        <td>
-            <a href="#" onclick="add_item('{{ object.get_create_item_url }}')">添加</a>
-        </td>
-    </tr>
     </tbody>
     <tfoot>
     <tr>

@@ -5,6 +5,16 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    # ------------------------------------------------turn back
+
+    path('turn_back/item/delete/<pk>', views.TurnBackOrderItemDeleteView.as_view(),
+         name='turn_back_order_item_delete'),
+    path('turn_back/update/<pk>/', views.TurnBackOrderUpdateView.as_view(), name='turn_back_order_update'),
+    path('turn_back/<model_name>/<from_order_id>/', views.TurnBackOrderCreateView.as_view(),
+         name='turn_back_order_create'),
+    path('turn_back/delete/<pk>/', views.TurnBackOrderDeleteView.as_view(), name='turn_back_order_delete'),
+    path('turn_back/<pk>/', views.TurnBackOrderDetailView.as_view(), name='turn_back_order_detail'),
+
     # ------------------------------------------------expenses
 
     path('expenses_item_update/<pk>/', views.MrpExpenseItemUpdateView.as_view(),
@@ -62,6 +72,7 @@ urlpatterns = [
     path('in_out_order/item/create/<order_id>/', views.InOutOrderItemEditView.as_view(),
          name='in_out_order_item_create'),
     path('in_out_order/item/edit/<pk>/', views.InOutOrderItemEditView.as_view(), name='in_out_order_item_edit'),
+    path('in_out_order/delete/<pk>/', views.InOutOrderDeleteView.as_view(), name='in_out_order_delete'),
     path('in_out_order/<pk>/', views.InOutOrderDetailView.as_view(), name='in_out_order_detail'),
     path('in_out_order/', views.InOutOrderListView.as_view(), name='in_out_order_list'),
 

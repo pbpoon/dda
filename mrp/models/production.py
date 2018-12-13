@@ -41,7 +41,7 @@ class ProductionOrder(MrpOrderAbstract):
     production_type = models.ForeignKey(ProductionType, on_delete=models.CASCADE, verbose_name='业务类型',
                                         limit_choices_to={'activate': True})
     partner = models.ForeignKey('partner.Partner', on_delete=models.SET_NULL, null=True, blank=True,
-                                verbose_name='业务伙伴', limit_choices_to={'type': 'supplier', 'is_production':True})
+                                verbose_name='业务伙伴', limit_choices_to={'type': 'supplier', 'is_production': True})
 
     class Meta:
         verbose_name = '生产订单'
@@ -138,6 +138,11 @@ class ProductionOrderProduceItem(OrderItemBase):
     class Meta:
         verbose_name = '生产单成品行'
         # unique_together = ['thickness', 'raw_item']
+
+    def get_amount(self):
+        if self.product.type == 'slab':
+            return self.quantity * self.price
+        return 0
 
     def get_location(self):
         return self.order.location_dest

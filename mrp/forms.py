@@ -6,8 +6,9 @@ from django.urls import reverse, reverse_lazy
 
 from mrp.models import ProductionOrder, ProductionOrderRawItem, ProductionOrderProduceItem, InOutOrder, InOutOrderItem, \
     Expenses
+from mrp.models import TurnBackOrder, TurnBackOrderItem
 from product.models import Product
-from public.widgets import AutocompleteWidget
+from public.widgets import AutocompleteWidget, OptionalChoiceField
 from stock.models import Location, Warehouse
 from mrp.models import MoveLocationOrder, MoveLocationOrderItem
 
@@ -59,15 +60,20 @@ class MoveLocationOrderForm(forms.ModelForm):
 
 
 class MoveLocationOrderItemForm(forms.ModelForm):
+    product_autocomplete = forms.CharField(label='产品编号', widget=AutocompleteWidget(url='get_product_list'))
+
     class Meta:
         model = MoveLocationOrderItem
-        fields = ('order', 'location', 'location_dest', 'product', 'piece', 'quantity', 'uom', 'package_list')
+        fields = ('order', 'location', 'location_dest', 'product_autocomplete', 'product', 'piece', 'quantity', 'uom',
+                  'package_list')
         widgets = {
             'order': forms.HiddenInput,
+            'product': forms.HiddenInput,
         }
 
     def save(self, commit=True):
         instance = super().save(commit=False)
+        instance.uom = instance.product.get_uom()
         if not instance.package_list and instance.product.type == 'slab':
             instance.piece = 0
             instance.quantity = 0
@@ -78,7 +84,8 @@ class MoveLocationOrderItemForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         order = kwargs.pop('move_order')
         super(MoveLocationOrderItemForm, self).__init__(*args, **kwargs)
-        if not kwargs.get('instance', None):
+        instance = kwargs.get('instance', None)
+        if not instance:
             loc = Location.objects.filter(id=order.location.id, is_virtual=False)
             dest = Location.objects.filter(id=order.location_dest.id, is_virtual=False)
             # onchange的ajax取数据url
@@ -104,8 +111,9 @@ class MoveLocationOrderItemForm(forms.ModelForm):
             self.fields['product'].widget.attrs = {
                 'onchange': 'onchange_set_product_info({},"{}","quantity","piece", "uom")'.format('this.value',
                                                                                                   get_product_info)}
-        # else:
-        #     self.fields['product'].widget.attrs = {'disabled':True}
+
+        else:
+            self.fields['product_autocomplete'].initial = instance.product.name + instance.product.get_type_display()
 
 
 class ProductionOrderForm(forms.ModelForm):
@@ -263,4 +271,26 @@ class MrpItemExpensesForm(forms.ModelForm):
         widgets = {
             'content_type': forms.HiddenInput,
             'object_id': forms.HiddenInput,
+        }
+
+
+class TurnBackOrderForm(forms.ModelForm):
+
+    class Meta:
+        model = TurnBackOrder
+        fields = ('content_type', 'object_id', 'reason', 'warehouse', 'entry', 'handler', 'date')
+        widgets = {
+            'entry': forms.HiddenInput,
+            'content_type': forms.HiddenInput,
+            'object_id': forms.HiddenInput,
+        }
+
+
+class TurnBackOrderItemForm(forms.ModelForm):
+    class Meta:
+        model = TurnBackOrderItem
+        fields = '__all__'
+        widgets = {
+            'order': forms.HiddenInput,
+            'package_list': forms.HiddenInput,
         }

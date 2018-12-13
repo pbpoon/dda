@@ -1,0 +1,71 @@
+{% extends 'detail.html' %}
+
+{% block bnaner-title %}
+    {{ object.name }}
+{% endblock %}
+{% block content %}
+
+    {% if object.get_stock_all %}
+        <p class="h3">可用库存：</p>
+        <hr>
+        <form action="" method="post" id="stock_form">
+            <ul>
+                {% for stock in object.get_stock_all %}
+                    {% if stock.product.type != 'semi_slab' %}
+                        <li><a href="#"
+                               onclick="open_package_list_by_stock('{% url 'stock_slabs_detail' stock.id %}')">{{ stock.product.get_type_display }}:{{ stock.piece }}件/{{ stock.quantity }}{{ stock.uom }}@{{ stock.location }}</a>
+                        </li>
+                    {% else %}
+                        <li><a href="{{ stock.get_absolute_url }}">{{ stock.product.get_type_display }}:{{ stock.piece }}件/{{ stock.quantity }}{{ stock.uom }}@{{ stock.location }}</a></li>
+                    {% endif %}
+                {% endfor %}
+                <input type="hidden" value="{{ path }}" name="path">
+                {% csrf_token %}
+            </ul>
+        </form>
+    {% endif %}
+    <!--事务-->
+    {% if object.get_stock_all %}
+        <p class="h3">事务记录</p>
+        <hr>
+        <table>
+            {% for track in object.get_stock_trace_all %}
+                {% if forloop.first %}
+                    <thead>
+                    <tr>
+                        {% for key in track.keys %}
+                            <th>{{ key }}</th>
+                        {% endfor %}
+                    </tr>
+                    </thead>
+                {% endif %}
+                <tbody>
+                <tr>
+                    {% for key,value in track.items %}
+                        {% if forloop.first %}
+                            <td><a href="{{ value.1.get_absolute_url }}">{{ value.0 }}</a></td>
+                        {% else %}
+                            <td>{{ value }}</td>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+                </tbody>
+            {% endfor %}
+        </table>
+    {% endif %}
+{% endblock %}
+{% block headline %}
+    {{ object.name }}
+{% endblock %}
+{% block subheadline %}
+    <ul style="display: inline">
+        <li>品种：{{ object.category|default_if_none:"" }}</li>
+        <li>矿口：{{ object.quarry|default_if_none:"" }}</li>
+        <li>批次：{{ object.get_batch }}</li>
+        <li>重量：{{ object.weight }}</li>
+        <li>立方：{{ object.m3 }}</li>
+        <li>计量单位:{{ object.uom }}</li>
+        <li>规格：{{ object.long|default_if_none:"" }} / {{ object.width|default_if_none:"" }}
+            / {{ object.height|default_if_none:"" }}</li>
+    </ul>
+{% endblock %}

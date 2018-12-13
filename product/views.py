@@ -11,7 +11,7 @@ from public.views import OrderItemEditMixin, OrderItemDeleteMixin
 from stock.models import Location, Stock, Warehouse
 from public.utils import qs_to_dict, Package
 
-from .models import Product, PackageList, DraftPackageList, DraftPackageListItem, Slab
+from .models import Product, PackageList, DraftPackageList, DraftPackageListItem, Slab, Block
 from django.core import serializers
 
 
@@ -47,19 +47,6 @@ def get_product_list(request):
     return JsonResponse(data, safe=False)
 
 
-class ProductListView(ListView):
-    model = Product
-
-
-class ProductDetailView(DetailView):
-    model = Product
-
-
-class DraftPackageListView(ListView):
-    model = DraftPackageList
-    template_name = 'choice_package_list.html'
-
-
 def get_draft_package_list_info(request):
     pk = request.GET.get('pk')
     obj = get_object_or_404(DraftPackageList, pk=pk)
@@ -71,6 +58,27 @@ def get_draft_package_list_info(request):
     else:
         data = {'status': 'error'}
     return JsonResponse(data)
+
+
+class BlockListView(ListView):
+    model = Block
+
+
+class BlockDetailView(DetailView):
+    model = Block
+
+
+class ProductListView(ListView):
+    model = Product
+
+
+class ProductDetailView(DetailView):
+    model = Product
+
+
+class DraftPackageListView(ListView):
+    model = DraftPackageList
+    template_name = 'choice_package_list.html'
 
 
 class DraftPackageListDetailView(DetailView):
@@ -154,6 +162,7 @@ class OutOrderPackageListDetailView(PackageListDetail):
         return slabs
 
 
+# 销售订单项目码单创建
 class OrderItemPackageListCreateView(View):
     template_name = 'package_list.html'
 
@@ -171,7 +180,7 @@ class OrderItemPackageListCreateView(View):
         slab_list = self.request.POST.getlist('select')
         product_id = self.kwargs.get('product_id')
         app_label_lower = self.kwargs.get('app_label_lower')
-        app_label, model_name = app_label.split('.')
+        app_label, model_name = app_label_lower.split('.')
         package = PackageList.make_package_from_list(product_id, slab_list)
         item = apps.get_model(app_label=app_label, model_name=model_name).objects.get(pk=self.kwargs.get('item_id'))
         item.package_list = package
@@ -179,3 +188,11 @@ class OrderItemPackageListCreateView(View):
         item.quantity = package.get_quantity()
         item.save()
         return JsonResponse({'state': 'ok'})
+
+
+# 提货单的码单显示
+class TurnBackOrderPackageListDetailView(PackageListDetail):
+
+    def get_state_draft_slabs(self):
+        slabs = [item.slab for item in self.object.from_package_list.items.all()]
+        return slabs

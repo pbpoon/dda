@@ -39,7 +39,7 @@
                                     <a href="#!" onclick="edit_item('{% url 'package_list_draft_item_edit' item.id %}')">
                                         修改
                                     </a>
-                                    <a href="#!" onclick="item_remove({{ item.id }},'{% url 'package_list_draft_item_delete' 9999 %}')">
+                                    <a href="#!" onclick="item_remove('{% url 'package_list_draft_item_delete' item.id %}')">
                                         删除
                                     </a>
                                 </td>

@@ -36,7 +36,7 @@
                                 </a>
                             </li>
                             <li>
-                                <a onclick="item_remove({{ item.id }},'{% url 'kes_order_raw_item_delete' 9999 %}')">
+                                <a onclick="item_remove('{% url 'kes_order_raw_item_delete' item.id %}')">
                                     删除
                                 </a>
                             </li>

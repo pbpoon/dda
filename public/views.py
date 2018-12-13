@@ -129,7 +129,3 @@ class StateChangeMixin:
 
     def draft(self):
         raise ValueError('define draft')
-
-
-
-

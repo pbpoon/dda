@@ -2,7 +2,18 @@
 # -*- coding: utf-8 -*-
 # Created by pbpoon on 2018/11/5
 from django import template
+from django.contrib.humanize.templatetags.humanize import intcomma
 
+register = template.Library()
+
+
+@register.filter
+def prepend_dollars(dollars):
+    if dollars:
+        dollars = round(float(dollars), 2)
+        return "$%s%s" % (intcomma(int(dollars)), ("%0.2f" % dollars)[-3:])
+    else:
+        return ''
 register = template.Library()
 
 
@@ -57,3 +68,12 @@ def template_method(instance, method):
 
 # 输出结果
 # value1, value2, value3
+
+
+@register.filter
+def money(dollars):
+    if dollars:
+        dollars = round(float(dollars), 2)
+        return "$%s%s" % (intcomma(int(dollars)), ("%0.2f" % dollars)[-3:])
+    else:
+        return ''

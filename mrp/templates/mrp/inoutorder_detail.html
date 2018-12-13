@@ -1,10 +1,9 @@
 {% extends "mrp/detail.html" %}
 {% load materializecss %}
 {% load public %}
-{% block headline %}<span class="h6">[{{ object.state }}]</span>{{ object.order }}/{% if object.purchase_order %}收货：
-    <a href="{{ object.purchase_order.get_absolute_url }}">{{ object.purchase_order.order }}</a>{% else %}
-    <a href="{{ object.sales_order.get_absolute_url }}">{{ object.sales_order.order }}</a>
-{% endif %}{% endblock %}
+{% block headline %}<span class="h6">[{{ object.get_state_display }}]</span>
+    <a href="{{ object.from_order.get_absolute_url }}">{{ object.full_order }}</a>
+{% endblock %}
 {% block subheadline %}
     业务伙伴：{{ object.partner }} / 仓库：{{ object.warehouse }} / 经办人：{{ object.handler }}
 {% endblock %}
@@ -26,10 +25,17 @@
                 <td>{{ item.line }}</td>
                 <td>{{ item.product }}</td>
                 <td>{% if item.package_list %}
-                    <a href="#"
-                       onclick="open_package_list('{% url "out_order_package_detail" item.package_list.id %}','{{ object.state }}')">
-                        {{ item.package_list.get_part }}夹/ {{ item.piece }}件/
-                        {{ item.quantity }}{{ item.product.get_uom }}</a>
+                    {% if object.state == 'draft' %}
+                        <a href="#"
+                           onclick="open_package_list('{% url "out_order_package_detail" item.package_list.id %}','{{ object.state }}')">
+                            {{ item.package_list.get_part }}夹/ {{ item.piece }}件/
+                            {{ item.quantity }}{{ item.product.get_uom }}</a>
+                    {% else %}
+                        <a href="#"
+                           onclick="open_package_list('{{ item.package_list.get_absolute_url }}','{{ object.state }}')">
+                            {{ item.package_list.get_part }}夹/ {{ item.piece }}件/
+                            {{ item.quantity }}{{ item.product.get_uom }}</a>
+                    {% endif %}
                 {% else %}
                     {{ item.piece }}件/
                     {{ item.quantity }}{{ item.product.get_uom }}
@@ -37,25 +43,27 @@
 
 
                 </td>
-                <td><!---费用显示-->
-                    {% if item.expenses.all %}
-                        <a href="#" class="tooltipped" data-position="bottom"
-                           data-tooltip="{% for expense in item.expenses.all %}<div class=text-right>
-                                {{ expense }}={{ expense.amount }}<br></div>{% endfor %}">
-                            <i class="material-icons">monetization_on</i>
-                        </a>
-                    {% endif %}</td>
+            <td>{% for expense in item.expenses.all %}<div class=text-right>
+                                {{ expense }}={{ expense.amount }}<br></div>{% endfor %}</td>
+{#                <td><!---费用显示-->#}
+{#                    {% if item.expenses.all %}#}
+{#                        <a href="#" class="tooltipped" data-position="bottom"#}
+{#                           data-tooltip="{% for expense in item.expenses.all %}<div class=text-right>#}
+{#                                {{ expense }}={{ expense.amount }}<br></div>{% endfor %}">#}
+{#                            <i class="material-icons">monetization_on</i>#}
+{#                        </a>#}
+{#                    {% endif %}</td>#}
 
                 <td>{% if object.state == 'draft' %}
                     <!-- Dropdown Trigger -->
 
-                    <a class='dropdown-trigger btn-floating grey' href='#' data-target='dropdown1'> <i
+                    <a class='dropdown-trigger btn-floating grey' href='#' data-target='dropdown{{ forloop.counter }}'> <i
                             class="material-icons">more_vert</i></a>
 
                     <!-- Dropdown Structure -->
-                    <ul id='dropdown1' class='dropdown-content'>
+                    <ul id='dropdown{{ forloop.counter }}' class='dropdown-content'>
                         <li>
-                            <a onclick="item_remove({{ item.id }},'{% url 'in_out_order_item_delete' 9999 %}')">
+                            <a onclick="item_remove('{% url 'in_out_order_item_delete' item.id %}')">
                                 删除
                             </a>
                         </li>

@@ -58,10 +58,10 @@ $('#item_form').on('submit', function (e) {
 })
 
 // 确认删除对话框
-function item_remove(item_id, url_string) {
+function item_remove(url) {
     //添加"确认"按钮，并绑定删除的方法
     $('#modal2 p').text('确认删除该明细行?')
-    var url = url_string.replace('9999', item_id);
+    // var url = url_string.replace('9999', item_id);
     $('#confirm_btn').on('click', function (e) {
         delete_item(url)
     });

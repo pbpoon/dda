@@ -6,41 +6,46 @@
     <form action="" method="post">
         {#        <script src="{% static 'js/autocomplete.js' %}"></script>#}
         {{ form.meida }}
-        <ul>
-            {{ form.as_ul }}
-        </ul>
-        {% csrf_token %}
-        {% if formset %}
-            <i>销售单明细</i>
-            <table class="table">
-                {{ formset.management_form }}
+        <div class="card-panel input-field">
+            <ul>
+                {{ form.as_ul }}
+            </ul>
+            {% csrf_token %}
 
-                {% for form in formset.forms %}
-                    {% if forloop.first %}
-                        <thead>
-                        <tr>
+        </div>
+        {% if formset %}
+            <div class="card-panel">
+                <i>销售单明细</i>
+                <table class="table">
+                    {{ formset.management_form }}
+
+                    {% for form in formset.forms %}
+                        {% if forloop.first %}
+                            <thead>
+                            <tr>
+                                {% for field in form.visible_fields %}
+                                    <th>{{ field.label|capfirst }}</th>
+                                {% endfor %}
+                            </tr>
+                            </thead>
+                        {% endif %}
+                        <tr class="formset_row">
                             {% for field in form.visible_fields %}
-                                <th>{{ field.label|capfirst }}</th>
+                                <td>
+                                    {# Include the hidden fields in the form #}
+                                    {% if forloop.first %}
+                                        {% for hidden in form.hidden_fields %}
+                                            {{ hidden }}
+                                        {% endfor %}
+                                    {% endif %}
+                                    {{ field.errors.as_ul }}
+                                    {{ field }}
+                                </td>
                             {% endfor %}
                         </tr>
-                        </thead>
-                    {% endif %}
-                    <tr class="formset_row">
-                        {% for field in form.visible_fields %}
-                            <td>
-                                {# Include the hidden fields in the form #}
-                                {% if forloop.first %}
-                                    {% for hidden in form.hidden_fields %}
-                                        {{ hidden }}
-                                    {% endfor %}
-                                {% endif %}
-                                {{ field.errors.as_ul }}
-                                {{ field }}
-                            </td>
-                        {% endfor %}
-                    </tr>
-                {% endfor %}
-            </table>
+                    {% endfor %}
+                </table>
+            </div>
         {% endif %}
         <input class="btn btn-block" type="submit" value="确定">
     </form>

@@ -24,11 +24,31 @@ class InOutOrder(MrpOrderAbstract):
     class Meta:
         verbose_name = '出入库操作'
 
+    @property
+    def from_order(self):
+        return self.sales_order or self.purchase_order
+
+    def __str__(self):
+        return self.full_order
+
+    @property
+    def full_order(self):
+        from_order = self.purchase_order or self.sales_order
+        count = from_order.in_out_order.filter(state__in=('confirm', 'done')).count()
+        if count > 1:
+            last_display = '({})'.format(count)
+        else:
+            last_display = ''
+        return '{}/{}{}'.format(from_order, self.get_type_display(), last_display)
+
     def get_absolute_url(self):
         return reverse('in_out_order_detail', args=[self.id])
 
     def get_create_item_url(self):
         return reverse('in_out_order_item_create', args=[self.id])
+
+    def get_delete_url(self):
+        return reverse('in_out_order_delete', args=[self.id])
 
     def get_location(self):
         if self.type == 'in':

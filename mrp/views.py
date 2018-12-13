@@ -13,6 +13,7 @@ from django.contrib import messages
 from invoice.models import CreateInvoice
 from mrp.models import ProductionOrder, ProductionOrderRawItem, ProductionOrderProduceItem, ProductionType, InOutOrder, \
     InOutOrderItem, Expenses, ExpensesItem
+from mrp.models import TurnBackOrder, TurnBackOrderItem
 from public.views import OrderItemEditMixin, OrderItemDeleteMixin, OrderFormInitialEntryMixin
 from purchase.models import PurchaseOrder
 from public.views import GetItemsMixin, StateChangeMixin
@@ -20,7 +21,8 @@ from public.stock_operate import StockOperate
 from sales.models import SalesOrder
 from .models import MoveLocationOrder, MoveLocationOrderItem
 from .forms import MoveLocationOrderItemForm, MoveLocationOrderForm, ProductionOrderForm, \
-    ProductionOrderRawItemForm, ProductionOrderProduceItemForm, InOutOrderForm, MrpItemExpensesForm
+    ProductionOrderRawItemForm, ProductionOrderProduceItemForm, InOutOrderForm, MrpItemExpensesForm, TurnBackOrderForm, \
+    TurnBackOrderItemForm
 
 
 #
@@ -130,9 +132,11 @@ class MoveLocationOrderDetailView(StateChangeMixin, GetItemsMixin, DetailView):
     def get_btn_visible(self, state):
         btn_visible = {}
         if state == 'draft':
+            btn_visible.update({'done': True, 'confirm': True, 'cancel': True})
+        elif state == 'confirm':
             btn_visible.update({'done': True, 'cancel': True})
         elif state == 'done':
-            btn_visible.update({'draft': False, 'cancel': False})
+            btn_visible.update({'turn_back': True})
         return btn_visible
 
     def done(self):
@@ -196,7 +200,15 @@ class ProductionOrderListView(ListView):
 class ProductionOrderDetailView(StateChangeMixin, DetailView):
     model = ProductionOrder
 
-    def confirm(self):
+    def get_btn_visible(self, state):
+        btn_visible = {}
+        if state == 'draft':
+            btn_visible.update({'done': True, 'cancel': True})
+        elif state == 'done':
+            btn_visible.update({'turn_back': True})
+        return btn_visible
+
+    def done(self):
         items = [i for i in self.object.items.all()]
         items.extend([i for i in self.object.produce_items.all()])
         stock = StockOperate(self.request, order=self.object, items=items)
@@ -277,9 +289,9 @@ class InOutOrderDetailView(StateChangeMixin, DetailView):
     def get_btn_visible(self, state):
         btn_visible = {}
         if state == 'draft':
-            btn_visible.update({'done': True, 'cancel': True})
+            btn_visible.update({'done': True, 'delete': True})
         elif state == 'done':
-            btn_visible.update({'draft': False, 'cancel': False})
+            btn_visible.update({'turn_back': True})
         return btn_visible
 
     def done(self):
@@ -289,11 +301,13 @@ class InOutOrderDetailView(StateChangeMixin, DetailView):
             return stock.handle_stock()
         return unlock, msg
 
-    def cancel(self):
-        from_order = self.object.sales_order or self.object.purchase_order
-        success_url = from_order.get_absolute_url()
-        self.object.delete()
-        return redirect(success_url)
+
+class InOutOrderDeleteView(BaseDeleteView):
+    model = InOutOrder
+
+    def get_success_url(self):
+        # return self.request.META.get('HTTP_REFERER')
+        return self.object.from_order.get_absolute_url()
 
 
 class InOutOrderEditView(OrderFormInitialEntryMixin):
@@ -307,7 +321,7 @@ class InOutOrderEditView(OrderFormInitialEntryMixin):
         if kwargs.get('sales_order_id'):
             self.sales_order = get_object_or_404(SalesOrder, pk=kwargs.get('sales_order_id'))
         if kwargs.get('purchase_order_id'):
-            self.purchase_order = get_object_or_404(SalesOrder, pk=kwargs.get('purchase_order_id'))
+            self.purchase_order = get_object_or_404(PurchaseOrder, pk=kwargs.get('purchase_order_id'))
         return super().dispatch(request, *args, **kwargs)
 
     def get_initial(self):
@@ -345,12 +359,13 @@ class InOutOrderEditView(OrderFormInitialEntryMixin):
         if sales_order_items:
             # 生成新item的项目
             for item in sales_order_items:
-                slabs_id_lst = [item.get_slab_id() for item in item.package_list.items.filter(slab__stock__isnull=False,
-                                                                                              slab__stock__location=self.object.warehouse.get_main_location())]
                 package = None
-                # 如果有码单，就生成一张新码单，并把码单的from_package_list链接到旧的码单，
-                # 为了在提货单draft状态下可以选择到旧码单的slab
-                if slabs_id_lst:
+                if item.product.type == 'slab':
+                    slabs_id_lst = [item.get_slab_id() for item in
+                                    item.package_list.items.filter(slab__stock__isnull=False,
+                                                                   slab__stock__location=self.object.warehouse.get_main_location())]
+                    # 如果有码单，就生成一张新码单，并把码单的from_package_list链接到旧的码单，
+                    # 为了在提货单draft状态下可以选择到旧码单的slab
                     package = item.package_list.make_package_from_list(item.product_id, slabs_id_lst,
                                                                        from_package_list=item.package_list)
                 defaults = {'piece': item.piece if not package else package.get_piece(),
@@ -452,3 +467,96 @@ class MrpExpenseItemCreateView(MrpExpenseItemEditMixin, CreateView):
 
 class MrpExpenseItemUpdateView(MrpExpenseItemEditMixin, UpdateView):
     pass
+
+
+class TurnBackOrderDetailView(StateChangeMixin, DetailView):
+    model = TurnBackOrder
+
+    def get_btn_visible(self, state):
+        btn_visible = {}
+        if state == 'draft':
+            btn_visible.update({'done': True, 'delete': True})
+        return btn_visible
+
+    def done(self):
+        items = self.object.items.all()
+        stock = StockOperate(self.request, order=self.object, items=items)
+        form_order = self.object.get_obj()
+        form_order.state = 'cancel'
+        form_order.save()
+        return stock.handle_stock()
+
+
+class TurnBackOrderDeleteView(BaseDeleteView):
+    model = TurnBackOrder
+
+    def get_success_url(self):
+        return self.object.get_obj.get_absolute_url()
+
+
+class TurnBackOrderEditMixin:
+    model = TurnBackOrder
+    form_class = TurnBackOrderForm
+    template_name = 'form.html'
+    from_order = None
+
+    def get_model(self, model_name):
+        return apps.get_model(app_label='mrp', model_name=model_name)
+
+    def dispatch(self, request, model_name, from_order_id, pk=None):
+        if pk:
+            self.sales_order = get_object_or_404(self.model, pk=pk)
+            self.object = self.get_object()
+            self.from_order = self.object.from_order
+        else:
+            self.object = None
+        if model_name and from_order_id:
+            model = self.get_model(model_name)
+            self.from_order = get_object_or_404(model, pk=from_order_id)
+        return super().dispatch(request, model_name, from_order_id, pk=None)
+
+    def get_initial(self):
+        initial = super().get_initial()
+        initial['content_type'] = ContentType.objects.get_for_model(self.from_order)
+        initial['object_id'] = self.from_order.id
+        initial['entry'] = self.request.user.id
+        initial['handle'] = self.request.user.id
+        return initial
+
+    def get_items(self):
+        # 如果是update状态，有object就返回items
+        if self.object:
+            items = self.object.items.all()
+            if items:
+                return items
+        if self.from_order:
+            items = self.from_order.items.all()
+            for item in items:
+                new_item = {f.name: getattr(item, f.name) for f in item._meta.fields if f.name != 'id'}
+                new_item['location'], new_item['location_dest'] = new_item['location_dest'], new_item['location']
+                new_item['order'] = self.object
+                new_item['package_list'] = new_item['package_list'].copy() if new_item['package_list'] else None
+                TurnBackOrderItem.objects.create(**new_item)
+
+    def form_valid(self, form):
+        with transaction.atomic():
+            self.object = form.save()
+            self.get_items()
+            return super().form_valid(form)
+
+
+class TurnBackOrderCreateView(TurnBackOrderEditMixin, CreateView):
+    pass
+
+
+class TurnBackOrderUpdateView(TurnBackOrderEditMixin, UpdateView):
+    pass
+
+
+class TurnBackOrderItemDeleteView(OrderItemDeleteMixin):
+    model = TurnBackOrderItem
+
+
+class TurnBackOrderItemEditMixin:
+    model = TurnBackOrderItemForm
+    template_name = 'item_form.html'

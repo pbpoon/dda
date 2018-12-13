@@ -4,7 +4,6 @@
 
 from stock.models import Stock, StockTrace
 from product.models import Slab
-from django.db import transaction
 
 
 class StockOperate:
@@ -157,8 +156,8 @@ class StockOperate:
                         return True
                 else:
                     # 解库
-                    max_piece, max_quantity = min((a.piece - a.reserve_piece), abs(piece)), \
-                                              min((a.quantity - a.reserve_quantity), abs(quantity))
+                    max_piece, max_quantity = min(a.reserve_piece, abs(piece)), \
+                                              min(a.reserve_quantity, abs(quantity))
                     a.reserve_piece -= max_piece
                     a.reserve_quantity -= max_quantity
                     piece += max_piece
@@ -239,7 +238,8 @@ class StockOperate:
                                                  piece=item.piece,
                                                  quantity=item.quantity, slabs=slabs):
                         break
-
+                self.trace_model.objects.create(item=item, product=item.product, location=item.location,
+                                                location_dest=item.location_dest)
             else:
                 # 更新数据库
                 # transaction.savepoint_commit(sid)

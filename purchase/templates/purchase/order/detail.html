@@ -4,15 +4,16 @@
 {% block headline %}{{ object.get_state_display }}{{ object.order }}{% endblock %}
 {% block subheadline %}
     供应商：{{ object.partner }} / 经办人：{{ object.handler }}
-    <a href="{% url 'purchase_order_in_order' object.id %}" class="float-right">收货</a>
+    {% if object.state == 'confirm' %}
+        <a href="{% url 'purchase_order_in_order' object.id %}" class="float-right">收货</a>
+    {% endif %}
 {% endblock %}
 {% block btn %}
-
 {% endblock %}
 {% block content %}
     <table class="table table-sm">
         <thead>
-        <tr>
+        <tr><th>#</th>
             <th>编号</th>
             <th>重量</th>
             <th>长</th>
@@ -28,7 +29,8 @@
 
         <tbody>
         {% for item in object.items.all %}
-            <tr id="block_list_tr">
+            <tr>
+            <td>{{ item.line }}</td>
                 <td>{{ item.name }}</td>
                 <td>{{ item.weight }}</td>
                 <td>{{ item.long }}</td>
@@ -38,19 +40,25 @@
                 <td>{{ item.uom }}</td>
                 <td>{{ item.price }}</td>
                 <td>{{ item.get_amount }}</td>
-                <td>
-                    {% if object.state == 'draft' %}
-                        <div class="btn-group">
-                            <button class="btn btn-outline-primary"
-                                    onclick="edit_item('{% url 'purchase_order_item_edit' item.id %}')">修改
-                            </button>
-                            <button class="btn btn-outline-danger"
-                                    onclick="item_remove({{ item.id }},'{% url 'purchase_order_item_delete' 9999 %}')">
+                <td>{% if object.state == 'draft' %}
+                    <!-- Dropdown Trigger -->
+
+                    <a class='dropdown-trigger btn-floating grey' href='#' data-target='dropdown{{ forloop.counter }}'> <i
+                            class="material-icons">more_vert</i></a>
+
+                    <!-- Dropdown Structure -->
+                    <ul id='dropdown{{ forloop.counter }}' class='dropdown-content'>
+                        <li>
+                            <a onclick="edit_item( '{% url 'purchase_order_item_edit' item.id %}')">修改
+                            </a>
+                        </li>
+                        <li>
+                            <a onclick="item_remove('{% url 'purchase_order_item_delete' item.id %}')">
                                 删除
-                            </button>
-                        </div>
-                    {% endif %}
-                </td>
+                            </a>
+                        </li>
+                    </ul>
+                {% endif %}</td>
             </tr>
         {% endfor %}
         </tbody>

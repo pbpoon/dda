@@ -71,6 +71,10 @@ class Block(models.Model):
     class Meta:
         verbose_name = '荒料资料'
 
+    def get_batch(self):
+        if not self.batch:
+            return self.name[:2]
+
     def get_m3(self):
         if self.uom == 't':
             m3 = self.weight / decimal.Decimal(2.8)
@@ -88,8 +92,28 @@ class Block(models.Model):
         product, is_create = Product.objects.get_or_create(block=block, type=type, thickness=thickness)
         return product
 
+    def get_stock_trace_all(self):
+        stock_traces = [trace for p in self.products.all() for trace in p.product_stock_trace.all()]
+        stock_trace_list = [{'事务': (t.get_obj().order._meta.verbose_name, t.get_obj().order),
+                             '状态': t.get_obj().order.get_state_display(),
+                             '形态': t.get_obj().product.get_type_display(),
+                             '件': t.get_obj().piece,
+                             '数量': str(t.get_obj().quantity) + t.get_obj().uom,
+                             '原库位': t.get_obj().location,
+                             '目标库位': t.get_obj().location_dest,
+                             '日期': t.get_obj().order.date} for t in stock_traces if
+                            t.get_obj().order.state not in ('draft', 'cancel')]
+        return stock_trace_list
+
+    def get_stock_all(self):
+        stocks = [s for p in self.products.all() for s in p.stock.all()]
+        return stocks
+
     def __str__(self):
         return self.name
+
+    def get_absolute_url(self):
+        return reverse('block_detail', args=[self.id])
 
     def save(self, *args, **kwargs):
         if not self.m3:
@@ -98,7 +122,7 @@ class Block(models.Model):
 
 
 class Product(models.Model):
-    block = models.ForeignKey('Block', on_delete=models.CASCADE, verbose_name='荒料编号')
+    block = models.ForeignKey('Block', on_delete=models.CASCADE, verbose_name='荒料编号', related_name='products')
     type = models.CharField('类型', max_length=10, choices=TYPE_CHOICES, default='block')
     thickness = models.DecimalField('厚度规格', max_digits=5, decimal_places=2, null=True, blank=True)
     updated = models.DateTimeField('更新日期', auto_now=True)
@@ -270,6 +294,10 @@ class PackageList(models.Model):
             package_list.items.set(new_items)
             package_list.save()
             return package_list
+
+    def copy(self):
+        slab_ids = [item.get_slab_id() for item in self.items.all()]
+        return self.make_package_from_list(self.product_id, slab_ids, from_package_list=self)
 
 
 class PackageListItem(models.Model):

@@ -39,17 +39,17 @@
                 <td>{% if object.state == 'draft' %}
                     <!-- Dropdown Trigger -->
 
-                    <a class='dropdown-trigger btn-floating grey' href='#' data-target='dropdown1'> <i
+                    <a class='dropdown-trigger btn-floating grey' href='#' data-target='dropdown{{ forloop.counter }}'> <i
                             class="material-icons">more_vert</i></a>
 
                     <!-- Dropdown Structure -->
-                    <ul id='dropdown1' class='dropdown-content'>
+                    <ul id='dropdown{{ forloop.counter }}' class='dropdown-content'>
                         <li>
                             <a onclick="edit_item( '{% url 'sales_order_item_edit' item.id %}')">修改
                             </a>
                         </li>
                         <li>
-                            <a onclick="item_remove({{ item.id }},'{% url 'sales_order_item_delete' 9999 %}')">
+                            <a onclick="item_remove('{% url 'sales_order_item_delete' item.id %}')">
                                 删除
                             </a>
                         </li>

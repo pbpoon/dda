@@ -99,9 +99,9 @@ class StockTrace(models.Model):
     """
     只在记录什么单的product操作了什么，用作链式记账
     """
-    order_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name='order_stock_trace')
-    order_id = models.PositiveIntegerField()
-    order = GenericForeignKey('order_content_type', 'order_id')
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name='order_stock_trace')
+    object_id = models.PositiveIntegerField()
+    item = GenericForeignKey()
     location = models.ForeignKey('Location', related_name='stock_trace_from', verbose_name='库位',
                                  on_delete=models.DO_NOTHING)
     location_dest = models.ForeignKey('Location', related_name='stock_trace_to', verbose_name='目标库位',
@@ -113,7 +113,10 @@ class StockTrace(models.Model):
         verbose_name = '库存轨迹'
 
     def __str__(self):
-        return '{}|{}:{}=>{}'.format(self.order, self.product, self.location, self.location_dest)
+        return '{}|{}:{}=>{}'.format(self.get_obj().order, self.product, self.location, self.location_dest)
+
+    def get_obj(self):
+        return self.content_type.model_class().objects.get(pk=self.object_id)
 
 
 class Stock(models.Model):

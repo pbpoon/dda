@@ -6,7 +6,7 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from mrp.models import ProductionOrderProduceItem, InOutOrderItem
+from mrp.models import ProductionOrderProduceItem, InOutOrderItem, TurnBackOrderItem
 from product.models import PackageList
 from sales.models import SalesOrderItem
 
@@ -42,6 +42,14 @@ def package_list_post_save_update_item_quantity(sender, **kwargs):
     io_items = InOutOrderItem.objects.filter(package_list=instance)
     if io_items:
         for item in io_items:
+            item.piece = instance.get_piece()
+            item.quantity = instance.get_quantity()
+            item.save()
+        return True
+
+    tb_items = TurnBackOrderItem.objects.filter(package_list=instance)
+    if tb_items:
+        for item in tb_items:
             item.piece = instance.get_piece()
             item.quantity = instance.get_quantity()
             item.save()
