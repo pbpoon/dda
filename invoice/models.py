@@ -30,15 +30,14 @@ STATE_CHOICES = (
 
 class CreateInvoice:
     # 创建发票的api
-    def __init__(self, order, partner, entry, items_dict_lst, state=None, usage=None, type=None, date=None,
+    def __init__(self, order, partner, items_dict_lst, state=None, usage=None, type=None, date=None,
                  due_date=None, due_day=None):
-        self.model = OrderInvoiceThrough
         self.invoice_model = Invoice
         self.item_model = InvoiceItem
         self.state = state
         self.order = order
         self.partner = partner
-        self.entry = entry
+        self.entry = self.order.entry
         self.usage = usage if usage else '货款'
         self.type = type if type else '-1'
         self.date = timezone.now() if date is None else date
@@ -46,61 +45,43 @@ class CreateInvoice:
             due_date = date + datetime.timedelta(due_day)
         self.due_date = due_date
         self.items_dict_lst = items_dict_lst
-        self.invoice = self.make_invoice()
+        self.invoice = self.make()
 
-    def check_invoice(self):
+    def get_invoice(self):
         order_model = ContentType.objects.get_for_model(self.order)
         # order_invoice_lst = self.model.objects.filter(content_type_id=order_model.id,
         #                                               object_id=self.order.id).values_list('id', flat=True)
         invoice = self.invoice_model.objects.filter(partner=self.partner, usage=self.usage, type=self.type,
-                                                    entry=self.entry, to_order__content_type_id=order_model.id,
-                                                    to_order__object_id=self.order.id)
+                                                    content_type=order_model, object_id=self.order.id)
         if invoice:
-            return invoice[0]
-        return None
+            return invoice[0], False
+        return self.invoice_model.objects.create(partner=self.partner, usage=self.usage, type=self.type,
+                                                 entry=self.entry, due_date=self.due_date, date=self.date), True
 
-    def create_invoice(self):
-        invoice = self.invoice_model.objects.create(partner=self.partner, usage=self.usage, type=self.type,
-                                                    entry=self.entry, due_date=self.due_date, date=self.date)
+    def get_or_create_invoice(self):
+        invoice, is_create = self.get_invoice()
+        invoice.items.all().delete()
         for item in self.items_dict_lst:
             item['order'] = invoice
             self.item_model.objects.create(**item)
         self.order.invoices.create(invoice=invoice)
-        return invoice
+        return invoice, is_create
 
-    def make_invoice(self):
+    def make(self):
         # 先查出有没相同的invoice ##check_invoice()
         # 如果有就直接return
         # 没有就create一条 ##create_invoice()
-        comment_detail = {}
-        comment_detail['order'] = self.order.order
-        invoice = self.check_invoice()
-        if invoice:
-            if self.state:
-                invoice.state = self.state
-                invoice.save()
-            comment_detail['method'] = '创建'
+        comment_content = {}
+        comment_content['order'] = str(self.order)
+        invoice, is_create = self.get_or_create_invoice()
+        if is_create:
+            comment_content['method'] = '创建'
         else:
-            invoice = self.create_invoice()
-            comment_detail['method'] = '更改'
-
+            comment_content['method'] = '更改'
         # 日后可以再添加comment的记录
-        comment_detail['state'] = invoice.state
-        invoice.comments.create(user=self.entry, comment='由{order}{method}'.format(**comment_detail))
+        comment_content['state'] = invoice.state
+        invoice.comments.create(user=self.entry, comment='由{order}{method}'.format(**comment_content))
         return invoice
-
-
-class OrderInvoiceThrough(models.Model):
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.PositiveIntegerField()
-    order = GenericForeignKey('content_type', 'object_id')
-    invoice = models.ForeignKey('Invoice', on_delete=models.CASCADE, verbose_name='账单', related_name='to_order')
-
-    class Meta:
-        verbose_name = '订单与账单关系'
-
-    def get_absolute_url(self):
-        return shortcut(self.content_type, self.object_id)
 
 
 class Invoice(models.Model):
@@ -109,7 +90,10 @@ class Invoice(models.Model):
     created = models.DateTimeField('创建时间', auto_now_add=True)
     updated = models.DateTimeField('更新时间', auto_now=True)
 
-    from_order = models.ManyToManyField('OrderInvoiceThrough', verbose_name='对应订单', related_name='to_invoice')
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    from_order = GenericForeignKey('content_type', 'object_id')
+
     date = models.DateField('日期')
     due_date = models.DateField('到期日', blank=True, null=True)
     partner = models.ForeignKey('partner.Partner', on_delete=models.SET_NULL, null=True, blank=True,

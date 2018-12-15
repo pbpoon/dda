@@ -41,11 +41,14 @@
                     <li><a href="{% url 'in_out_order_list' %}">出入库</a></li>
                     <li><a href="{% url 'move_location_order_list' %}">移库单</a></li>
                     <li><a href="{% url 'production_list' %}">生产订单</a></li>
+                    <li><a href="{% url 'inventory_order_list' %}">库存盘点</a></li>
+                    <hr/>
                     <li>
-                        <hr/>
+                        <ul>
+                            <li><a href="{% url 'production_type_list' %}">生产业务类型设置</a></li>
+                            <li><a href="{% url 'expenses_item_list' %}">费用相关设置</a></li>
+                        </ul>
                     </li>
-                    <li><a href="{% url 'production_type_list' %}">生产业务类型设置</a></li>
-                    <li><a href="{% url 'expenses_item_list' %}">费用相关设置</a></li>
                 </ul>
             </div>
         </li>

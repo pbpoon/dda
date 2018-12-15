@@ -180,7 +180,7 @@ class StockOperate:
                     id__in=package_list.items.values_list('slab', flat=True)) if package_list else None
                 av_piece, av_quantity = self.get_available(product=item.product, location=item.location, slabs=slabs)
                 if (av_piece - item.piece) < 0:
-                    error.append('{product}#可以库存为:{av_piece}件/{av_quantity}{uom},超出需求{piece}件/{quantity}{uom}'.format(
+                    error.append('{product}#可用库存为:{av_piece}件/{av_quantity}{uom},超出需求{piece}件/{quantity}{uom}'.format(
                         product=item.product, av_piece=av_piece, av_quantity=av_quantity, piece=item.piece,
                         quantity=item.quantity, uom=item.product.uom))
         if error:

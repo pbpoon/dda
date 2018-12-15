@@ -18,6 +18,7 @@ class MrpOrderAbstract(OrderAbstract):
                                       related_name='%(class)s_location_dest',
                                       verbose_name='目标库位', null=True, blank=True)
     stock_trace = GenericRelation('stock.StockTrace')
+    operation_logs = GenericRelation('comment.OperationLogs')
     warehouse = models.ForeignKey('stock.Warehouse', on_delete=models.CASCADE, verbose_name='仓库')
     date = models.DateField('日期')
     created = models.DateField('创建日期', auto_now_add=True)
@@ -35,7 +36,7 @@ class MrpOrderAbstract(OrderAbstract):
     def save(self, *args, **kwargs):
         self.location = self.get_location()
         self.location_dest = self.get_location_dest()
-        super(MrpOrderAbstract, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.order
@@ -47,13 +48,14 @@ class OrderItemBase(models.Model):
                                  on_delete=models.DO_NOTHING, blank=True, null=True)
     location_dest = models.ForeignKey('stock.Location', related_name='%(class)s_location_dest', verbose_name='目标库位',
                                       on_delete=models.DO_NOTHING, blank=True, null=True)
-    product = models.ForeignKey('product.Product', on_delete=models.CASCADE, verbose_name='product')
+    product = models.ForeignKey('product.Product', on_delete=models.CASCADE, verbose_name='产品')
     piece = models.IntegerField('件', default=1)
     quantity = models.DecimalField('数量', decimal_places=2, max_digits=10)
     uom = models.CharField('计量单位', null=False, choices=UOM_CHOICES, max_length=10, default='t')
 
     class Meta:
         abstract = True
+        unique_together = ('order', 'product')
 
     def get_location(self):
         return self.order.location

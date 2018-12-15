@@ -1,0 +1,75 @@
+{% extends "mrp/detail.html" %}
+{% load materializecss %}
+{% block headline %}<span class="h6">[{{ object.state }}]{{ object.name }}</span>
+{% endblock %}
+{% block subheadline %}
+    盘点仓库：{{ object.warehouse }} / 经办人：{% for handler in object.hsndler %}{{ handler }}{% endfor %}
+{% endblock %}
+{% block content %}
+    <table class="table">
+        <thead>
+        <tr>
+            <th>#</th>
+            <th>已盘</th>
+            <th>产品</th>
+            <th>原库位</th>
+            <th>原数量</th>
+            <th>编辑</th>
+        </tr>
+        </thead>
+
+        <tbody>
+        {% for item in object.items.all %}
+            <tr>
+                <td>{{ item.line }}</td>
+                <td><p>
+                    <label>
+                        <input type="checkbox" class="filled-in" {% if item.is_equal %}checked="checked"{% endif %}/>
+                        <span></span>
+                    </label>
+                </p>{{ item.is_equal }}</td>
+                <td>{{ item.product }}</td>
+                <td>{% if item.old_package_list %}
+                    <a href="#"
+                       onclick="open_package_list('{{ item.old_package_list.get_absolute_url }}','{{ object.state }}')">
+                        {{ item.old_package_list.get_part }}夹/ {{ item.old_piece }}件/
+                        {{ item.old_quantity }}{{ item.product.get_uom }}</a>
+                {% else %}
+                    {{ item.old_piece }}件/
+                    {{ item.old_quantity }}{{ item.product.get_uom }}
+                {% endif %}<br>
+                    <span class="blue-text">{{ item.piece }}件/{{ item.quantity }}{{ item.product.get_uom }}</span>
+                </td>
+                <td>{{ item.old_location }}<br>
+                    <span class="blue-text">{{ item.location }}</span></td>
+
+                <td>{% if object.state == 'draft' %}
+                    <!-- Dropdown Trigger -->
+
+                    <a class='dropdown-trigger btn-floating btn-small grey' href='#'
+                       data-target='dropdown{{ forloop.counter }}'>
+                        <i
+                                class="material-icons">more_vert</i></a>
+
+                    <!-- Dropdown Structure -->
+                    <ul id='dropdown{{ forloop.counter }}' class='dropdown-content'>
+                        <li>
+                            <a onclick="edit_item('{% url 'inventory_order_item_edit' item.id %}')">
+                                输入盘点数据
+                            </a>
+                        </li>
+                    </ul>
+                {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+        <tfoot>
+        <tr>
+            <td></td>
+            <td>{{ object.get_quantity }}</td>
+            <td></td>
+        </tr>
+        </tfoot>
+    </table>
+{% endblock %}

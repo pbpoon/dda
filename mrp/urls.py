@@ -5,14 +5,24 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    # ------------------------------------------------inventory order
+
+    path('inventory_order/item/create/<order_id>/', views.InventoryOrderItemEditView.as_view(),
+         name='inventory_order_item_create'),
+    path('inventory_order/item/edit/<pk>/', views.InventoryOrderItemEditView.as_view(),
+         name='inventory_order_item_edit'),
+    path('inventory_order/update/<pk>/', views.InventoryOrderUpdateView.as_view(), name='inventory_order_update'),
+    path('inventory_order/create/', views.InventoryOrderCreateView.as_view(), name='inventory_order_create'),
+    path('inventory_order/<pk>/', views.InventoryOrderDetailView.as_view(), name='inventory_order_detail'),
+    path('inventory_order/', views.InventoryOrderListView.as_view(), name='inventory_order_list'),
     # ------------------------------------------------turn back
 
     path('turn_back/item/delete/<pk>', views.TurnBackOrderItemDeleteView.as_view(),
          name='turn_back_order_item_delete'),
     path('turn_back/update/<pk>/', views.TurnBackOrderUpdateView.as_view(), name='turn_back_order_update'),
+    path('turn_back/delete/<pk>/', views.TurnBackOrderDeleteView.as_view(), name='turn_back_order_delete'),
     path('turn_back/<model_name>/<from_order_id>/', views.TurnBackOrderCreateView.as_view(),
          name='turn_back_order_create'),
-    path('turn_back/delete/<pk>/', views.TurnBackOrderDeleteView.as_view(), name='turn_back_order_delete'),
     path('turn_back/<pk>/', views.TurnBackOrderDetailView.as_view(), name='turn_back_order_detail'),
 
     # ------------------------------------------------expenses

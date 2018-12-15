@@ -126,7 +126,7 @@ class PackageListDetail(DetailView):
 
     def get_state_draft_slabs(self):
         slabs = [item for stock in self.object.product.stock.all() for item in
-                 stock.items.all().order_by('part_number', 'line')]
+                 stock.items.filter(is_reserve=False).order_by('part_number', 'line')]
         return slabs
 
     def get(self, *args, **kwargs):

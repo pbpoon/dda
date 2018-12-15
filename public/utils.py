@@ -36,11 +36,8 @@ class Package:
         return quantity
 
 
-
-
-
-def obj_to_dict(obj):
-    return {q.name: getattr(obj, q.name) for q in obj._meta.fields}
+def obj_to_dict(obj, fields_lst=[]):
+    return {q.name: getattr(obj, q.name) for q in obj._meta.fields if q.name in fields_lst}
 
 
 def qs_to_dict(obj):
@@ -159,6 +156,7 @@ class ImportData:
                     item[name] = str(row).split('.')[0]
                 lst.append(item)
         return lst
+
 
 def default_decimal(obj):
     if isinstance(obj, Decimal):

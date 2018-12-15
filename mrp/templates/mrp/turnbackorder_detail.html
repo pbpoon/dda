@@ -1,7 +1,7 @@
 {% extends "mrp/detail.html" %}
 {% load materializecss %}
 {% block headline %}<span class="h6">[{{ object.state }}]</span>
-    <a href="{{ object.from_order.get_absolute_url }}">{{ object.get_obj }}</a>库存反操作{{ object.order }}
+    <a href="{{ object.from_order.get_absolute_url }}">{{ object }}</a>
 {% endblock %}
 {% block subheadline %}
     原因： {{ object.reason }} / 卸货仓库：{{ object.warehouse }} / 经办人：{{ object.handler }}

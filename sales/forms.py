@@ -6,6 +6,7 @@ from django.urls import reverse, reverse_lazy
 
 from partner.models import City
 from product.models import Product, PackageList
+from public.forms import FormUniqueTogetherMixin
 from public.widgets import CheckBoxWidget, AutocompleteWidget
 from sales.models import SalesOrder, SalesOrderItem
 from stock.models import Warehouse
@@ -48,7 +49,7 @@ class SalesOrderForm(forms.ModelForm):
         return instance
 
 
-class SalesOrderItemForm(forms.ModelForm):
+class SalesOrderItemForm(FormUniqueTogetherMixin, forms.ModelForm):
     product_autocomplete = forms.CharField(label='产品编号', widget=AutocompleteWidget(url='get_product_list'))
     warehouse = forms.ModelChoiceField(label='出货仓库', queryset=Warehouse.objects.filter(is_activate=True, ),
                                        required=True)
@@ -110,7 +111,7 @@ class SalesOrderItemForm(forms.ModelForm):
         return instance
 
 
-class SalesOrderItemQuickForm(forms.ModelForm):
+class SalesOrderItemQuickForm(FormUniqueTogetherMixin, forms.ModelForm):
     slab_id_list = forms.CharField(widget=forms.HiddenInput(), required=False)
 
     class Meta:

@@ -1,9 +1,10 @@
 function set_product(val) {
-    $('input[name=product]').val(val)
+    $('input[name=product]').val(val);
+
     $.ajax({
         url: '/product/product_info',
         method: 'GET',
-        data: {'product': val},
+        data: $('#item_form').serialize(),
         success: function (data) {
             $('input[name=piece]').val(data['piece']);
             $('input[name=quantity]').val(data['quantity']);

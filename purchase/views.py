@@ -32,11 +32,8 @@ class PurchaseOrderDetailView(StateChangeMixin, DetailView):
         obj.save()
         # 日后生产invoice
         comment += obj.state
-        obj.comments.create(user=self.request.user, comment=comment)
+        obj.comments.create(user=self.request.user, content=comment)
 
-        items_dict_lst = [{'item': str(item.product), 'price': item.price, 'quantity': item.get_quantity()} for item in
-                          obj.items.all()]
-        CreateInvoice(order=obj, partner=obj.partner, entry=obj.entry, items_dict_lst=items_dict_lst)
         msg = '设置订单{}设置成 确认 状态'.format(obj.order)
         return True, msg
 
@@ -46,6 +43,12 @@ class PurchaseOrderDetailView(StateChangeMixin, DetailView):
         obj.save()
         messages.info(self.request, '设置订单{}设置成 草稿 状态'.format(obj.order))
         return super(PurchaseOrderDetailView, self).draft()
+
+    def make_invoice(self):
+        items_dict_lst = [{'item': str(item.product), 'price': item.price, 'quantity': item.get_quantity()} for item in
+                          self.object.items.all()]
+        CreateInvoice(order=self.object, partner=self.object.partner, items_dict_lst=items_dict_lst).make()
+        return True
 
 
 class PurchaseOrderEditMixin(OrderFormInitialEntryMixin):

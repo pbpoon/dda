@@ -34,10 +34,9 @@ class TurnBackOrder(models.Model):
     date = models.DateField('日期', default=datetime.now)
     created = models.DateField('创建日期', auto_now_add=True)
     updated = models.DateTimeField('更新时间', auto_now=True)
-    stock_trace = GenericRelation('stock.StockTrace')
 
     class Meta:
-        verbose_name = '回退操作'
+        verbose_name = '库存回退'
 
     def get_obj(self):
         return self.content_type.model_class().objects.get(pk=self.object_id)
@@ -48,6 +47,9 @@ class TurnBackOrder(models.Model):
     def get_delete_url(self):
         return reverse('turn_back_order_delete', args=[self.id])
 
+    def __str__(self):
+        return '{}/库存回退({})'.format(self.get_obj(), self.order[-8:])
+
 
 class TurnBackOrderItem(OrderItemBase):
     order = models.ForeignKey('TurnBackOrder', on_delete=models.CASCADE, related_name='items', verbose_name='对应订单')
@@ -55,7 +57,7 @@ class TurnBackOrderItem(OrderItemBase):
                                      verbose_name='码单')
 
     class Meta:
-        verbose_name = '出入库操作明细行'
+        verbose_name = '库存回退明细行'
 
     def save(self, *args, **kwargs):
         if self.package_list:

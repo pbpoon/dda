@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
+from django.db.models import Q
 from django.urls import reverse
 from django.contrib import messages
 
@@ -94,6 +95,12 @@ class Location(models.Model):
                 return parent
             parent = parent.parent
 
+    def get_child_list(self):
+        child_list = [id for id in self.child.filter(is_activate=True).values_list('id', flat=True)]
+        if child_list:
+            return child_list.append(self.id)
+        return [self.id]
+
 
 class StockTrace(models.Model):
     """
@@ -162,15 +169,17 @@ class Stock(models.Model):
     @staticmethod
     def _get_stock(product, location=None, slabs=None, check_in=False):
         # 取得库存的记录
-        qs = Stock.objects.filter(product_id=product.id)
+        kwargs = {'product_id': product.id}
         if location:
             if check_in:
-                return qs.filter(location_id=location.id)
+                kwargs['location_id'] = location.id
+                return Stock.objects.filter(**kwargs)
             location_id_list = [l.id for l in location.child.all()] if location.child.all() else []
             location_id_list.append(location.id)
-            qs.filter(location_id__in=location_id_list)
+            kwargs['location_id__in'] = location_id_list
+        qs = Stock.objects.filter(**kwargs).distinct()
         if slabs:
-            qs.filter(items__in=[s.id for s in slabs])
+            qs = qs.filter(items__in=[s.id for s in slabs]).distinct()
         return qs
 
     @staticmethod

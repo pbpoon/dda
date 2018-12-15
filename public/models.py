@@ -34,7 +34,8 @@ class OrderAbstract(models.Model):
     entry = models.ForeignKey('auth.User', on_delete=models.CASCADE, verbose_name='登记人',
                               related_name='%(class)s_entry')
     comments = GenericRelation('comment.Comment')
-    invoices = GenericRelation('invoice.OrderInvoiceThrough')
+    invoices = GenericRelation('invoice.Invoice')
+    # operation_logs = GenericRelation('comment.OperationLogs')
 
     class Meta:
         abstract = True

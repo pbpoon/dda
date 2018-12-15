@@ -23,3 +23,14 @@ class AddExcelForm(forms.Form):
     file = forms.FileField(label='上传文件')
 
 
+class FormUniqueTogetherMixin:
+
+    def clean(self):
+        data = self.cleaned_data
+        product = data.get('product')
+        order = data.get('order')
+        if order and product:
+            same_product_count = order.items.filter(product_id=product.id).count()
+            if same_product_count > 1:
+                raise forms.ValidationError('订单明细行，已有 {} 产品.不允许有相同的产品规格!'.format(str(product)))
+        return data

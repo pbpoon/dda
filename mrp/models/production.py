@@ -72,6 +72,10 @@ class ProductionOrderRawItem(OrderItemBase):
     class Meta:
         verbose_name = '生产单原料行'
 
+    @property
+    def amount(self):
+        return self.get_amount()
+
     def get_amount(self):
         if self.product.type == 'block':
             return self.get_m3() * self.price
@@ -120,7 +124,7 @@ class ProductionOrderRawItem(OrderItemBase):
 
 
 class ProductionOrderProduceItem(OrderItemBase):
-    order = models.ForeignKey(ProductionOrder, on_delete=models.CASCADE, related_name='produce_items',
+    order = models.ForeignKey('ProductionOrder', on_delete=models.CASCADE, related_name='produce_items',
                               verbose_name='对应生产单')
     raw_item = models.ForeignKey('ProductionOrderRawItem', on_delete=models.CASCADE, related_name='produces',
 
@@ -138,6 +142,10 @@ class ProductionOrderProduceItem(OrderItemBase):
     class Meta:
         verbose_name = '生产单成品行'
         # unique_together = ['thickness', 'raw_item']
+
+    @property
+    def amount(self):
+        return self.get_amount()
 
     def get_amount(self):
         if self.product.type == 'slab':

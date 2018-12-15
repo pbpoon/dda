@@ -27,11 +27,18 @@ class PurchaseOrder(OrderAbstract):
         verbose_name = '采购订单'
         ordering = ['-order']
 
+    def __str__(self):
+        return self.order
+
     def get_absolute_url(self):
         return reverse('purchase_order_detail', args=[self.id])
 
     def get_quantity(self):
         return sum(item.get_quantity() for item in self.items.all())
+
+    @property
+    def amount(self):
+        return self.get_amount()
 
     def get_amount(self):
         return sum(item.get_amount() for item in self.items.all())
@@ -65,6 +72,10 @@ class PurchaseOrderItem(models.Model):
 
     def get_quantity(self):
         return self.weight if self.uom == 't' else self.m3
+
+    @property
+    def amount(self):
+        return self.get_amount()
 
     def get_amount(self):
         return Decimal('{0:.2f}'.format(self.quantity * self.price))

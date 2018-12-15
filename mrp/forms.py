@@ -5,49 +5,13 @@ from django import forms
 from django.urls import reverse, reverse_lazy
 
 from mrp.models import ProductionOrder, ProductionOrderRawItem, ProductionOrderProduceItem, InOutOrder, InOutOrderItem, \
-    Expenses
+    Expenses, InventoryOrder, InventoryOrderItem
 from mrp.models import TurnBackOrder, TurnBackOrderItem
 from product.models import Product
-from public.widgets import AutocompleteWidget, OptionalChoiceField
+from public.forms import FormUniqueTogetherMixin
+from public.widgets import AutocompleteWidget, OptionalChoiceField, CheckBoxWidget
 from stock.models import Location, Warehouse
 from mrp.models import MoveLocationOrder, MoveLocationOrderItem
-
-
-#
-# class BlockCheckInOrderForm(forms.ModelForm):
-#     class Meta:
-#         model = BlockCheckInOrder
-#         exclude = ('location', 'location_dest')
-#         widgets = {
-#             'entry': forms.HiddenInput,
-#             'purchase_order': forms.HiddenInput,
-#             'order': forms.HiddenInput,
-#             'state': forms.HiddenInput,
-#         }
-#
-#
-# class BlockCheckInOrderItemForm(forms.ModelForm):
-#     class Meta:
-#         model = BlockCheckInOrderItem
-#         exclude = ('location', 'location_dest')
-#         widgets = {
-#             'order': forms.HiddenInput,
-#         }
-#
-#     def __init__(self, *args, **kwargs):
-#         order = kwargs.pop('block_check_in_order')
-#         super(BlockCheckInOrderItemForm, self).__init__(*args, **kwargs)
-#         if kwargs.get('instance', None) is None:
-#             already_check_in_products = [i.product.id for i in order.purchase_order.items.filter(
-#                 order__block_check_in_order__state__in=('confirm', 'done'))]
-#             already_check_in_products.extend([i.product.id for i in order.items.all()])
-#             products = [i.product.id for i in order.purchase_order.items.all() if
-#                         i.product.id not in already_check_in_products]
-#             qs = Product.objects.filter(id__in=products)
-#             url = reverse_lazy('get_product_info')
-#             self.fields['product'].queryset = qs
-#             self.fields['product'].widget.attrs = {
-#                 'onchange': 'set_onchange({},"{}","quantity")'.format('this.value', url)}
 
 
 class MoveLocationOrderForm(forms.ModelForm):
@@ -59,7 +23,7 @@ class MoveLocationOrderForm(forms.ModelForm):
         }
 
 
-class MoveLocationOrderItemForm(forms.ModelForm):
+class MoveLocationOrderItemForm(FormUniqueTogetherMixin, forms.ModelForm):
     product_autocomplete = forms.CharField(label='产品编号', widget=AutocompleteWidget(url='get_product_list'))
 
     class Meta:
@@ -69,6 +33,7 @@ class MoveLocationOrderItemForm(forms.ModelForm):
         widgets = {
             'order': forms.HiddenInput,
             'product': forms.HiddenInput,
+            'package_list': forms.HiddenInput,
         }
 
     def save(self, commit=True):
@@ -94,23 +59,23 @@ class MoveLocationOrderItemForm(forms.ModelForm):
 
             self.fields['location'].queryset = loc
             self.fields['location'].initial = order.location.id
-            self.fields['location'].widget.attrs = {
-                'onchange': 'onchange_set_product_list("{url}",{kwargs})'.format(url=get_product_list,
-                                                                                 kwargs='{"location":this.value}')}
+            # self.fields['location'].widget.attrs = {
+            #     'onchange': 'onchange_set_product_list("{url}",{kwargs})'.format(url=get_product_list,
+            #                                                                      kwargs='{"location":this.value}')}
             self.fields['location_dest'].queryset = dest
             self.fields['location_dest'].initial = order.location_dest.id
             # 按初始化的仓库及本order已选择的product为条件筛选出product的qs
-            order_products = [item.product.id for item in order.items.all()]
-            loc_id = order.location.id
-            loc_childs = Location.objects.get(pk=loc_id).child.all()
-            loc_id = [loc_id]
-            if loc_childs:
-                loc_id.extend([c.id for c in loc_childs])
-            qs = Product.objects.filter(stock__location_id__in=loc_id).exclude(id__in=order_products)
-            self.fields['product'].queryset = qs
-            self.fields['product'].widget.attrs = {
-                'onchange': 'onchange_set_product_info({},"{}","quantity","piece", "uom")'.format('this.value',
-                                                                                                  get_product_info)}
+            # order_products = [item.product.id for item in order.items.all()]
+            # loc_id = order.location.id
+            # loc_childs = Location.objects.get(pk=loc_id).child.all()
+            # loc_id = [loc_id]
+            # if loc_childs:
+            #     loc_id.extend([c.id for c in loc_childs])
+            # qs = Product.objects.filter(stock__location_id__in=loc_id).exclude(id__in=order_products)
+            # self.fields['product'].queryset = qs
+            # self.fields['product'].widget.attrs = {
+            #     'onchange': 'onchange_set_product_info({},"{}","quantity","piece", "uom")'.format('this.value',
+            #                                                                                       get_product_info)}
 
         else:
             self.fields['product_autocomplete'].initial = instance.product.name + instance.product.get_type_display()
@@ -127,7 +92,7 @@ class ProductionOrderForm(forms.ModelForm):
         }
 
 
-class ProductionOrderRawItemForm(forms.ModelForm):
+class ProductionOrderRawItemForm(FormUniqueTogetherMixin, forms.ModelForm):
     product_autocomplete = forms.CharField(label='产品编号', widget=AutocompleteWidget(url='get_product_list'))
     type = forms.CharField(widget=forms.HiddenInput)
 
@@ -191,7 +156,7 @@ class ProductionOrderRawItemForm(forms.ModelForm):
             self.fields['uom'].initial = 'm2'
 
 
-class ProductionOrderProduceItemForm(forms.ModelForm):
+class ProductionOrderProduceItemForm(FormUniqueTogetherMixin, forms.ModelForm):
     class Meta:
         model = ProductionOrderProduceItem
         fields = ('order', 'raw_item', 'thickness', 'piece', 'quantity', 'price', 'package_list', 'draft_package_list')
@@ -254,7 +219,7 @@ class InOutOrderForm(forms.ModelForm):
             self.fields['pickup_staff'].widget = forms.HiddenInput()
 
 
-class InOutOrderItemForm(forms.ModelForm):
+class InOutOrderItemForm(FormUniqueTogetherMixin, forms.ModelForm):
     class Meta:
         model = InOutOrderItem
         exclude = ('location', 'location_dest')
@@ -275,7 +240,6 @@ class MrpItemExpensesForm(forms.ModelForm):
 
 
 class TurnBackOrderForm(forms.ModelForm):
-
     class Meta:
         model = TurnBackOrder
         fields = ('content_type', 'object_id', 'reason', 'warehouse', 'entry', 'handler', 'date')
@@ -286,7 +250,7 @@ class TurnBackOrderForm(forms.ModelForm):
         }
 
 
-class TurnBackOrderItemForm(forms.ModelForm):
+class TurnBackOrderItemForm(FormUniqueTogetherMixin, forms.ModelForm):
     class Meta:
         model = TurnBackOrderItem
         fields = '__all__'
@@ -294,3 +258,62 @@ class TurnBackOrderItemForm(forms.ModelForm):
             'order': forms.HiddenInput,
             'package_list': forms.HiddenInput,
         }
+
+
+class InventoryOrderForm(forms.ModelForm):
+    class Meta:
+        model = InventoryOrder
+        fields = '__all__'
+        widgets = {
+            'state': forms.HiddenInput,
+            'entry': forms.HiddenInput,
+            'order': forms.HiddenInput,
+        }
+
+
+class InventoryOrderItemForm(FormUniqueTogetherMixin, forms.ModelForm):
+    product_display = forms.CharField(widget=forms.TextInput(attrs={'disabled': True}), required=False, label='产品')
+
+    class Meta:
+        model = InventoryOrderItem
+        fields = (
+            'is_equal', 'product_display', 'location', 'piece', 'quantity', 'uom', 'ps', 'product', 'entry', 'order',
+            'line',
+            'package_list', 'old_quantity', 'old_piece', 'old_location', 'draft_package_list', 'old_package_list',
+            'is_done', 'is_lose')
+        widgets = {
+            'product': forms.HiddenInput,
+            'entry': forms.HiddenInput,
+            'order': forms.HiddenInput,
+            'line': forms.HiddenInput,
+            'package_list': forms.HiddenInput,
+            'old_package_list': forms.HiddenInput,
+            'old_location': forms.HiddenInput,
+            'old_piece': forms.HiddenInput,
+            'old_quantity': forms.HiddenInput,
+            'draft_package_list': forms.HiddenInput,
+            'ps': forms.Textarea,
+            'is_done': forms.HiddenInput,
+            'is_lose': forms.HiddenInput,
+            'is_equal': CheckBoxWidget(attrs={'class': 'right'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        instance = kwargs.get('instance')
+        qs = Location.objects.filter(id__in=instance.order.warehouse.get_main_location().get_child_list()).distinct()
+        self.fields['location'].queryset = qs
+        self.fields['location'].initial = instance.old_location
+        self.fields['is_equal'].initial = False
+        self.fields['product_display'].initial = instance.product
+        self.fields['piece'].widget.attrs = {'placeholder': instance.old_piece}
+        self.fields['quantity'].widget.attrs = {'placeholder': instance.old_quantity}
+
+    def clean(self):
+        cd = self.cleaned_data
+        if cd.get('is_equal') or cd.get('is_lose'):
+            cd['is_done'] = True
+        else:
+            (cd.get('piece') and cd.get('quantity')) or cd.get('package_list') or cd.get('draft_package_list')
+            cd['is_done'] = True
+        return cd

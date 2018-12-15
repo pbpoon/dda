@@ -2,124 +2,29 @@ from django.apps import apps
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import render, get_object_or_404, redirect, render_to_response
+from django.shortcuts import render, get_object_or_404
 from django.template.loader import render_to_string
-from django.urls import reverse_lazy, reverse
 from django.views import View
-from django.views.generic import ListView, DetailView, TemplateView
-from django.views.generic.edit import ModelFormMixin, CreateView, UpdateView, DeleteView, BaseDeleteView
+from django.views.generic import ListView, DetailView
+from django.views.generic.edit import ModelFormMixin, CreateView, UpdateView, BaseDeleteView
 from django.contrib import messages
 
 from invoice.models import CreateInvoice
 from mrp.models import ProductionOrder, ProductionOrderRawItem, ProductionOrderProduceItem, ProductionType, InOutOrder, \
-    InOutOrderItem, Expenses, ExpensesItem
+    InOutOrderItem, Expenses, ExpensesItem, InventoryOrder, InventoryOrderItem
 from mrp.models import TurnBackOrder, TurnBackOrderItem
+from product.models import PackageList
+from public.utils import Package
 from public.views import OrderItemEditMixin, OrderItemDeleteMixin, OrderFormInitialEntryMixin
 from purchase.models import PurchaseOrder
 from public.views import GetItemsMixin, StateChangeMixin
 from public.stock_operate import StockOperate
 from sales.models import SalesOrder
+from stock.models import Stock
 from .models import MoveLocationOrder, MoveLocationOrderItem
 from .forms import MoveLocationOrderItemForm, MoveLocationOrderForm, ProductionOrderForm, \
     ProductionOrderRawItemForm, ProductionOrderProduceItemForm, InOutOrderForm, MrpItemExpensesForm, TurnBackOrderForm, \
-    TurnBackOrderItemForm
-
-
-#
-# class BlockCheckInOrderListView(ListView):
-#     model = BlockCheckInOrder
-#
-#
-# class BlockCheckInOrderDetailView(StateChangeMixin, GetItemsMixin, DetailView):
-#     model = BlockCheckInOrder
-#
-#     def get_btn_visible(self, state):
-#         btn_visible = {}
-#         if state == 'draft':
-#             btn_visible.update({'done': True, 'cancel': True})
-#         elif state == 'done':
-#             btn_visible.update({'draft': False, 'cancel': False})
-#         return btn_visible
-#
-#     def done(self):
-#         stock = StockOperate(self.request, items=self.object.items.all(), order=self.object)
-#         return stock.handle_stock()
-#
-#
-# class BlockCheckInOrderEditMixin:
-#     model = BlockCheckInOrder
-#     purchase_order = None
-#     form_class = BlockCheckInOrderForm
-#     template_name = 'mrp/blockcheckinorder_form.html'
-#
-#     def get_initial(self):
-#         kwargs = super(BlockCheckInOrderEditMixin, self).get_initial()
-#         kwargs.update({'entry': self.request.user,
-#                        'purchase_order': self.purchase_order})
-#         return kwargs
-#
-#     def get_items(self):
-#         # 如果是update状态，有object就返回items
-#         if self.object:
-#             items = self.object.items.all()
-#             if items:
-#                 return items
-#         # 如果是新建状态
-#         # 该采购单已收货的items取出
-#         already_check_in_items = self.purchase_order.items.filter(
-#             order__block_check_in_order__state__in=('confirm', 'done'))
-#         purchase_order_items = self.purchase_order.items.all()
-#         if already_check_in_items:
-#             purchase_order_items.exclude(product_id__in=[item.product.id for item in already_check_in_items])
-#         for item in purchase_order_items:
-#             item, _ = BlockCheckInOrderItem.objects.get_or_create(product=item.product, piece=item.piece,
-#                                                                   quantity=item.quantity,
-#                                                                   uom=item.uom, order=self.object)
-#         # items = BlockCheckInOrderItem.objects.filter(product_id__in=[item.product.id for item in purchase_order_items],
-#         #                                              order__isnull=True)
-#         return self.object.items.all()
-#
-#     def dispatch(self, request, purchase_order_id):
-#         self.purchase_order = get_object_or_404(PurchaseOrder, pk=purchase_order_id, state__in=('confirm', 'done'))
-#         if not self.purchase_order:
-#             raise ValueError('创建提货单错误')
-#         return super(BlockCheckInOrderEditMixin, self).dispatch(request, purchase_order_id)
-#
-#     def form_valid(self, form):
-#         self.object = form.save()
-#         items = self.get_items()
-#         return super(BlockCheckInOrderEditMixin, self).form_valid(form)
-#
-#
-# class BlockCheckInOrderCreateView(BlockCheckInOrderEditMixin, CreateView):
-#     pass
-#
-#
-# class BlockCheckInOrderUpdateView(StateChangeMixin, BlockCheckInOrderEditMixin, UpdateView):
-#     pass
-#
-#
-# class BlockCheckInOrderItemEditView(OrderItemEditMixin):
-#     model = BlockCheckInOrderItem
-#     form_class = BlockCheckInOrderItemForm
-#
-#     def get_order(self):
-#         order = None
-#         order_id = self.get_order_id()
-#         if self.object:
-#             order = self.object.order
-#         elif order_id:
-#             order = MoveLocationOrder.objects.get(pk=order_id)
-#         return order
-#
-#     def get_form_kwargs(self):
-#         kwargs = super().get_form_kwargs()
-#         kwargs['block_check_in_order'] = self.get_order()
-#         return kwargs
-#
-#
-# class BlockCheckInOrderItemDeleteView(OrderItemDeleteMixin):
-#     model = BlockCheckInOrderItem
+    TurnBackOrderItemForm, InventoryOrderForm, InventoryOrderItemForm
 
 
 class MoveLocationOrderListView(ListView):
@@ -134,15 +39,24 @@ class MoveLocationOrderDetailView(StateChangeMixin, GetItemsMixin, DetailView):
         if state == 'draft':
             btn_visible.update({'done': True, 'confirm': True, 'cancel': True})
         elif state == 'confirm':
-            btn_visible.update({'done': True, 'cancel': True})
+            btn_visible.update({'done': True, 'draft': True})
         elif state == 'done':
             btn_visible.update({'turn_back': True})
         return btn_visible
 
     def done(self):
-        items = self.object.items.all()
-        stock = StockOperate(self.request, order=self.object, items=items)
+        stock = StockOperate(self.request, order=self.object, items=self.object.items.all())
+        if self.object.state == 'confirm':
+            stock.reserve_stock(unlock=True)
         return stock.handle_stock()
+
+    def confirm(self):
+        stock = StockOperate(self.request, order=self.object, items=self.object.items.all())
+        return stock.reserve_stock()
+
+    def draft(self):
+        stock = StockOperate(self.request, order=self.object, items=self.object.items.all())
+        return stock.reserve_stock(unlock=True)
 
 
 class MoveLocationOrderEditMixin(OrderFormInitialEntryMixin):
@@ -483,6 +397,7 @@ class TurnBackOrderDetailView(StateChangeMixin, DetailView):
         stock = StockOperate(self.request, order=self.object, items=items)
         form_order = self.object.get_obj()
         form_order.state = 'cancel'
+        # form_order.comments.create(user=self.request.user, content='由%s设置状态：取消，原因是：%s' % (self.object, self.object.reason),)
         form_order.save()
         return stock.handle_stock()
 
@@ -491,7 +406,7 @@ class TurnBackOrderDeleteView(BaseDeleteView):
     model = TurnBackOrder
 
     def get_success_url(self):
-        return self.object.get_obj.get_absolute_url()
+        return self.object.get_obj().get_absolute_url()
 
 
 class TurnBackOrderEditMixin:
@@ -531,11 +446,16 @@ class TurnBackOrderEditMixin:
                 return items
         if self.from_order:
             items = self.from_order.items.all()
+            if hasattr(self.from_order, 'produce_items'):
+                items = [item for item in items]
+                items.extend([item for item in self.from_order.produce_items.all()])
             for item in items:
-                new_item = {f.name: getattr(item, f.name) for f in item._meta.fields if f.name != 'id'}
+                fields_lst = {f.name for f in TurnBackOrderItem._meta.fields if f.name != 'id'}
+                new_item = {f.name: getattr(item, f.name) for f in item._meta.fields if
+                            f.name != 'id' and f.name in fields_lst}
                 new_item['location'], new_item['location_dest'] = new_item['location_dest'], new_item['location']
                 new_item['order'] = self.object
-                new_item['package_list'] = new_item['package_list'].copy() if new_item['package_list'] else None
+                new_item['package_list'] = new_item['package_list'].copy() if new_item.get('package_list') else None
                 TurnBackOrderItem.objects.create(**new_item)
 
     def form_valid(self, form):
@@ -560,3 +480,63 @@ class TurnBackOrderItemDeleteView(OrderItemDeleteMixin):
 class TurnBackOrderItemEditMixin:
     model = TurnBackOrderItemForm
     template_name = 'item_form.html'
+
+
+class InventoryOrderListView(ListView):
+    model = InventoryOrder
+
+
+class InventoryOrderDetailView(DetailView):
+    model = InventoryOrder
+
+
+class InventoryOrderEditMixin(OrderFormInitialEntryMixin):
+    model = InventoryOrder
+    template_name = 'form.html'
+    form_class = InventoryOrderForm
+    product_type = None
+
+    def get_items(self):
+        # 先按条件选出库存
+        if self.object.items.all():
+            return self.object.items.all()
+        location_ids_list = self.object.warehouse.get_main_location().get_child_list()
+        kwargs = {'location_id__in': location_ids_list}
+        if self.object.product_type:
+            kwargs['product__type'] = self.object.product_type
+        stocks = Stock.objects.filter(**kwargs).distinct()
+        # 把需要盘点的所有先有库存创建items
+        for stock in stocks:
+            old_item = {
+                'order': self.object,
+                'product': stock.product,
+                'uom': stock.uom,
+                'old_location': stock.location,
+                'location': stock.location,
+                'old_piece': stock.piece,
+                'old_quantity': stock.quantity,
+            }
+            # 如果是板材，就把建一张码单
+            if stock.product.type == 'slab':
+                slab_ids = stock.items.all().values_list('id')
+                old_item['old_package_list'] = PackageList.make_package_from_list(stock.product.id, slab_ids)
+            InventoryOrderItem.objects.create(**old_item)
+
+    @transaction.atomic()
+    def form_valid(self, form):
+        self.object = form.save()
+        self.get_items()
+        return super().form_valid(form)
+
+
+class InventoryOrderCreateView(InventoryOrderEditMixin, CreateView):
+    pass
+
+
+class InventoryOrderUpdateView(InventoryOrderEditMixin, UpdateView):
+    pass
+
+
+class InventoryOrderItemEditView(OrderItemEditMixin):
+    model = InventoryOrderItem
+    form_class = InventoryOrderItemForm

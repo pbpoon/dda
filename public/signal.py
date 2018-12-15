@@ -3,12 +3,70 @@
 # Created by pbpoon on 2018/12/6
 
 # 更新该package list所对应的order item项数量
-from django.db.models.signals import post_save
+from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import ForeignKey, OneToOneField, ManyToManyField, DateTimeField, DateField
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
+from django.forms import FileField
 
-from mrp.models import ProductionOrderProduceItem, InOutOrderItem, TurnBackOrderItem
+from mrp.models import ProductionOrderProduceItem, InOutOrderItem, TurnBackOrderItem, ProductionOrder, \
+    MoveLocationOrder, MoveLocationOrderItem
 from product.models import PackageList
 from sales.models import SalesOrderItem
+from comment.models import OperationLogs
+
+
+def get_dict(obj):
+    return {f.verbose_name: str(getattr(obj, f.name)) for f in obj._meta.fields if f.name != 'id'}
+
+
+def to_dict(obj):
+    obj_dict = get_dict(obj)
+    items = obj.items.all()
+    if items:
+        for item in items:
+            item_dict = get_dict(item)
+            if hasattr(item, 'amount'):
+                item_dict['金额'] = str(item.amount)
+            if hasattr(item, 'produces'):
+                for p in item.produces.all():
+                    p_dict = get_dict(p)
+                    if hasattr(p, 'amount'):
+                        p_dict['金额'] = str(item.amount)
+                    item_dict[p.line] = p_dict
+            obj_dict[item.line] = item_dict
+    return obj_dict
+
+
+def compare(old_dict, new_dict):
+    change = {}
+    for key, value in old_dict.items():
+
+        if isinstance(value, dict):
+            if key in new_dict:
+                old_dt, new_dt = old_dict[key], new_dict[key]
+                change[key] = compare(old_dt, new_dt)
+        elif key in new_dict:
+            if value != new_dict[key]:
+                change[key] = '%s=>%s' % (old_dict[key], new_dict[key])
+        else:
+            change[key] = '%s' % ("删除")
+    for key, value in new_dict.items():
+        if key not in old_dict:
+            change[key] = '%s(%s)' % (new_dict[key], '添加')
+    return change
+
+
+# @receiver(pre_save, sender=MoveLocationOrder)
+# @receiver(pre_save, sender=ProductionOrder)
+# def pre_save_operation_logs(sender, **kwargs):
+#     instance = kwargs.get('instance')
+#     if instance.pk:
+#         old_instance = instance.__class__.objects.get(pk=instance.pk)
+#         old_dict = to_dict(old_instance)
+#         new_dict = to_dict(instance)
+#         change = compare(old_dict, new_dict)
+#         instance.operation_logs.create(pre_data=change, from_order=instance)
 
 
 @receiver(post_save, sender=PackageList, dispatch_uid='new_package')
@@ -31,7 +89,7 @@ def package_list_post_save_update_item_quantity(sender, **kwargs):
             item.save()
         return True
     # 移库
-    mv_items = ProductionOrderProduceItem.objects.filter(package_list=instance)
+    mv_items = MoveLocationOrderItem.objects.filter(package_list=instance)
     if mv_items:
         for item in mv_items:
             item.piece = instance.get_piece()
