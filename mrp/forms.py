@@ -5,11 +5,11 @@ from django import forms
 from django.urls import reverse, reverse_lazy
 
 from mrp.models import ProductionOrder, ProductionOrderRawItem, ProductionOrderProduceItem, InOutOrder, InOutOrderItem, \
-    Expenses, InventoryOrder, InventoryOrderItem
+    Expenses, InventoryOrder, InventoryOrderItem, InventoryOrderNewItem
 from mrp.models import TurnBackOrder, TurnBackOrderItem
-from product.models import Product
+from product.models import Product, PackageList
 from public.forms import FormUniqueTogetherMixin
-from public.widgets import AutocompleteWidget, OptionalChoiceField, CheckBoxWidget
+from public.widgets import AutocompleteWidget, OptionalChoiceField, CheckBoxWidget, RadioWidget
 from stock.models import Location, Warehouse
 from mrp.models import MoveLocationOrder, MoveLocationOrderItem
 
@@ -84,7 +84,7 @@ class MoveLocationOrderItemForm(FormUniqueTogetherMixin, forms.ModelForm):
 class ProductionOrderForm(forms.ModelForm):
     class Meta:
         model = ProductionOrder
-        fields = ('partner', 'date', 'production_type', 'warehouse', 'handler', 'entry')
+        fields = ('production_type', 'partner', 'warehouse', 'handler', 'date', 'entry')
         # exclude = ('order', 'location', 'location_dest', 'state')
         widgets = {
             'entry': forms.HiddenInput,
@@ -157,9 +157,14 @@ class ProductionOrderRawItemForm(FormUniqueTogetherMixin, forms.ModelForm):
 
 
 class ProductionOrderProduceItemForm(FormUniqueTogetherMixin, forms.ModelForm):
+    # 以下2个是为了传值到quick create draft package list
+    raw_product_name = forms.CharField(required=False, widget=forms.HiddenInput)
+    raw_product_thickness = forms.CharField(required=False, widget=forms.HiddenInput)
+
     class Meta:
         model = ProductionOrderProduceItem
-        fields = ('order', 'raw_item', 'thickness', 'piece', 'quantity', 'price', 'package_list', 'draft_package_list')
+        fields = ('order', 'raw_item', 'thickness', 'piece', 'quantity', 'price', 'package_list', 'draft_package_list',
+                  'raw_product_name', 'raw_product_thickness')
         widgets = {
             'order': forms.HiddenInput,
             'raw_item': forms.HiddenInput,
@@ -176,6 +181,9 @@ class ProductionOrderProduceItemForm(FormUniqueTogetherMixin, forms.ModelForm):
             self.fields['thickness'].required = True
             self.fields['quantity'].widget = forms.HiddenInput()
         else:
+            raw_product = ProductionOrderRawItem.objects.get(pk=kwargs['initial']['raw_item']).product
+            self.fields['raw_product_name'].initial = str(raw_product)
+            self.fields['raw_product_thickness'].initial = raw_product.thickness
             self.fields['thickness'].widget = forms.HiddenInput()
         # 根据product type的expense_by来设置price是否显示及是否必填
         if order.production_type.expense_by == 'raw':
@@ -277,43 +285,105 @@ class InventoryOrderItemForm(FormUniqueTogetherMixin, forms.ModelForm):
     class Meta:
         model = InventoryOrderItem
         fields = (
-            'is_equal', 'product_display', 'location', 'piece', 'quantity', 'uom', 'ps', 'product', 'entry', 'order',
-            'line',
-            'package_list', 'old_quantity', 'old_piece', 'old_location', 'draft_package_list', 'old_package_list',
-            'is_done', 'is_lose')
+            'report', 'product_display', 'old_location', 'now_location', 'now_piece', 'now_quantity', 'uom', 'ps',
+            'product',
+            'entry', 'order', 'line', 'now_package_list', 'old_quantity', 'old_piece',)
         widgets = {
             'product': forms.HiddenInput,
             'entry': forms.HiddenInput,
             'order': forms.HiddenInput,
             'line': forms.HiddenInput,
-            'package_list': forms.HiddenInput,
-            'old_package_list': forms.HiddenInput,
-            'old_location': forms.HiddenInput,
+            'location': forms.HiddenInput,
             'old_piece': forms.HiddenInput,
             'old_quantity': forms.HiddenInput,
-            'draft_package_list': forms.HiddenInput,
             'ps': forms.Textarea,
-            'is_done': forms.HiddenInput,
-            'is_lose': forms.HiddenInput,
-            'is_equal': CheckBoxWidget(attrs={'class': 'right'}),
+            'report': RadioWidget(attrs={'class': 'with-gap'}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         instance = kwargs.get('instance')
         qs = Location.objects.filter(id__in=instance.order.warehouse.get_main_location().get_child_list()).distinct()
-        self.fields['location'].queryset = qs
-        self.fields['location'].initial = instance.old_location
-        self.fields['is_equal'].initial = False
+        self.fields['now_location'].queryset = qs
+        self.fields['now_location'].initial = instance.old_location.id
         self.fields['product_display'].initial = instance.product
-        self.fields['piece'].widget.attrs = {'placeholder': instance.old_piece}
-        self.fields['quantity'].widget.attrs = {'placeholder': instance.old_quantity}
+        self.fields['now_piece'].widget.attrs = {'placeholder': instance.old_piece}
+        self.fields['now_quantity'].widget = forms.TextInput(
+            attrs={'placeholder': instance.old_quantity, 'class': "validate"})
 
     def clean(self):
         cd = self.cleaned_data
-        if cd.get('is_equal') or cd.get('is_lose'):
-            cd['is_done'] = True
+        report = cd.get('report')
+        now_piece = cd.get('now_piece')
+        now_quantity = cd.get('now_quantity')
+        if report == 'not_equal':
+            if not now_piece or not now_quantity:
+                raise forms.ValidationError('盘点件及数量不能为空')
+        return cd
+
+
+class InventoryOrderNewItemForm(forms.ModelForm):
+    name_autocomplete = forms.CharField(label='产品编号',
+                                        widget=AutocompleteWidget(url='get_block_list', onAutocomplete_function='set_block'))
+
+    class Meta:
+        model = InventoryOrderNewItem
+        fields = (
+            'product_type', 'name_autocomplete', 'block', 'thickness', 'location_dest', 'piece', 'quantity', 'uom',
+            'ps', 'product', 'entry',
+            'order',
+            'line', 'package_list', 'draft_package_list', 'location')
+
+        widgets = {
+            'block': forms.HiddenInput,
+            'order': forms.HiddenInput,
+            'entry': forms.HiddenInput,
+            'line': forms.HiddenInput,
+            'location': forms.HiddenInput,
+            'product': forms.HiddenInput,
+            'package_list': forms.HiddenInput,
+            'draft_package_list': forms.HiddenInput,
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        order = kwargs['initial'].get('order')
+        instance = kwargs.get('instance')
+        qs = Location.objects.filter(id__in=order.warehouse.get_main_location().get_child_list()).distinct()
+        self.fields['location_dest'].queryset = qs
+        self.fields['location'].initial = Location.get_inventory_location().id
+        if order.product_type:
+            self.fields['product_type'].initial = order.product_type
+            self.fields['product_type'].widget.attrs = {'disabled': True}
+            self.fields['product_type'].required = False
+            if order.product_type != 'block':
+                self.fields['uom'].initial = 'm2'
         else:
-            (cd.get('piece') and cd.get('quantity')) or cd.get('package_list') or cd.get('draft_package_list')
-            cd['is_done'] = True
+            self.fields['product_type'].required = True
+        if instance:
+            self.fields['name_autocomplete'].initial = instance.product
+
+
+    def clean_block(self):
+        block = self.cleaned_data.get('block')
+        if not block:
+            raise forms.ValidationError('请输入正确的编号')
+        return block
+
+    def clean(self):
+        cd = self.cleaned_data
+        product_type = cd.get('product_type')
+        order = cd.get('order')
+        if not order.product_type and not product_type:
+            raise forms.ValidationError('请输入产品类型')
+        if not product_type and order.product_type:
+            cd['product_type'] = order.product_type
+        if order.product_type == 'block':
+            cd['piece'] = 1
+        else:
+            cd['uom'] = 'm2'
+        cd['product'] = cd['block'].create_product(type=cd['product_type'], defaults={'name': cd['block'].name},
+                                                   thickness=cd.get('thickness'))
+        if cd['product_type'] == 'slab':
+            cd['package_list'] = PackageList.objects.create(product=cd['product'])
         return cd

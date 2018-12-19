@@ -19,13 +19,13 @@ from . import views
 
 
 urlpatterns = [
-    path('slabs/<pk>/', views.StockSlabsView.as_view(), name='stock_slabs_detail'),
-    path('<pk>/', views.StockDetailView.as_view(), name='stock_detail'),
-    path('', views.StockListView.as_view(), name='stock_list'),
     path('location/update/<pk>', views.LocationUpdateView.as_view(), name='location_edit'),
     path('location/create/<int:warehouse_id>', views.LocationCreateView.as_view(), name='location_create'),
     path('warehouse/update/<pk>/', views.WarehouseUpdateView.as_view(), name='warehouse_update'),
     path('warehouse/create/', views.WarehouseCreateView.as_view(), name='warehouse_create'),
     path('warehouse/<pk>/', views.WarehouseDetailView.as_view(), name='warehouse_detail'),
     path('warehouse/', views.WarehouseListView.as_view(), name='warehouse_list'),
+    path('slabs/<pk>/', views.StockSlabsView.as_view(), name='stock_slabs_detail'),
+    path('<pk>/', views.StockDetailView.as_view(), name='stock_detail'),
+    path('', views.StockListView.as_view(), name='stock_list'),
 ]

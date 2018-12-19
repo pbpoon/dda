@@ -5,16 +5,22 @@
 {% block subheadline %}
     盘点仓库：{{ object.warehouse }} / 经办人：{% for handler in object.hsndler %}{{ handler }}{% endfor %}
 {% endblock %}
+{% block state %}
+    {% if object.items.all or object.new_items.all %}
+        {% include 'state.html' %}
+    {% endif %}
+{% endblock %}
 {% block content %}
+    <i><b class="h4">原库存产品列表</b></i>
     <table class="table">
         <thead>
         <tr>
             <th>#</th>
             <th>已盘</th>
             <th>产品</th>
-            <th>原库位</th>
-            <th>原数量</th>
-            <th>编辑</th>
+            <th>数量</th>
+            <th>库位</th>
+            <th>操作</th>
         </tr>
         </thead>
 
@@ -22,26 +28,55 @@
         {% for item in object.items.all %}
             <tr>
                 <td>{{ item.line }}</td>
-                <td><p>
-                    <label>
-                        <input type="checkbox" class="filled-in" {% if item.is_equal %}checked="checked"{% endif %}/>
-                        <span></span>
-                    </label>
-                </p>{{ item.is_equal }}</td>
-                <td>{{ item.product }}</td>
-                <td>{% if item.old_package_list %}
-                    <a href="#"
-                       onclick="open_package_list('{{ item.old_package_list.get_absolute_url }}','{{ object.state }}')">
-                        {{ item.old_package_list.get_part }}夹/ {{ item.old_piece }}件/
-                        {{ item.old_quantity }}{{ item.product.get_uom }}</a>
+                <td>
+                    <p>
+                        <label>
+                            <input type="checkbox" disabled
+                                   {% if item.is_done %}checked="checked"{% endif %}/>
+                            <span>
+
+                            </span>
+                        </label>
+                    </p></td>
+                <td>{% if item.report == 'is_lose' %}
+                    <s>
+                        {{ item.product }}
+                    </s>{% else %}
+                    {{ item.product }}
+                {% endif %}
+                    {% if item.state > 0 %}
+                        <i class="material-icons">arrow_upward</i>
+                    {% elif item.state < 0 %}
+                        <i class="material-icons red-text">arrow_downward</i>
+                    {% endif %}
+                </td>
+                <td>{% if item.report != 'not_equal' %}
+                    {% if item.old_package_list %}
+                        <a href="#"
+                           onclick="open_package_list('{{ item.old_package_list.get_absolute_url }}')">
+                        {{ item.old_package_list.get_part }}夹/{% endif %} {{ item.old_piece }}件/
+                {{ item.old_quantity }}{{ item.product.get_uom }}</a>
                 {% else %}
-                    {{ item.old_piece }}件/
-                    {{ item.old_quantity }}{{ item.product.get_uom }}
-                {% endif %}<br>
-                    <span class="blue-text">{{ item.piece }}件/{{ item.quantity }}{{ item.product.get_uom }}</span>
+                    {{ item.old_piece }}件/{{ item.old_quantity }}{{ item.product.get_uom }}
+                {% endif %}
+                    <br>
+                    {% if item.report == 'not_equal' %}
+                        <span class="blue-text">
+                                                    {% if item.now_package_list %}
+
+                                                        <a href="#"
+                                                           onclick="open_package_list('{% url 'inventory_order_package_detail' item.now_package_list.id %}','{{ object.state }}')">
+                                                        {{ item.now_package_list.get_part }}
+                                                        夹/{% endif %} {{ item.now_package_list.get_piece }}件/
+                            {{ item.now_package_list.get_quantity }}{{ item.product.get_uom }}</a>
+                            {% else %}
+                        {{ item.now_piece }}件/
+                        {{ item.now_quantity }}{{ item.product.get_uom }}
+                        </span>
+                    {% endif %}
                 </td>
                 <td>{{ item.old_location }}<br>
-                    <span class="blue-text">{{ item.location }}</span></td>
+                    <span class="blue-text">{{ item.now_location }}</span></td>
 
                 <td>{% if object.state == 'draft' %}
                     <!-- Dropdown Trigger -->
@@ -69,7 +104,96 @@
             <td></td>
             <td>{{ object.get_quantity }}</td>
             <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
         </tr>
         </tfoot>
     </table>
+    {% if object.new_items.all %}
+        <i><b class="h4">新增产品列表</b></i>
+        <table class="table">
+            <thead>
+            <tr>
+                <th>#</th>
+                <th>已盘</th>
+                <th>产品</th>
+                <th>数量</th>
+                <th>库位</th>
+                <th>操作</th>
+            </tr>
+            </thead>
+
+            <tbody>
+            {% for item in object.new_items.all %}
+                <tr>
+                    <td>{{ item.line }}</td>
+                    <td>
+                        <p>
+                            <label>
+                                <input type="checkbox" disabled
+                                       {% if item.is_done %}checked="checked"{% endif %}/>
+                                <span></span>
+                            </label>
+                        </p>
+                    </td>
+                    <td>{% if item.product %}
+                        {{ item.product }}
+                    {% else %}
+                        {{ item.name }}{{ item.get_product_type_display }}
+                    {% endif %}
+                    </td>
+                    <td><span class="blue-text">
+                        {% if item.package_list %}
+                            <a href="#"
+                               onclick="open_package_list('{% url 'inventory_order_new_package_detail' item.package_list.id %}','{{ object.state }}')">
+                            {{ item.package_list.get_part }}夹/ {{ item.piece }}件/
+                                {{ item.quantity }}{{ item.product.get_uom }}</a>
+                        {% else %}
+                            {{ item.piece }}件/
+                            {{ item.quantity }}{{ item.product.get_uom }}
+                        {% endif %}
+                    </span>
+                    </td>
+                    <td>
+                        <span class="blue-text">
+                        {{ item.location_dest }}
+                </span>
+                    </td>
+                    <td>{% if object.state == 'draft' %}
+                        <!-- Dropdown Trigger -->
+
+                        <a class='dropdown-trigger btn-floating btn-small grey' href='#'
+                           data-target='dropdown{{ forloop.counter }}new'>
+                            <i
+                                    class="material-icons">more_vert</i></a>
+
+                        <!-- Dropdown Structure -->
+                        <ul id='dropdown{{ forloop.counter }}new' class='dropdown-content'>
+                            <li>
+                                <a onclick="edit_item('{% url 'inventory_order_new_item_edit' item.id %}')">
+                                    修改
+                                </a>
+                            </li>
+                            <li>
+                                <a onclick="item_remove('{% url 'inventory_order_new_item_delete' item.id %}')">
+                                    删除
+                                </a>
+                            </li>
+                        </ul>
+                    {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+            <tfoot>
+            <tr>
+                <td></td>
+                <td>{{ object.get_quantity }}</td>
+                <td></td>
+            </tr>
+            </tfoot>
+        </table>
+    {% endif %}
 {% endblock %}
+

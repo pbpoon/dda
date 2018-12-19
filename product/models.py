@@ -87,7 +87,8 @@ class Block(models.Model):
 
     @staticmethod
     def create_product(type, defaults, thickness=None):
-        name = defaults.pop('name')
+        if defaults.get('name'):
+            name = defaults.pop('name')
         block, is_create = Block.objects.get_or_create(name=name, defaults=defaults)
         product, is_create = Product.objects.get_or_create(block=block, type=type, thickness=thickness)
         return product
@@ -101,9 +102,12 @@ class Block(models.Model):
                              '数量': str(t.get_obj().quantity) + t.get_obj().uom,
                              '原库位': t.get_obj().location,
                              '目标库位': t.get_obj().location_dest,
-                             '日期': t.get_obj().order.date} for t in stock_traces if
+                             '日期': t.get_obj().order.date,
+                             'created': t.get_obj().order.created,
+                             } for t in stock_traces if
                             t.get_obj().order.state not in ('draft', 'cancel')]
-        return stock_trace_list
+
+        return sorted(stock_trace_list, key=lambda x: (x['日期'], x['created']))
 
     def get_stock_all(self):
         stocks = [s for p in self.products.all() for s in p.stock.all()]
@@ -229,8 +233,10 @@ class Slab(SlabAbstract):
     stock = models.ForeignKey('stock.Stock', on_delete=models.SET_NULL, blank=True, null=True,
                               limit_choices_to={'location__is_virtual': False}, related_name='items')
     is_reserve = models.BooleanField('锁库', default=False)
-    verbose_name = '板材'
-    verbose_name_plural = verbose_name
+
+    class Meta:
+        verbose_name = '板材'
+        verbose_name_plural = verbose_name
 
     def get_slab_id(self):
         return self.id
@@ -245,6 +251,7 @@ class Slab(SlabAbstract):
 class PackageList(models.Model):
     product = models.ForeignKey('Product', on_delete=models.CASCADE, related_name='package_listed', verbose_name='产品')
     from_package_list = models.ForeignKey('self', on_delete=models.SET_NULL, verbose_name='创建自', blank=True, null=True)
+    return_path = models.URLField('返回链接', blank=True, null=True)
 
     class Meta:
         verbose_name = '码单'
@@ -273,27 +280,30 @@ class PackageList(models.Model):
     def get_absolute_url(self):
         return reverse('package_detail', args=[self.id])
 
+    def get_create_item_url(self):
+        return reverse('package_list_item_create', args=[self.id])
+
     @staticmethod
     def make_package_from_list(product_id, lst, from_package_list=None):
-        with transaction.atomic():
-            order = PackageList.objects.create(product_id=product_id, from_package_list=from_package_list)
-            for id in lst:
-                slab = Slab.objects.get(pk=id)
-                PackageListItem.objects.create(slab=slab, part_number=slab.part_number, order=order)
-            return order
+        # with transaction.atomic():
+        order = PackageList.objects.create(product_id=product_id, from_package_list=from_package_list)
+        for id in lst:
+            slab = Slab.objects.get(pk=id)
+            PackageListItem.objects.create(slab=slab, part_number=slab.part_number, order=order)
+        return order
 
     @staticmethod
     def update(package_list, slab_id_lst):
         new_items = []
         slabs = Slab.objects.filter(id__in=slab_id_lst)
-        with transaction.atomic():
-            package_list.items.all().delete()
-            for slab in slabs:
-                new_items.append(
-                    PackageListItem.objects.create(slab=slab, part_number=slab.part_number, order=package_list))
-            package_list.items.set(new_items)
-            package_list.save()
-            return package_list
+        # with transaction.atomic():
+        package_list.items.all().delete()
+        for slab in slabs:
+            new_items.append(
+                PackageListItem.objects.create(slab=slab, part_number=slab.part_number, order=package_list))
+        package_list.items.set(new_items)
+        package_list.save()
+        return package_list
 
     def copy(self):
         slab_ids = [item.get_slab_id() for item in self.items.all()]
@@ -309,6 +319,7 @@ class PackageListItem(models.Model):
 
     class Meta:
         verbose_name = '码单项'
+        ordering = ('part_number', 'line')
 
     def __str__(self):
         return str(self.slab)
@@ -329,10 +340,12 @@ class PackageListItem(models.Model):
 
 class DraftPackageList(models.Model):
     name = models.CharField('编号', max_length=20, db_index=True)
+    thickness = models.DecimalField('厚度规格', max_digits=5, decimal_places=2)
     entry = models.ForeignKey('auth.User', on_delete=models.CASCADE, verbose_name='登记人',
                               related_name='%(class)s_entry')
     created = models.DateField('创建日期', auto_now_add=True)
     updated = models.DateTimeField('更新时间', auto_now=True)
+    from_path = models.URLField('返回页面', blank=True, null=True)
 
     class Meta:
         verbose_name = "草稿码单"

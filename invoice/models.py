@@ -55,8 +55,8 @@ class CreateInvoice:
                                                     content_type=order_model, object_id=self.order.id)
         if invoice:
             return invoice[0], False
-        return self.invoice_model.objects.create(partner=self.partner, usage=self.usage, type=self.type,
-                                                 entry=self.entry, due_date=self.due_date, date=self.date), True
+        return self.order.invoices.create(partner=self.partner, usage=self.usage, type=self.type,
+                                          entry=self.entry, due_date=self.due_date, date=self.date), True
 
     def get_or_create_invoice(self):
         invoice, is_create = self.get_invoice()
@@ -64,7 +64,6 @@ class CreateInvoice:
         for item in self.items_dict_lst:
             item['order'] = invoice
             self.item_model.objects.create(**item)
-        self.order.invoices.create(invoice=invoice)
         return invoice, is_create
 
     def make(self):
@@ -79,8 +78,7 @@ class CreateInvoice:
         else:
             comment_content['method'] = '更改'
         # 日后可以再添加comment的记录
-        comment_content['state'] = invoice.state
-        invoice.comments.create(user=self.entry, comment='由{order}{method}'.format(**comment_content))
+        invoice.comments.create(user=self.entry, content='由{order}{method}'.format(**comment_content))
         return invoice
 
 

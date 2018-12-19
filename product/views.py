@@ -1,18 +1,25 @@
 from django.apps import apps
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, HttpResponse
+from django.shortcuts import get_object_or_404, HttpResponse, redirect
 from django.template.loader import render_to_string
 from django.views import View
 from django.views.generic import ListView, DetailView, CreateView
 
 from cart.cart import Cart
-from product.forms import DraftPackageListItemForm
+from product.forms import DraftPackageListItemForm, PackageListItemForm
 from public.views import OrderItemEditMixin, OrderItemDeleteMixin
 from stock.models import Location, Stock, Warehouse
 from public.utils import qs_to_dict, Package
 
-from .models import Product, PackageList, DraftPackageList, DraftPackageListItem, Slab, Block
+from .models import Product, PackageList, DraftPackageList, DraftPackageListItem, Slab, Block, PackageListItem
 from django.core import serializers
+
+
+def get_block_list(request):
+    name = request.POST.get('name_autocomplete')
+    qs = Block.objects.filter(name__icontains=name)
+    data = {str(p): {"id": p.id, 'image': None} for p in qs}
+    return JsonResponse(data, safe=False)
 
 
 def get_product_info(request):
@@ -43,7 +50,7 @@ def get_product_list(request):
     product_text = request.POST.get('product_autocomplete')
     if product_text:
         qs.filter(block__name__icontains=product_text)
-    data = {str(p.name) + p.get_type_display(): {"id": p.id} for p in qs}
+    data = {str(p): {"id": p.id} for p in qs}
     return JsonResponse(data, safe=False)
 
 
@@ -98,11 +105,32 @@ class DraftPackageListDetailView(DetailView):
                     kw.setdefault(k, []).append(item)
         return kw
 
+    def post(self, *args, **kwargs):
+        path = self.request.META.get('HTTP_REFERER')
+        select_list = self.request.POST.getlist('select')
+        if select_list:
+            DraftPackageListItem.objects.filter(id__in=select_list).delete()
+        return redirect(path)
+
+
+class DraftPackageListQuickCreateView(View):
+    model = DraftPackageList
+
+    def post(self, *args, **kwargs):
+        defaults = {}
+        name = self.request.POST.get('raw_product_name')
+        thickness = self.request.POST.get('raw_product_thickness')
+        defaults['from_path'] = self.request.META.get('HTTP_REFERER')
+        entry = self.request.user
+        self.object, _ = self.model.objects.get_or_create(name=name, thickness=thickness, entry=entry,
+                                                          defaults=defaults)
+        return JsonResponse({'state': 'ok', 'url': self.object.get_absolute_url()})
+
 
 class DraftPackageListCreateView(CreateView):
     model = DraftPackageList
     template_name = "form.html"
-    fields = ('name', 'entry')
+    fields = ('name', 'thickness', 'entry')
 
     def get_initial(self):
         initial = super().get_initial()
@@ -122,7 +150,7 @@ class DraftPackageListItemDeleteView(OrderItemDeleteMixin):
 # 一般order订单的码单显示
 class PackageListDetail(DetailView):
     model = PackageList
-    template_name = 'package_list.html'
+    template_name = 'product/package_list.html'
 
     def get_state_draft_slabs(self):
         slabs = [item for stock in self.object.product.stock.all() for item in
@@ -144,7 +172,7 @@ class PackageListDetail(DetailView):
         # edit_url = self.object.get_absolute_url
         # 'edit_url': edit_url,
         data = {'package': package, 'cart': cart, 'package_slabs_ids': package_slabs_ids,
-                'state': state}
+                'state': state, 'object': self.object}
         return HttpResponse(render_to_string(self.template_name, data))
 
     def post(self, *args, **kwargs):
@@ -154,11 +182,59 @@ class PackageListDetail(DetailView):
         return JsonResponse({'state': 'ok'})
 
 
+# 生产（板材入库）的码单draft显示
+class ProductionOrderPackageListDetailView(PackageListDetail):
+
+    def get_state_draft_slabs(self):
+        slabs = [item.slab for item in self.object.items.all()]
+        return slabs
+
+
+# 库存盘点码单（编辑）显示
+class InventoryOrderPackageListDetailView(PackageListDetail):
+    template_name = 'product/inventory_package_list.html'
+
+    def get(self, *args, **kwargs):
+        state = self.request.GET.get('state')
+        self.object = self.get_object()
+        # 先把旧（库存）的码单slab取出
+        old_slabs_ids = [s.get_slab_id() for s in self.object.from_package_list.items.all()]
+        now_slabs_ids = [item.get_slab_id() for item in self.object.items.all()]
+
+        slabs = Slab.objects.filter(id__in=set(now_slabs_ids) | set(old_slabs_ids))
+        package = Package(self.object.product, slabs)
+
+        data = {'object': self.object, 'package': package, 'old_slabs_ids': old_slabs_ids,
+                'now_slabs_ids': now_slabs_ids,
+                'state': state}
+        return HttpResponse(render_to_string(self.template_name, data))
+
+
+# 库存盘点码单（新建）显示
+class InventoryOrderNewItemPackageListDetailView(PackageListDetail):
+    template_name = 'product/inventory_package_list.html'
+
+    def get(self, *args, **kwargs):
+        state = self.request.GET.get('state')
+        self.object = self.get_object()
+        now_slabs_ids = None
+        package = None
+        # 先把旧（库存）的码单slab取出
+        if self.object.items.all():
+            slabs_ids = [item.get_slab_id() for item in self.object.items.all()]
+            slabs = Slab.objects.filter(id__in=slabs_ids)
+            package = Package(self.object.product, slabs)
+            now_slabs_ids = slabs_ids
+
+        data = {'object': self.object, 'package': package, 'state': state, 'now_slabs_ids': now_slabs_ids}
+        return HttpResponse(render_to_string(self.template_name, data))
+
+
 # 提货单的码单显示
 class OutOrderPackageListDetailView(PackageListDetail):
 
     def get_state_draft_slabs(self):
-        slabs = [item.slab for item in self.object.from_package_list.items.filter(slab__stock__isnull=False)]
+        slabs = list(self.object.from_package_list.items.filter(slab__stock__isnull=False))
         return slabs
 
 
@@ -196,3 +272,33 @@ class TurnBackOrderPackageListDetailView(PackageListDetail):
     def get_state_draft_slabs(self):
         slabs = [item.slab for item in self.object.from_package_list.items.all()]
         return slabs
+
+
+class PackageListFullPageView(DetailView):
+    model = PackageList
+    template_name = 'product/packagelist_full_page.html'
+
+    def get_return_path(self):
+        if self.request.GET.get('return_path'):
+            return_path = self.request.GET.get('return_path')
+
+    def get_context_data(self, **kwargs):
+        self.object = self.get_object()
+        state = self.request.GET.get('state')
+        if not self.object.return_path:
+            return_path = self.request.META.get('HTTP_REFERER')
+            self.model.objects.filter(pk=self.object.pk).update(return_path=return_path)
+        slabs = [item.slab for item in self.object.items.all()]
+        package_slabs_ids = [s.get_slab_id() for s in slabs]
+        package = Package(self.object.product, slabs)
+        cart = Cart(self.request)
+        data = {'package': package, 'cart': cart, 'package_slabs_ids': package_slabs_ids,
+                'object': self.object}
+        kwargs.update(data)
+        return super().get_context_data(**kwargs)
+
+
+# 码单item添加
+class PackageListItemCreateView(OrderItemEditMixin):
+    model = PackageListItem
+    form_class = PackageListItemForm

@@ -16,7 +16,7 @@
                                onclick="open_package_list_by_stock('{% url 'stock_slabs_detail' stock.id %}')">{{ stock.product.get_type_display }}:{{ stock.piece }}件/{{ stock.quantity }}{{ stock.uom }}@{{ stock.location }}</a>
                         </li>
                     {% else %}
-                        <li><a href="{{ stock.get_absolute_url }}">{{ stock.product.get_type_display }}:{{ stock.piece }}件/{{ stock.quantity }}{{ stock.uom }}@{{ stock.location }}</a></li>
+                        <li><a href="{{ stock.get_absolute_url }}">{{ stock.product }}:{{ stock.piece }}件/{{ stock.quantity }}{{ stock.uom }}@{{ stock.location }}</a></li>
                     {% endif %}
                 {% endfor %}
                 <input type="hidden" value="{{ path }}" name="path">

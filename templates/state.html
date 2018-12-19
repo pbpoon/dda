@@ -1,30 +1,29 @@
 {% load public %}
-{% if state_form %}
-    <form action="" method="post" id="state_form">
-        {% csrf_token %}
-        <input type="hidden" value="" name="state">
-    </form>
-    {% if btn_visible.draft %}
-        <button class="btn default" onclick="state_confirm('draft')">设成草稿</button>
+    {% if state_form %}
+        <form action="" method="post" id="state_form">
+            {% csrf_token %}
+            <input type="hidden" value="" name="state">
+        </form>
+        {% if btn_visible.draft %}
+            <button class="btn default" onclick="state_confirm('draft')">设成草稿</button>
+        {% endif %}
+        {% if btn_visible.confirm %}
+            <button class="btn blue" onclick="state_confirm('confirm')">确定</button>
+        {% endif %}
+        {% if btn_visible.cancel %}
+            <button class="btn grey" onclick="state_confirm('cancel')">取消</button>
+        {% endif %}
+        {% if btn_visible.done %}
+            <button class="btn green" onclick="state_confirm('done')">完成</button>
+        {% endif %}
+        {% if btn_visible.turn_back %}
+            <a class="btn orange" href="{% url 'turn_back_order_create' object|model_name object.id %}">退回操作</a>
+            {#        <button class="btn orange" onclick="state_confirm('turn_back')"></button>#}
+        {% endif %}
+        {% if btn_visible.delete %}
+            <button class="btn grey" onclick="item_remove('{{ object.get_delete_url }}')">删除</button>
+        {% endif %}
     {% endif %}
-    {% if btn_visible.confirm %}
-        <button class="btn blue" onclick="state_confirm('confirm')">确定</button>
-    {% endif %}
-    {% if btn_visible.cancel %}
-        <button class="btn grey" onclick="state_confirm('cancel')">取消</button>
-    {% endif %}
-    {% if btn_visible.done %}
-        <button class="btn green" onclick="state_confirm('done')">完成</button>
-    {% endif %}
-    {% if btn_visible.turn_back %}
-        <a class="btn orange" href="{% url 'turn_back_order_create' object|model_name object.id %}">退回操作</a>
-        {#        <button class="btn orange" onclick="state_confirm('turn_back')"></button>#}
-    {% endif %}
-    {% if btn_visible.delete %}
-        <button class="btn grey" onclick="item_remove('{{ object.get_delete_url }}')">删除</button>
-    {% endif %}
-
-{% endif %}
 <script>
     function state_confirm(state_str) {
         $('#modal2 p').text('确定要把本单状态设置为：' + state_str);

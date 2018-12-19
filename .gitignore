@@ -108,3 +108,6 @@ venv.bak/
 settings.py
 db.sqlite3
 mysite/__pycache__/
+!/partner_initial_data.json
+!/test_data.json
+!/partner/initial_json/

@@ -1,6 +1,7 @@
 from django.apps import apps
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
+from django.db.models import Q
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, get_object_or_404
 from django.template.loader import render_to_string
@@ -11,20 +12,20 @@ from django.contrib import messages
 
 from invoice.models import CreateInvoice
 from mrp.models import ProductionOrder, ProductionOrderRawItem, ProductionOrderProduceItem, ProductionType, InOutOrder, \
-    InOutOrderItem, Expenses, ExpensesItem, InventoryOrder, InventoryOrderItem
+    InOutOrderItem, Expenses, ExpensesItem, InventoryOrder, InventoryOrderItem, InventoryOrderNewItem
 from mrp.models import TurnBackOrder, TurnBackOrderItem
 from product.models import PackageList
-from public.utils import Package
+from public.utils import Package, StockOperateItem
 from public.views import OrderItemEditMixin, OrderItemDeleteMixin, OrderFormInitialEntryMixin
 from purchase.models import PurchaseOrder
 from public.views import GetItemsMixin, StateChangeMixin
 from public.stock_operate import StockOperate
 from sales.models import SalesOrder
-from stock.models import Stock
+from stock.models import Stock, Location
 from .models import MoveLocationOrder, MoveLocationOrderItem
 from .forms import MoveLocationOrderItemForm, MoveLocationOrderForm, ProductionOrderForm, \
     ProductionOrderRawItemForm, ProductionOrderProduceItemForm, InOutOrderForm, MrpItemExpensesForm, TurnBackOrderForm, \
-    TurnBackOrderItemForm, InventoryOrderForm, InventoryOrderItemForm
+    TurnBackOrderItemForm, InventoryOrderForm, InventoryOrderItemForm, InventoryOrderNewItemForm
 
 
 class MoveLocationOrderListView(ListView):
@@ -210,10 +211,11 @@ class InOutOrderDetailView(StateChangeMixin, DetailView):
 
     def done(self):
         stock = StockOperate(self.request, self.object, self.object.items.all())
-        unlock, msg = stock.reserve_stock(unlock=True)
-        if unlock:
-            return stock.handle_stock()
-        return unlock, msg
+        if self.object.sales_order:
+            unlock, msg = stock.reserve_stock(unlock=True)
+            if not unlock:
+                return unlock, msg
+        return stock.handle_stock()
 
 
 class InOutOrderDeleteView(BaseDeleteView):
@@ -447,8 +449,8 @@ class TurnBackOrderEditMixin:
         if self.from_order:
             items = self.from_order.items.all()
             if hasattr(self.from_order, 'produce_items'):
-                items = [item for item in items]
-                items.extend([item for item in self.from_order.produce_items.all()])
+                items = list(items)
+                items.extend(list(self.from_order.produce_items.all()))
             for item in items:
                 fields_lst = {f.name for f in TurnBackOrderItem._meta.fields if f.name != 'id'}
                 new_item = {f.name: getattr(item, f.name) for f in item._meta.fields if
@@ -486,8 +488,42 @@ class InventoryOrderListView(ListView):
     model = InventoryOrder
 
 
-class InventoryOrderDetailView(DetailView):
+class InventoryOrderDetailView(StateChangeMixin, DetailView):
     model = InventoryOrder
+
+    def get_btn_visible(self, state):
+        btn_visible = {}
+        if state == 'draft':
+            btn_visible.update({'done': True, 'confirm': True, 'cancel': True})
+        elif state == 'confirm':
+            btn_visible.update({'done': True, 'draft': True})
+        return btn_visible
+
+    def check_items(self):
+        if any((item for item in self.object.items.all() if not item.is_done)):
+            return False
+        return True
+
+    def make_items(self):
+        items = self.object.items.exclude(Q(report='is_equal') | Q(report=None))
+        new_items = self.object.new_items.all()
+        if new_items:
+            items = list(items)
+            items.extend(list(new_items))
+        return items
+
+    def confirm(self):
+        if not self.check_items():
+            return False, '有明细行没有进行盘点'
+        return True, ''
+
+    def done(self):
+        items = self.make_items()
+        stock = StockOperate(self.request, self.object, items)
+        return stock.handle_stock()
+
+    def draft(self):
+        return True, ''
 
 
 class InventoryOrderEditMixin(OrderFormInitialEntryMixin):
@@ -512,14 +548,19 @@ class InventoryOrderEditMixin(OrderFormInitialEntryMixin):
                 'product': stock.product,
                 'uom': stock.uom,
                 'old_location': stock.location,
-                'location': stock.location,
+                'now_location': stock.location,
                 'old_piece': stock.piece,
+                'now_piece': stock.piece,
                 'old_quantity': stock.quantity,
+                'now_quantity': stock.quantity,
             }
             # 如果是板材，就把建一张码单
             if stock.product.type == 'slab':
-                slab_ids = stock.items.all().values_list('id')
-                old_item['old_package_list'] = PackageList.make_package_from_list(stock.product.id, slab_ids)
+                slab_ids = stock.items.all().values_list('id', flat=True)
+                package = PackageList.make_package_from_list(stock.product.id, slab_ids)
+                old_item['old_package_list'] = package
+                old_item['now_package_list'] = package.copy()
+                old_item['package_list'] = package.copy()
             InventoryOrderItem.objects.create(**old_item)
 
     @transaction.atomic()
@@ -540,3 +581,12 @@ class InventoryOrderUpdateView(InventoryOrderEditMixin, UpdateView):
 class InventoryOrderItemEditView(OrderItemEditMixin):
     model = InventoryOrderItem
     form_class = InventoryOrderItemForm
+
+
+class InventoryOrderNewItemEditView(OrderItemEditMixin):
+    model = InventoryOrderNewItem
+    form_class = InventoryOrderNewItemForm
+
+
+class InventoryOrderNewItemDeleteView(OrderItemDeleteMixin):
+    model = InventoryOrderNewItem

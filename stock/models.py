@@ -35,7 +35,6 @@ class Warehouse(models.Model):
         super(Warehouse, self).save(*args, **kwargs)
         if not self.locations.filter(is_main=True):
             Location.objects.create(warehouse_id=self.id, name='仓库', is_main=True, usage='internal')
-            Location.objects.create(warehouse_id=self.id, name='盘点库位', is_virtual=True, usage='inventory')
         if self.is_production:
             Location.objects.get_or_create(warehouse_id=self.id, is_virtual=True, usage='production', name='生产库位')
 
@@ -94,6 +93,12 @@ class Location(models.Model):
             if parent.is_main:
                 return parent
             parent = parent.parent
+        return parent
+
+    @staticmethod
+    def get_inventory_location():
+        loc, _ = Location.objects.get_or_create(usage='inventory', name='盘点库位', is_virtual=True)
+        return loc
 
     def get_child_list(self):
         child_list = [id for id in self.child.filter(is_activate=True).values_list('id', flat=True)]

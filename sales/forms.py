@@ -78,6 +78,7 @@ class SalesOrderItemForm(FormUniqueTogetherMixin, forms.ModelForm):
         self.fields['warehouse'].widget.attrs = {'onchange': 'get_autocomplete("{}")'.format(get_product_list)}
         qs = Product.objects.filter(stock__isnull=False).exclude(type='semi_slab')
         self.fields['product'].queryset = qs
+        self.fields['price'].widget.attrs = {'min': 0.0}
         instance = kwargs.get('instance')
         if instance:
             self.fields['uom'].required = False

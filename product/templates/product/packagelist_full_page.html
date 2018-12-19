@@ -1,0 +1,168 @@
+{% extends "detail.html" %}
+{% load public %}
+{% block headline %}
+    {{ object.product }}
+{% endblock %}
+{% block subheadline %}
+    <input type="hidden" name="return_path" value="{{ return_path }}" form="select_slab_form">
+    <a href="{{ object.return_path }}">返回</a>
+    {#    {{ object|call:'get_total_part_number' }} 夹/#}
+    {#    {{ object|call:'get_total_piece' }} 件/#}
+    {#    {{ object|call:'get_total_quantity' }}m2#}
+{% endblock %}
+{% block content %}
+    <div class="row white">
+        <ul class="tabs">
+            {% for part_number in package.get_part_number %}
+                <li class="tab col s3 "><a class="{% if forloop.first %}active{% endif %}"
+                                           href="#{{ part_number }}">{{ part_number }}#</a></li>
+            {% endfor %}
+        </ul>
+        {% regroup package.items by part_number as package_list %}
+        {% with select_slabs=cart.get_select_slabs %}
+
+            {% for part_number in package_list %}
+                <div id="{{ part_number.grouper }}" class="col s12">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th><p>
+                                <label>
+                                    <input type="checkbox" name="select_part"
+                                           data-part="{{ part_number.grouper }}"/>
+                                    <span>选择</span>
+                                </label>
+                            </p>
+                            </th>
+                            <th>规格</th>
+                            <th>面积</th>
+                            <th></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for item in part_number.list %}
+
+                            <tr {% if item.get_slab_id not in package_slabs_ids %}class="green-text"{% endif %}>
+                                <td>
+                                    <p>
+                                        <label>
+                                            <input form="select_slab_form" data-quantity="{{ item.get_quantity }}"
+                                                   type="checkbox" name="select"
+                                                    {% if state != 'draft' %}
+                                                   disabled
+                                                    {% endif %}
+                                                    {% if item.get_slab_id in now_slabs_ids %}
+                                                   checked="checked"
+                                                    {% endif %}
+                                                   value="{{ item.get_slab_id }}"/>
+                                            <span>{{ item.line }}</span>
+                                        </label>
+                                    </p>
+                                </td>
+                                <td>
+                                    {% if item.get_slab_id not in now_slabs_ids %}
+                                        <s>{% endif %}
+                                    {{ item }}
+                                    <a href="#!"
+                                       onclick="edit_item({{ item.id }},'{% url 'package_list_draft_item_edit' item.id %}')">
+                                        修改
+                                    </a>
+                                    {% if item.get_slab_id not in now_slabs_ids %}
+                                        </s>
+                                    {% endif %}
+                                </td>
+                                <td>{{ item.get_quantity }}</td>
+                                <td>
+                                    {{ item.get_location }}
+                                    {% if item.get_slab_id not in old_slabs_ids %}
+                                        <span class="red-text">新增</span>
+                                    {% elif item.get_slab_id not in now_slabs_ids %}
+                                        <span class="red-text">丢失</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+
+                        {% endfor %}
+                        </tbody>
+                        <tfoot>
+                        <tr>
+                            <td>第 {{ part_number.grouper }} 夹</td>
+                            <td>{{ package|add_arg:part_number.grouper|call:'get_piece' }}件</td>
+                            <td>{{ package|add_arg:part_number.grouper|call:'get_quantity' }}m2</td>
+                            <td></td>
+                        </tr>
+                        </tfoot>
+                    </table>
+
+                </div>
+
+            {% endfor %}
+        {% endwith %}
+        {% if state == 'draft' %}
+            <form id="select_slab_form" action="{{ edit_url }}" method="post">
+                <input type="hidden" name="product"
+                       value="{{ package.product.id }}">
+                <input type="hidden" name="package_list_id"
+                       value="{{ package.id }}">
+            </form>
+        {% endif %}
+    </div>
+{% endblock %}
+{% block action_btn %}
+    <div class="fixed-action-btn">
+        <a onclick="add_item('{{ object.get_create_item_url }}')"
+           class="btn-floating btn-large red">
+            <i class="large material-icons">add</i>
+        </a>
+    </div>
+{% endblock %}
+<script>
+    {% block domready %}
+        $('.tabs').tabs();
+        $('.dropdown-trigger').dropdown();
+        {#    $('.tabs').on('click', function (){#}
+        {#        $('.dropdown-trigger').dropdown();#}
+        {#    } )#}
+        $('.tabs').on('click', function (e) {
+            $('.dropdown-trigger').dropdown()
+        })
+        //码单的checkbox选择相关
+        $('input[name=select]').on('click', function (e) {
+            sum()
+        });
+
+        $('input[name=select_part]').on('click', function (e) {
+            var tb = $(this).parents('#' + $(this).data('part') + "");
+            tb.find(':checkbox').attr("checked", this.checked);
+            sum()
+        });
+        $('#all_select').on('click', function () {
+            var $btn = $(this);
+            if ($btn.text() == '全选') {
+                $btn.text('全不选');
+                $(':checkbox').attr("checked", true);
+
+            } else {
+                $btn.text('全选');
+                $(':checkbox').attr("checked", false);
+            }
+            sum()
+        });
+        $('#select_slab_form_submit').on('click', function () {
+            var $form = $('#select_slab_form');
+            var url = $form.attr('action');
+            $.ajax({
+                url: url,
+                data: $form.serialize(),
+                method: 'POST',
+                success: function (data) {
+                    md_package_list.modal('close')
+                    window.location.reload()
+                },
+                error: function (e) {
+                    alert('网络遇到错误')
+                }
+            })
+        });
+    {% endblock %}
+</script>

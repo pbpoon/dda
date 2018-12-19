@@ -168,6 +168,7 @@ class ProductionOrderProduceItem(OrderItemBase):
             self.piece = self.package_list.get_piece()
             self.quantity = self.package_list.get_quantity()
             self.draft_package_list = None
+        self.uom = self.product.get_uom()
         super().save(*args, **kwargs)
 
 

@@ -4,6 +4,7 @@
 from django import forms
 from django.urls import reverse
 from django.core.exceptions import ValidationError
+from django.utils.safestring import mark_safe
 
 
 class AutocompleteWidget(forms.TextInput):
@@ -12,8 +13,9 @@ class AutocompleteWidget(forms.TextInput):
     class Media:
         js = ('js/autocomplete.js',)
 
-    def __init__(self, url=None, *args, **kwargs):
+    def __init__(self, url=None, onAutocomplete_function=None, *args, **kwargs):
         self.url = url
+        self.onAutocomplete_function = onAutocomplete_function if onAutocomplete_function else "set_product"
         super().__init__(*args, **kwargs)
 
     def build_attrs(self, *args, **kwargs):
@@ -43,9 +45,66 @@ class AutocompleteWidget(forms.TextInput):
 
     url = property(_get_url, _set_url)
 
+    def render(self, *args, **kwargs):
+        html = super().render(*args, **kwargs)
+        html += """
+        <script>
+    function set_product(val) {
+    $('input[name=product]').val(val);
+
+    $.ajax({
+        url: '/product/product_info',
+        method: 'GET',
+        data: $('#item_form').serialize(),
+        success: function (data) {
+            $('input[name=piece]').val(data['piece']);
+            $('input[name=quantity]').val(data['quantity']);
+        }
+    })
+}
+
+
+var DATA;//用来保存get到的数据
+// 实例化autocomplete组件
+var $ap = $('input.autocomplete').autocomplete({
+    onAutocomplete: function (input) {
+        // alert("aa" + DATA[input]['id'] + input);
+
+        %(onAutocomplete_function)s(DATA[input]['id'])
+    },
+    activeIndex: function (i) {
+        alert(i)
+
+    }
+
+});
+
+function get_autocomplete(url) {
+    var $form = $('form');
+
+    $.ajax({
+        url: url,
+        data: $form.serialize(),
+        method: 'POST',
+        success: function (data) {
+            $ap.autocomplete("updateData", data);
+            $ap.autocomplete("open");
+            DATA = data
+        }
+    })
+}
+</script>
+        """ % {'onAutocomplete_function': self.onAutocomplete_function}
+
+        return mark_safe(html)
+
 
 class CheckBoxWidget(forms.CheckboxInput):
     template_name = 'public/checkbox.html'
+
+
+class RadioWidget(forms.RadioSelect):
+    option_template_name = 'public/input_option.html'
 
 
 class OptionalChoiceWidget(forms.MultiWidget):

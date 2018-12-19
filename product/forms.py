@@ -4,7 +4,7 @@
 
 from django import forms
 
-from product.models import DraftPackageListItem
+from product.models import DraftPackageListItem, PackageListItem, Slab
 
 
 class DraftPackageListItemForm(forms.ModelForm):
@@ -37,3 +37,57 @@ class DraftPackageListItemForm(forms.ModelForm):
                     instance.save()
         return instance
 
+
+class PackageListItemForm(forms.ModelForm):
+    slab = forms.ModelChoiceField(queryset=Slab.objects.none(), required=False, widget=forms.HiddenInput)
+    piece = forms.IntegerField(max_value=30, label='件数', widget=forms.NumberInput(), initial=1)
+    long = forms.IntegerField(label='长', widget=forms.NumberInput(), min_value=0)
+    height = forms.IntegerField(label='高', widget=forms.NumberInput(), min_value=0)
+    kl1 = forms.IntegerField(label='长1', widget=forms.NumberInput(), min_value=0, required=False)
+    kh1 = forms.IntegerField(label='高1', widget=forms.NumberInput(), min_value=0, required=False)
+    kl2 = forms.IntegerField(label='长2', widget=forms.NumberInput(), min_value=0, required=False)
+    kh2 = forms.IntegerField(label='高2', widget=forms.NumberInput(), min_value=0, required=False)
+    part_number = forms.ChoiceField(label='夹号', choices=[(i, "第 {} 夹".format(i)) for i in range(1, 11)])
+
+    class Meta:
+        model = PackageListItem
+        fields = ('order', 'slab', 'part_number', 'long', 'height', 'piece',
+                  'kl1', 'kh1', 'kl2', 'kh2', 'line',)
+        widgets = {
+            'order': forms.HiddenInput(),
+        }
+
+    def save(self, commit=True):
+        cd = self.cleaned_data
+        instance = super().save(commit=False)
+        piece = self.cleaned_data.pop('piece') + 1
+        try:
+            max_line = max(i.line for i in instance.order.items.filter(part_number=instance.part_number))
+        except Exception as e:
+            max_line = 0
+        data = {
+            'part_number': cd.get('part_number'),
+            'long': cd.get('long'),
+            'height': cd.get('height'),
+            'kl1': cd.get('kl1'),
+            'kh1': cd.get('kh1'),
+            'kl2': cd.get('kl2'),
+            'kh2': cd.get('kh2'),
+        }
+        if commit:
+            if piece and piece > 1:
+                for i in range(max_line + 1, max_line + piece):
+                    instance.pk = None
+                    instance.line = i
+                    data.update({'line': i})
+                    slab = Slab.objects.create(**data)
+                    instance.slab = slab
+                    instance.save()
+            else:
+                data.update({'line': max_line + 1})
+                slab = Slab.objects.create(**data)
+                instance.slab = slab
+                instance.line = data['line']
+                instance.save()
+        instance.order.save()
+        return instance

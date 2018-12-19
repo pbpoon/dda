@@ -9,7 +9,9 @@
                     {% endblock %}</p>
                 </div>
                 <div class="card-action right-align grey lighten-3">
-                    {% include 'state.html' %}<!--状态按钮组-->
+                    {% block state %}
+                        {% include 'state.html' %}<!--状态按钮组-->
+                    {% endblock %}
                 </div>
             </div>
         </div>

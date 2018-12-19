@@ -15,7 +15,6 @@ function add_item(url) {
         success: function (data) {
             $('#modal1 .container').html(data);
             md.modal('open')
-
         }
     })
 }
@@ -45,7 +44,7 @@ $('#item_form').on('submit', function (e) {
         success: function (data) {
             if (data['state'] == 'ok') {
                 md.modal('close');
-                window.location.reload()
+                location.replace(data['url'])
             }
             else {
                 $('#modal1 .container').html(data);
@@ -155,6 +154,7 @@ function show_package_list() {
 function add_produce_item(url, produce_type) {
     if (produce_type == 'slab') {
         $('#choice_btn').show()
+        $('#quick_create_btn').show()
         // var footer = $('#modal1 .modal-footer');
         // $('#modal1 .modal-footer').append("<button class='btn' onclick='choice_package_list()'>选取码单</button>")
     }
@@ -244,4 +244,9 @@ function show_car_detail() {
             md_cart.modal('open')
         }
     })
+}
+
+//库存盘点添加item设置block
+function set_block(val) {
+    $('input[name=block]').val(val);
 }

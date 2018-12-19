@@ -22,6 +22,14 @@ class SalesOrderDetailView(StateChangeMixin, DetailView):
         is_done, msg = StockOperate(self.request, self.object, self.object.items.all()).reserve_stock()
         return is_done, msg
 
+    def draft(self):
+        if self.object.state == 'confirm':
+            return StockOperate(self.request, self.object, self.object.items.all()).reserve_stock(unlock=True)
+        return True, ''
+
+    def make_invoice(self):
+        pass
+
 
 class SalesOrderEditMixin(OrderFormInitialEntryMixin):
     model = SalesOrder
@@ -50,7 +58,8 @@ class SalesOrderQuickCreateView(SalesOrderEditMixin, CreateView):
     template_name = 'sales/form.html'
 
     def get_formset(self, extra=0):
-        return inlineformset_factory(SalesOrder, SalesOrderItem, form=SalesOrderItemQuickForm, extra=extra,can_delete=False)
+        return inlineformset_factory(SalesOrder, SalesOrderItem, form=SalesOrderItemQuickForm, extra=extra,
+                                     can_delete=False)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

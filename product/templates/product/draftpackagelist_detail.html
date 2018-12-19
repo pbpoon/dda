@@ -1,65 +1,82 @@
 {% extends "detail.html" %}
 {% load public %}
 {% block headline %}
-    草稿码单:{{ object.name }}
+    草稿码单:{{ object.name }}#({{ object.thickness }})
 {% endblock %}
 {% block subheadline %}
+    <a href="{{ object.from_path }}">返回</a>
     {{ object|call:'get_total_part_number' }} 夹/
     {{ object|call:'get_total_piece' }} 件/
     {{ object|call:'get_total_quantity' }}m2
 {% endblock %}
 {% block content %}
     <div class="row">
-        <div class="col s12">
+        <form action="" method="post" id="post_form">
+            <div class="col s12">
 
-            <ul class="tabs">
-                {% for part_number in package_list.keys %}
-                    <li class="tab col s3"><a href="#{{ part_number }}">{{ part_number }}#</a></li>
-                {% endfor %}
-            </ul>
-
-            {% for part_number, items in package_list.items %}
-                <div id="{{ part_number }}" class="col s12">
-                    <table>
-                        <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>规格</th>
-                            <th>面积</th>
-                            <th></th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {% for item in items %}
+                <ul class="tabs">
+                    {% for part_number in package_list.keys %}
+                        <li class="tab col s3"><a href="#{{ part_number }}">{{ part_number }}#</a></li>
+                    {% endfor %}
+                </ul>
+                {% for part_number, items in package_list.items %}
+                    <div id="{{ part_number }}" class="col s12">
+                        <table>
+                            <thead>
                             <tr>
-                                <td>{{ item.line }}</td>
-                                <td>{{ item }}</td>
-                                <td>{{ item.get_quantity }}</td>
-                                <td>
-                                    <a href="#!" onclick="edit_item('{% url 'package_list_draft_item_edit' item.id %}')">
-                                        修改
-                                    </a>
-                                    <a href="#!" onclick="item_remove('{% url 'package_list_draft_item_delete' item.id %}')">
-                                        删除
-                                    </a>
-                                </td>
+                                <th>
+                                    <p>
+                                        <label>
+                                            <input type="checkbox" name="select_part"
+                                                   data-part="{{ part_number }}"/>
+                                            <span>选择</span>
+                                        </label>
+                                    </p></th>
+                                <th>规格</th>
+                                <th>面积</th>
+                                <th></th>
                             </tr>
-                        {% endfor %}
-                        </tbody>
-                        <tfoot>
-                        <tr>
-                            <td></td>
-                            <td>{{ object|add_arg:part_number|call:'get_total_piece' }}件</td>
-                            <td>{{ object|add_arg:part_number|call:'get_total_quantity' }}m2</td>
-                            <td></td>
-                        </tr>
-                        </tfoot>
-                    </table>
-                </div>
-            {% endfor %}
-        </div>
+                            </thead>
+                            <tbody>
+                            {% for item in items %}
+                                <tr>
+                                    <td>
+                                        <p>
+                                            <label>
+                                                <input form="post_form"
+                                                       type="checkbox" name="select"
+                                                       value="{{ item.id }}"/>
+                                                <span>{{ item.line }}</span>
+                                            </label>
+                                        </p>
+                                    </td>
+                                    <td><a href="#!"
+                                           onclick="edit_item('{% url 'package_list_draft_item_edit' item.id %}')">{{ item }}
+                                    </a></td>
+                                    <td>{{ item.get_quantity }}</td>
+                                    <td>
+                                        <a href="#!"
+                                           onclick="item_remove('{% url 'package_list_draft_item_delete' item.id %}')">
+                                            删除
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                            <tfoot>
+                            <tr>
+                                <td><a href="#" onclick="item_remove('{{ object.get_absolute_url }}')">勾选的删除</a></td>
+                                <td>{{ object|add_arg:part_number|call:'get_total_piece' }}件</td>
+                                <td>{{ object|add_arg:part_number|call:'get_total_quantity' }}m2</td>
+                                <td></td>
+                            </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                {% endfor %}
+            </div>
 
-
+        </form>
     </div>
 {% endblock %}
 {% block domready %}
@@ -75,7 +92,8 @@
 {% endblock %}
 {% block action_btn %}
     <div class="fixed-action-btn">
-        <a onclick="add_item('{% url 'package_list_draft_item_create' object.id %}')" class="btn-floating btn-large red">
+        <a onclick="add_item('{% url 'package_list_draft_item_create' object.id %}')"
+           class="btn-floating btn-large red">
             <i class="large material-icons">add</i>
         </a>
     </div>

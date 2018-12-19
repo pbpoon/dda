@@ -17,8 +17,11 @@ from django.urls import path
 from django.urls import include
 from . import views
 
-urlpatterns = [path('product_list', views.get_product_list, name='get_product_list'),
-               path('product_info', views.get_product_info, name='get_product_info'), ]
+urlpatterns = [
+    path('block_list', views.get_block_list, name='get_block_list'),
+    path('product_list', views.get_product_list, name='get_product_list'),
+    path('product_info', views.get_product_info, name='get_product_info'),
+]
 urlpatterns += [
     path('package_list/draft/item/delete/<pk>/', views.DraftPackageListItemDeleteView.as_view(),
          name='package_list_draft_item_delete'),
@@ -26,6 +29,8 @@ urlpatterns += [
          name='package_list_draft_item_create'),
     path('package_list/draft/item/edit/<pk>/', views.DraftPackageListItemEditView.as_view(),
          name='package_list_draft_item_edit'),
+    path('package_list/draft/quick_create/', views.DraftPackageListQuickCreateView.as_view(),
+         name='quick_create_draft_package_list'),
     path('package_list/draft/create/', views.DraftPackageListCreateView.as_view(), name='package_list_draft_create'),
     path('package_list/draft/<pk>/', views.DraftPackageListDetailView.as_view(), name='package_list_draft_detail'),
     path('get_draft_package_list_info', views.get_draft_package_list_info, name='get_draft_package_list_info'),
@@ -33,6 +38,12 @@ urlpatterns += [
     # --------------------------出入库码单
     path('out_order_package_list/<pk>/', views.OutOrderPackageListDetailView.as_view(),
          name='out_order_package_detail'),
+    # --------------------------盘点码单
+    path('inventory_order_package_list/<pk>/', views.InventoryOrderPackageListDetailView.as_view(),
+         name='inventory_order_package_detail'),
+    path('inventory_order_new_package_list/<pk>/', views.InventoryOrderNewItemPackageListDetailView.as_view(),
+         name='inventory_order_new_package_detail'),
+
     # --------------------------回退操作库码单
     path('turn_back_order_package_list/<pk>/', views.TurnBackOrderPackageListDetailView.as_view(),
          name='turn_back_order_package_detail'),
@@ -40,7 +51,13 @@ urlpatterns += [
     path('package_list/create/<app_label_lower>/<item_id>/<product_id>/<location_id>/',
          views.OrderItemPackageListCreateView.as_view(),
          name='order_item_package_create'),
+    # --------------------------生产码单打开
+    path('package_list/production/<pk>/', views.ProductionOrderPackageListDetailView.as_view(),
+         name='package_production_detail'),
     # --------------------------一般码单打开
+    path('package_list/item/create/<order_id>/', views.PackageListItemCreateView.as_view(),
+         name='package_list_item_create'),
+    path('package_list_full_page/<pk>/', views.PackageListFullPageView.as_view(), name='package_full_page'),
     path('package_list/<pk>/', views.PackageListDetail.as_view(), name='package_detail'),
     path('block/<pk>/', views.BlockDetailView.as_view(), name='block_detail'),
     path('block/', views.BlockListView.as_view(), name='block_list'),

@@ -7,8 +7,12 @@ from . import views
 urlpatterns = [
     # ------------------------------------------------inventory order
 
-    path('inventory_order/item/create/<order_id>/', views.InventoryOrderItemEditView.as_view(),
-         name='inventory_order_item_create'),
+    path('inventory_order/new_item/create/<order_id>/', views.InventoryOrderNewItemEditView.as_view(),
+         name='inventory_order_new_item_create'),
+    path('inventory_order/new_item/edit/<pk>/', views.InventoryOrderNewItemEditView.as_view(),
+         name='inventory_order_new_item_edit'),
+    path('inventory_order/new_item/delete/<pk>/', views.InventoryOrderNewItemDeleteView.as_view(),
+         name='inventory_order_new_item_delete'),
     path('inventory_order/item/edit/<pk>/', views.InventoryOrderItemEditView.as_view(),
          name='inventory_order_item_edit'),
     path('inventory_order/update/<pk>/', views.InventoryOrderUpdateView.as_view(), name='inventory_order_update'),

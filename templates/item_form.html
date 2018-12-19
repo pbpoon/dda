@@ -1,14 +1,14 @@
 {% load materializecss %}
 {% load static %}
 {% if form %}
-    <script src="{% static 'js/autocomplete.js' %}"></script>
+{#    <script src="{% static 'js/autocomplete.js' %}"></script>#}
         {{ form.meida}}
     <ul class="input-field"><!--非常重要-->
         {{ form.as_ul }}
         <!--导入外部的form动态渲染-->
     </ul>
-    <script>
 
+    <script>
         $('.datepicker').datepicker({'format': 'yyyy-mm-dd'});
         $('select').formSelect();
         {% if error %}

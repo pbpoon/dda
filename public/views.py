@@ -57,13 +57,15 @@ class OrderItemEditMixin(OrderFormInitialEntryMixin, ModelFormMixin, View):
         return HttpResponse(render_to_string(self.template_name, {'form': form}))
 
     def post(self, *args, **kwargs):
+        path = self.request.META.get('HTTP_REFERER')
         form = self.get_form()
         msg = '修改' if self.object else '添加'
         if form.is_valid():
             form.save()
             msg += '成功'
             messages.success(self.request, msg)
-            return JsonResponse({'state': 'ok'})
+            # return redirect(path)
+            return JsonResponse({'state': 'ok', 'url': path})
         msg += '失败'
         return HttpResponse(render_to_string(self.template_name, {'form': form, 'error': msg}))
 

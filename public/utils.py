@@ -10,9 +10,19 @@ from decimal import Decimal
 import json
 
 
+class StockOperateItem:
+    def __init__(self, product, location, location_dest, piece, quantity, package_list):
+        self.product = product
+        self.location = location
+        self.location_dest = location_dest
+        self.piece = piece
+        self.quantity = quantity
+        self.package_list = package_list
+
+
 class Package:
     def __init__(self, product, slabs):
-        self.items = slabs
+        self.items = sorted(slabs, key=lambda x: (x.part_number, x.line))
         self.product = product
 
     def get_piece(self, number=None):
