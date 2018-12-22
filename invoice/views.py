@@ -8,7 +8,7 @@ from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
 from django.contrib import messages
 from invoice.form import AssignInvoiceForm
-from public.views import GetItemsMixin, OrderItemEditMixin, StateChangeMixin, OrderItemDeleteMixin
+from public.views import GetItemsMixin, OrderItemEditMixin, StateChangeMixin, OrderItemDeleteMixin, ModalOptionsMixin
 from django.views.generic.edit import CreateView, UpdateView, ModelFormMixin
 from django.views.generic.base import TemplateResponseMixin, View
 
@@ -24,14 +24,10 @@ class InvoiceDetailView(StateChangeMixin, DetailView):
     template_name = 'invoice/detail.html'
 
     def get_btn_visible(self, state):
-        btn_visible = {}
-        if state == 'draft':
-            btn_visible.update({'confirm': True, 'cancel': True})
-        elif state == 'confirm':
-            btn_visible.update({'done': True, 'draft': True})
-        elif state == 'done':
-            btn_visible.update({'turn_back': True})
-        return btn_visible
+        return {'draft': {'confirm': True, 'cancel': True},
+                'confirm': {'done': True, 'draft': True},
+                'done': {}
+                }[state]
 
     def confirm(self):
         return self.object.confirm()
@@ -86,53 +82,22 @@ class AccountCreateView(CreateView):
         return form
 
 
-class PaymentDetailView(DetailView):
+class PaymentDetailView(StateChangeMixin, DetailView):
     model = Payment
+
+    def get_btn_visible(self, state):
+        return {'draft': {'confirm': True},
+                'confirm': {'delete': True, 'draft': True},
+                }[state]
+
+    def confirm(self):
+        self.object.confirm = True
+        self.object.save()
+        return True, ''
 
 
 class PaymentListView(ListView):
     model = Payment
-
-
-class AssignDeleteView(View):
-    def post(self, *args, **kwargs):
-        assign = get_object_or_404(Assign, pk=self.kwargs.get('assign_id'))
-        path = assign.invoice.get_absolute_url()
-        assign.delete()
-        return redirect(path)
-
-
-class AssignPaymentFormView(TemplateResponseMixin, View):
-    template_name = 'item_form.html'
-
-    def get(self, *args, **kwargs):
-        invoice = get_object_or_404(Invoice, pk=self.kwargs.get('invoice_id'))
-        payment = get_object_or_404(Payment, pk=self.kwargs.get('payment_id'))
-        form = AssignInvoiceForm(initial={'invoice': invoice.id, 'payment': payment.id, 'entry': self.request.user})
-        amount = min(invoice.due_amount, payment.get_balance())
-        form.fields['amount'].widget.attrs = {'placeholder': '最高分配金额：' + str(amount), 'max': amount, 'min': 0,
-                                              'step': 0.01}
-        form.fields['amount'].initial = amount
-        return HttpResponse(render_to_string(self.template_name, {'form': form}))
-
-    def post(self, *args, **kwargs):
-        form = AssignInvoiceForm(data=self.request.POST)
-        invoice = get_object_or_404(Invoice, pk=self.kwargs.get('invoice_id'))
-        path = invoice.get_absolute_url()
-        if form.is_valid():
-            obj = form.save(commit=False)
-            try:
-                assign = Assign.objects.get(invoice=obj.invoice, payment=obj.payment)
-                assign.amount += obj.amount
-                assign.save()
-            except ObjectDoesNotExist:
-                obj.save()
-            messages.success(self.request, '成功分配款项到该账单')
-            return JsonResponse({'state': 'ok', 'url': path})
-
-        else:
-            messages.error(self.request, '分配款项错误')
-            return HttpResponse(render_to_string(self.template_name, {'form': form}))
 
 
 class PaymentEditView(ModelFormMixin, View):
@@ -192,3 +157,63 @@ class PaymentEditView(ModelFormMixin, View):
             return JsonResponse({'state': 'ok', 'url': path})
         msg += '失败'
         return HttpResponse(render_to_string(self.template_name, {'form': form, 'error': msg}))
+
+
+class AssignDeleteView(View):
+    def post(self, *args, **kwargs):
+        assign = get_object_or_404(Assign, pk=self.kwargs.get('assign_id'))
+        path = assign.invoice.get_absolute_url()
+        assign.delete()
+        return redirect(path)
+
+
+class AssignPaymentFormView(TemplateResponseMixin, View):
+    template_name = 'item_form.html'
+
+    def get(self, *args, **kwargs):
+        invoice = get_object_or_404(Invoice, pk=self.kwargs.get('invoice_id'))
+        payment = get_object_or_404(Payment, pk=self.kwargs.get('payment_id'))
+        form = AssignInvoiceForm(initial={'invoice': invoice.id, 'payment': payment.id, 'entry': self.request.user})
+        amount = min(invoice.due_amount, payment.get_balance())
+        form.fields['amount'].widget.attrs = {'placeholder': '最高分配金额：' + str(amount), 'max': amount, 'min': 0,
+                                              'step': 0.01}
+        form.fields['amount'].initial = amount
+        return HttpResponse(render_to_string(self.template_name, {'form': form}))
+
+    def post(self, *args, **kwargs):
+        form = AssignInvoiceForm(data=self.request.POST)
+        invoice = get_object_or_404(Invoice, pk=self.kwargs.get('invoice_id'))
+        path = invoice.get_absolute_url()
+        if form.is_valid():
+            obj = form.save(commit=False)
+            try:
+                assign = Assign.objects.get(invoice=obj.invoice, payment=obj.payment)
+                assign.amount += obj.amount
+                assign.save()
+            except ObjectDoesNotExist:
+                obj.save()
+            messages.success(self.request, '成功分配款项到该账单')
+            return JsonResponse({'state': 'ok', 'url': path})
+
+        else:
+            messages.error(self.request, '分配款项错误')
+            return HttpResponse(render_to_string(self.template_name, {'form': form}))
+
+
+class QuickInvoiceAssignUnderchargePayment(ModalOptionsMixin):
+    model = Invoice
+
+    def do_yes(self):
+        account = Account.get_undercharge_account()
+        partner = self.object.partner.get_undercharge_partner()
+        self.object.quick_assign_due_payment(partner=partner, account=account, entry=self.request.user)
+        return True, '已成功登记款项'
+
+    def do_no(self):
+        return False, ''
+
+    def get_options(self):
+        return [('do_yes', '是'), ('do_no', '否')]
+
+    def get_content(self):
+        return '是否登记少收货款,金额:{}'.format(self.object.due_amount)

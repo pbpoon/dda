@@ -1,8 +1,11 @@
+import collections
+
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.db import models
+from django.db.models import Q
 from django.urls import reverse
 
-from invoice.models import CreateInvoice
+from invoice.models import CreateInvoice, Account
 from mrp.models import MrpOrderAbstract, OrderItemBase
 from public.fields import OrderField
 from public.stock_operate import StockOperate
@@ -41,17 +44,7 @@ class InOutOrder(MrpOrderAbstract):
         return self.sales_order or self.purchase_order
 
     def __str__(self):
-        return self.full_order
-
-    @property
-    def full_order(self):
-        from_order = self.purchase_order or self.sales_order
-        count = from_order.in_out_order.filter(state__in=('confirm', 'done')).count()
-        if count > 1:
-            last_display = '({})'.format(count)
-        else:
-            last_display = ''
-        return '{}/{}{}'.format(from_order, self.get_type_display(), last_display)
+        return '[{}]{}'.format(self.get_type_display(), self.order)
 
     def get_absolute_url(self):
         return reverse('in_out_order_detail', args=[self.id])
@@ -82,6 +75,9 @@ class InOutOrder(MrpOrderAbstract):
     def get_stock(self):
         return StockOperate(self, self.items.all())
 
+    def get_expenses_amount(self):
+        return sum(item.get_expenses_amount() for item in self.items.all())
+
     def done(self):
         stock = self.get_stock()
         if self.sales_order:
@@ -89,6 +85,7 @@ class InOutOrder(MrpOrderAbstract):
             if unlock:
                 is_done, msg = stock.handle_stock()
                 if is_done:
+                    self.make_invoice()
                     self.state = 'done'
                     self.save()
                 else:
@@ -98,6 +95,7 @@ class InOutOrder(MrpOrderAbstract):
         else:
             is_done, msg = stock.handle_stock()
             if is_done:
+                self.make_invoice()
                 self.state = 'done'
                 self.save()
             return is_done, msg
@@ -128,13 +126,15 @@ class InOutOrder(MrpOrderAbstract):
         lst = [item.prepare_invoice_item() for item in self.items.all()]
         if lst:
             items_dict_lst = unpack_lst(lst)
-            return CreateInvoice(self, self.partner.get_expenses_partner(), items_dict_lst, usage='杂费', state='done')
+            payment = {'partner': self.partner.get_expenses_partner(),
+                       'account': Account.get_expense_account()}
+            return CreateInvoice(self, self.partner.get_expenses_partner(), items_dict_lst, usage='杂费',
+                                 state='done').make(payment)
 
 
 class InOutOrderItem(OrderItemBase):
     order = models.ForeignKey('InOutOrder', on_delete=models.CASCADE, related_name='items', verbose_name='对应订单')
-    package_list = models.ForeignKey('product.PackageList', on_delete=models.SET_NULL, blank=True, null=True,
-                                     verbose_name='码单')
+
     sales_order_item = models.ForeignKey('sales.SalesOrderItem', on_delete=models.CASCADE,
                                          related_name='in_out_order_items', blank=True, null=True,
                                          verbose_name='销售订单明细行')
@@ -161,6 +161,9 @@ class InOutOrderItem(OrderItemBase):
                 'sales_order_item': self.get_from_order_item()}
 
     def prepare_invoice_item(self):
-        return [{'item': '{}:{}'.format(str(self.product), expense.name), 'quantity': expense.quantity,
+        return [{'item': '{}:{}'.format(str(self.product), expense.expense.name), 'quantity': expense.quantity,
                  'price': expense.price,
                  'uom': expense.uom} for expense in self.expenses.all()]
+
+    def get_expenses_amount(self):
+        return sum(expense.amount for expense in self.expenses.all())

@@ -1,0 +1,23 @@
+{% extends 'list.html' %}
+{% block content %}
+    {% regroup object_list by get_type_display as payment_list %}
+    {% for type in payment_list %}
+        <h4>{{ type.grouper }}</h4>
+        <div class="collection">
+            {% for object in type.list %}
+                <a href="{{ object.get_absolute_url }}" class="collection-item">
+                <span class="new badge {% if object.confirm %}red{% else %}default{% endif %}"
+                      data-badge-caption="{{ object.get_state_display }}"></span>{{ object }}<span>@
+                    {{ object.created|date:"SHORT_DATE_FORMAT" }}</span>
+                </a>
+            {% endfor %}
+        </div>
+    {% endfor %}
+    {% block action_btn %}
+        <div class="fixed-action-btn">
+            <a href="{% block add_url %}{% endblock %}" class="btn-floating btn-large red">
+                <i class="large material-icons">add</i>
+            </a>
+        </div>
+    {% endblock %}
+{% endblock %}

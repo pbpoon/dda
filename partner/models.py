@@ -114,9 +114,14 @@ class Partner(models.Model):
                                                 is_activate=True)
         return loc
 
-    @staticmethod
-    def get_expenses_partner():
-        partner, _ = Partner.objects.get_or_create(name='杂费支出', is_company=True, type='supplier', phone='88888888888')
+    @classmethod
+    def get_expenses_partner(cls):
+        partner, _ = cls.objects.get_or_create(name='杂费支出', is_company=True, type='supplier', phone='88888888888')
+        return partner
+
+    @classmethod
+    def get_undercharge_partner(cls):
+        partner, _ = cls.objects.get_or_create(name='货款少收/坏账', is_company=True, type='supplier', phone='88888888881')
         return partner
 
 

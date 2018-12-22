@@ -10,7 +10,7 @@ from public.fields import OrderField, LineField
 from django.contrib.contenttypes.views import shortcut
 
 TYPE_CHOICES = (
-    ('-1', '支付'),
+    ('-1', '付款'),
     ('1', '收款')
 )
 USAGE_CHOICES = (
@@ -74,7 +74,17 @@ class CreateInvoice:
             self.item_model.objects.create(**item)
         return invoice, is_create
 
-    def make(self):
+    def create_payment(self, invoice, payment):
+        payment = Payment.objects.create(date=datetime.date.today(),
+                                         partner=payment['partner'],
+                                         account=payment['account'],
+                                         type=invoice.type,
+                                         amount=invoice.amount,
+                                         entry=self.entry)
+        Assign.objects.create(invoice=invoice, payment=payment, amount=payment.amount, entry=self.entry)
+        return True
+
+    def make(self, payment=None):
         # 先查出有没相同的invoice ##check_invoice()
         # 如果有就直接return
         # 没有就create一条 ##create_invoice()
@@ -87,6 +97,10 @@ class CreateInvoice:
             comment_content['method'] = '更改'
         # 日后可以再添加comment的记录
         invoice.comments.create(user=self.entry, content='由{order}{method}'.format(**comment_content))
+        if payment:
+            self.create_payment(invoice, payment)
+            invoice.state = self.state
+            invoice.save()
         return invoice
 
 
@@ -107,7 +121,7 @@ class Invoice(models.Model):
     # payments = models.ManyToManyField('Payment', through='Assign', related_name='assign_invoices')
     entry = models.ForeignKey('auth.User', on_delete=models.CASCADE, related_name='%(class)s_entry', verbose_name='登记')
     usage = models.CharField('款项用途', choices=USAGE_CHOICES, null=False, max_length=20, default='货款')
-    type = models.CharField('支付/收款', choices=TYPE_CHOICES, null=False, max_length=2, default='-1')
+    type = models.CharField('付款/收款', choices=TYPE_CHOICES, null=False, max_length=2, default='-1')
     is_paid = models.BooleanField('付讫', default=False)
     comments = GenericRelation('comment.Comment')
 
@@ -138,7 +152,7 @@ class Invoice(models.Model):
         return reverse('invoice_item_create', args=[self.id])
 
     def __str__(self):
-        return '{}/金额:{}'.format(self.order, self.amount)
+        return '[{}]{}/金额:{}'.format(self.get_type_display(), self.order, self.amount)
 
     def confirm(self):
         self.state = 'confirm'
@@ -167,6 +181,15 @@ class Invoice(models.Model):
         self.state = 'draft'
         self.save()
         return is_done, msg
+
+    def quick_assign_due_payment(self, partner, account, entry):
+        payment = Payment.objects.create(date=datetime.date.today(),
+                                         partner=partner,
+                                         account=account,
+                                         type=self.type,
+                                         amount=self.due_amount,
+                                         entry=self.entry)
+        Assign.objects.create(invoice=self, payment=payment, amount=payment.amount, entry=entry)
 
 
 class InvoiceItem(models.Model):
@@ -218,16 +241,37 @@ class Payment(models.Model):
     amount = models.DecimalField('金额', decimal_places=2, max_digits=10)
     entry = models.ForeignKey('auth.User', on_delete=models.CASCADE, verbose_name='登记',
                               related_name='%(class)s_entry')
+    confirm = models.BooleanField('确认款项', default=False)
 
     class Meta:
         verbose_name = '收付款记录'
+        ordering = ('-created', 'confirm')
+
+    def __str__(self):
+        return '{}/金额 {} @{}'.format(self.get_type_display(), self.amount, self.date)
+
+    @property
+    def state(self):
+        if self.confirm:
+            return 'confirm'
+        return 'draft'
+
+    def get_state_display(self):
+        if self.confirm:
+            return '已{}'.format(self.get_type_display())
+        return '待{}'.format(self.get_type_display())
 
     def get_absolute_url(self):
-        return reverse('invoice_detail', args=[self.id])
+        return reverse('payment_detail', args=[self.id])
 
     def get_balance(self):
         # 可分配的余额
         return self.amount - sum(assign.amount for assign in self.assign_invoice.all())
+    #
+    # def get_undercharge_partner_account(self):
+    #     partner = self.partner.get_undercharge_partner()
+    #     account = self.account.get_undercharge_account()
+    #     return partner, account
 
 
 class Account(models.Model):
@@ -236,6 +280,7 @@ class Account(models.Model):
     desc = models.CharField('描述', max_length=200)
     created = models.DateTimeField('创建时间', auto_now_add=True)
     updated = models.DateTimeField('更新时间', auto_now=True)
+    is_visible = models.BooleanField('显示', default=True)
 
     def get_absolute_url(self):
         return reverse('account_detail', args=[self.id])
@@ -243,3 +288,13 @@ class Account(models.Model):
     def __str__(self):
         desc = '(%s)' % (self.desc) if self.desc else ''
         return '{}'.format(self.name, desc)
+
+    @classmethod
+    def get_expense_account(cls):
+        account, _ = cls.objects.get_or_create(name='杂费支出', desc='杂费支出', is_visible=False)
+        return account
+
+    @classmethod
+    def get_undercharge_account(cls):
+        account, _ = cls.objects.get_or_create(name='货款少收', desc='货款少收', is_visible=False)
+        return account

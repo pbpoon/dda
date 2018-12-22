@@ -2,7 +2,7 @@
 {% load materializecss %}
 {% load public %}
 {% block headline %}<span class="h6">[{{ object.get_state_display }}]</span>
-    <a href="{{ object.from_order.get_absolute_url }}">{{ object.full_order }}</a>
+    <a href="{{ object.from_order.get_absolute_url }}">{{ object }}</a>
 {% endblock %}
 {% block subheadline %}
     业务伙伴：{{ object.partner }} / 仓库：{{ object.warehouse }} / 经办人：{{ object.handler }}
@@ -43,14 +43,15 @@
 
 
                 </td>
-            <td>{% for expense in item.expenses.all %}<div class=text-right>
+            <td>
+                {% for expense in item.expenses.all %}<div class=text-right>
                                 {{ expense }}={{ expense.amount }}<br></div>{% endfor %}</td>
 {#                <td><!---费用显示-->#}
 {#                    {% if item.expenses.all %}#}
 {#                        <a href="#" class="tooltipped" data-position="bottom"#}
 {#                           data-tooltip="{% for expense in item.expenses.all %}<div class=text-right>#}
 {#                                {{ expense }}={{ expense.amount }}<br></div>{% endfor %}">#}
-{#                            <i class="material-icons">monetization_on</i>#}
+{#                            <i class="material-icons">monetization_on</i>{{ item.get_expenses_amount }}#}
 {#                        </a>#}
 {#                    {% endif %}</td>#}
 
@@ -80,20 +81,29 @@
         </tbody>
         <tfoot>
         <tr>
-            <td></td>
-            <td></td>
-            <td>{{ object.get_quantity }}</td>
-            <td></td>
+            <th colspan="2">合计：</th>
+            <th>
+                {% for key, item in object.get_total.items %}
+                    {{ key }}:{% if item.part %}{{ item.part }}夹 / {% endif %}{{ item.piece }}件 /
+                    {{ item.quantity }}{{ item.uom }}<br>
+                {% endfor %}
+            </th>
+        <th>{{ object.get_expenses_amount }}</th>
+        <th></th>
         </tr>
         </tfoot>
     </table>
 {% endblock %}
-{% block siderbar %}
-    <ul class="list_group">
-        {% for invoice in object.invoices.all %}
-            <li class="list_group_item"><a href="{{ invoice.invoice.get_absolute_url }}">{{ invoice.invoice }}</a></li>
-        {% endfor %}
-    </ul>
+{% block sidebar %}
+    {% if object.invoices.all %}
+        <span>账单</span>
+        <hr>
+        <div class="collection">
+            {% for invoice in object.invoices.all %}
+                <a href="{{ invoice.get_absolute_url }}" class="collection-item">{{ invoice }}</a>
+            {% endfor %}
+        </div>
+    {% endif %}
 {% endblock %}
 {% block domready %}
     {{ block.super }}

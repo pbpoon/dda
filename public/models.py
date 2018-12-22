@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Created by pbpoon on 2018/11/25
+import collections
+
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 
@@ -35,6 +37,7 @@ class OrderAbstract(models.Model):
                               related_name='%(class)s_entry')
     comments = GenericRelation('comment.Comment')
     invoices = GenericRelation('invoice.Invoice')
+
     # operation_logs = GenericRelation('comment.OperationLogs')
 
     class Meta:
@@ -46,3 +49,20 @@ class OrderAbstract(models.Model):
 
     def get_amount(self):
         return sum(item.get_amount() for item in self.items.all())
+
+    def get_total(self):
+        """
+        template使用方式
+        {% for key, item in object.get_total.items %}
+        {{ key }}:{% if item.part %}{{ item.part }}夹 / {% endif %}{{ item.piece }}件 / {{ item.quantity }}{{ item.uom }}<br>
+        {% endfor %}
+        """
+        d = collections.defaultdict(lambda: 0)
+        total = {}
+        for item in self.items.all():
+            a = total.setdefault(item.product.get_type_display(), d)
+            a['piece'] += item.piece
+            a['quantity'] += item.quantity
+            a['part'] += item.package_list.get_part() if item.package_list else 0
+            a['uom'] = item.uom
+        return total

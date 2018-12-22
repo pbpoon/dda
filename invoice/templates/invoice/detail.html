@@ -1,18 +1,19 @@
 {% extends "detail.html" %}
-{% block headline %}[{{ object.get_state_display }}]{{ object.order }}
+{% block headline %}[{{ object.get_state_display }}]{{ object.get_type_display }}/{{ object.order }}
     <a href="{{ object.get_obj.get_absolute_url }}">{{ object.get_obj }}</a>
 {% endblock %}
 {% block subheadline %}
     对方名称：{{ object.partner }} / 总金额：{{ object.amount }}
     {% if object.due_amount %}
-    <a onclick="add_item('{% url 'payment_create_from_invoice' object.id object.partner.id %}')" class="btn right">登记收款
-    </a>
+        <a onclick="add_item('{% url 'payment_create_from_invoice' object.id object.partner.id %}')" class="btn right">登记收款
+        </a>
     {% endif %}
 {% endblock %}
 {% block content %}
     <table class="striped">
         <thead>
-        <tr><th>#</th>
+        <tr>
+            <th>#</th>
             <th>项目</th>
             <th>数量</th>
             <th>单价</th>
@@ -23,7 +24,7 @@
         <tbody>
         {% for item in object.items.all %}
             <tr>
-            <td>{{ item.line }}</td>
+                <td>{{ item.line }}</td>
                 <td>{{ item.item }}</td>
                 <td class="right-align">{{ item.quantity }}{{ item.uom }}</td>
                 <td class="right-align">{{ item.price }}</td>
@@ -31,7 +32,8 @@
                 <td>{% if object.state == 'draft' %}
                     <!-- Dropdown Trigger -->
 
-                    <a class='dropdown-trigger btn-small btn-floating grey' href='#' data-target='dropdown{{ forloop.counter }}'> <i
+                    <a class='dropdown-trigger btn-small btn-floating grey' href='#'
+                       data-target='dropdown{{ forloop.counter }}'> <i
                             class="material-icons">more_vert</i></a>
 
                     <!-- Dropdown Structure -->
@@ -57,33 +59,36 @@
             <th class="right-align">{{ object.amount }}</th>
             <th></th>
         </tr>
-         {% if object.assign_payments.all %}
-                <tr>
+        {% if object.assign_payments.all %}
             {% for payment in object.assign_payments.all %}
+                <tr>
                     <form action="{% url 'assign_delete' payment.id %}" method="post">
 
                         <td colspan="4" class="right-align">
-                            <i>{{ payment.payment.amount }}({{ payment.payment.account }})-{{ payment.created }}</i>
-
+                            <a href="{{ payment.payment.get_absolute_url }}">
+                                <i>{{ payment.payment.amount }}({{ payment.payment.account }})-{{ payment.created }}</i>
+                            </a>
                         </td>
                         <td class="right-align">
                             {{ payment.amount }}
                         </td>
                         <td>
-                            <button class="btn-floating btn-small red waves-effect waves-red" type="submit">
-                                <i class="material-icons">money_off</i>
-                            </button>
+                            {% if object.state != 'done' %}
+                                <button class="btn-floating btn-small red waves-effect waves-red" type="submit">
+                                    <i class="material-icons">money_off</i>
+                                </button>
+                            {% endif %}
                         </td>
                         {% csrf_token %}
-
                     </form>
-            {% endfor %}
                 </tr>
+            {% endfor %}
         {% endif %}
         <tr>
             <th colspan="4" class="right-align">未付余额：</th>
             <th class="right-align">{{ object.due_amount }}</th>
-            <th></th>
+            <th><a href="#" onclick="confirm_option('{% url 'invoice_quick_assign_undercharge_payment' object.id %}')">少收此货款</a>
+            </th>
         </tr>
         </tfoot>
     </table>

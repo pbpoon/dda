@@ -1,0 +1,45 @@
+{% extends 'detail.html' %}
+{% block headline %}
+    金额:{{ object.amount }}<br>
+    {{ object.get_type_display }} / 对方：{{ object.partner }}
+{% endblock %}
+{% block subheadline %}
+    登记人：{{ object.entry }} / 时间: {{ object.updated }}
+{% endblock %}
+{% block content %}
+    {% if object.assign_invoice.all %}
+        <span>分配情况</span>
+        <table>
+            <thead>
+            <tr>
+                <th>账单</th>
+                <th>分配金额</th>
+                <th>日期</th>
+                <th>登记人</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for assign in object.assign_invoice.all %}
+
+                <tr>
+                    <td><a href="{{ assign.invoice.get_absolute_url }}">{{ assign.invoice }}</a></td>
+                    <td>{{ assign.amount }}</td>
+                    <td>{{ assign.created }}</td>
+                    <td>{{ assign.entry }}</td>
+                </tr>
+            {% endfor %}
+
+            <tfoot>
+            <tr>
+                <th>未分配金额</th>
+                <th>{{ object.get_balance }}</th>
+                <th></th>
+                <th></th>
+            </tr>
+            </tfoot>
+            </tbody>
+        </table>
+    {% else %}
+        <p>本笔款项，没有分配到任何账单</p>
+    {% endif %}
+{% endblock %}

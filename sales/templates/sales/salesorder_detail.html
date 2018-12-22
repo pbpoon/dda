@@ -37,7 +37,7 @@
                 <td>{% if object.state != 'done' %}
                     <!-- Dropdown Trigger -->
 
-                    <a class='dropdown-trigger btn-floating grey' href='#' data-target='dropdown{{ forloop.counter }}'>
+                    <a class='dropdown-trigger btn-small btn-floating grey' href='#' data-target='dropdown{{ forloop.counter }}'>
                         <i
                                 class="material-icons">more_vert</i></a>
 
@@ -96,19 +96,7 @@
         {% endif %}
     {% endif %}
     <a href="#" onclick="confirm_option('{% url 'sales_order_invoice_options' object.id %}')">创建账单</a>
-    <script>
-        function confirm_option(url) {
-            $.ajax({
-                url: url,
-                method: 'GET',
-                success: function (data) {
-                    $('#modal1 .container').html(data);
-                    $('#item_form').attr('action', url);
-                    md.modal('open')
-                }
-            })
-        }
-    </script>
+
 {% endblock %}
 {% block sidebar %}
     {% if object.in_out_order.all %}

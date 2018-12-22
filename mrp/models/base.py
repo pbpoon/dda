@@ -52,6 +52,8 @@ class OrderItemBase(models.Model):
     piece = models.IntegerField('件', default=1)
     quantity = models.DecimalField('数量', decimal_places=2, max_digits=10)
     uom = models.CharField('计量单位', null=False, choices=UOM_CHOICES, max_length=10, default='t')
+    package_list = models.ForeignKey('product.PackageList', on_delete=models.SET_NULL, blank=True, null=True,
+                                     verbose_name='码单')
 
     class Meta:
         abstract = True

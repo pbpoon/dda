@@ -254,3 +254,16 @@ function show_car_detail() {
 function set_block(val) {
     $('input[name=block]').val(val);
 }
+
+//对应public.views的confirm
+function confirm_option(url) {
+    $.ajax({
+        url: url,
+        method: 'GET',
+        success: function (data) {
+            $('#modal1 .container').html(data);
+            $('#item_form').attr('action', url);
+            md.modal('open')
+        }
+    })
+}

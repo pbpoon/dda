@@ -98,9 +98,6 @@ class StateChangeMixin:
                        'btn_visible': self.get_btn_visible(state)})
         return super(StateChangeMixin, self).get_context_data(**kwargs)
 
-    def make_invoice(self):
-        return True
-
     @transaction.atomic()
     def post(self, *args, **kwargs):
         self.object = self.get_object()
@@ -151,12 +148,16 @@ class ModalOptionsMixin(BaseDetailView):
         form.fields['options'] = forms.ChoiceField(widget=RadioWidget(), choices=self.get_options())
         return form
 
+    def get_content(self):
+        return ''
+
     def get_success_url(self):
         return self.object.get_absolute_url()
 
     def get(self, *args, **kwargs):
+        context = {}
         self.object = self.get_object()
-        context = self.get_context_data(**kwargs)
+        context['content'] = self.get_content()
         context['form'] = self.get_form()
         return HttpResponse(render_to_string(self.template_name, context))
 
@@ -164,7 +165,7 @@ class ModalOptionsMixin(BaseDetailView):
         self.object = self.get_object()
         url = self.get_success_url()
         option = self.request.POST.get('options')
-        is_done, msg = getattr(self, option)
+        is_done, msg = getattr(self, option)()
         if is_done:
             messages.success(self.request, msg)
             return JsonResponse({'state': 'ok', 'msg': msg, 'url': url})
