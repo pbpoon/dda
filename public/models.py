@@ -66,3 +66,45 @@ class OrderAbstract(models.Model):
             a['part'] += item.package_list.get_part() if item.package_list else 0
             a['uom'] = item.uom
         return total
+
+
+class HasChangedMixin:
+    """ this mixin gives subclasses the ability to set fields for which they want to monitor if the field value changes """
+    monitor_fields = []
+
+    def __init__(self, *args, **kwargs):
+        # self.field_trackers = {}
+        super().__init__(*args, **kwargs)
+        if not self.monitor_fields:
+            self.monitor_fields = [f.name for f in self._meta.fields]
+        for field in self.monitor_fields:
+            setattr(self, '__original_%s' % field, getattr(self, field))
+
+    # def __setattr__(self, key, value):
+    #     super().__setattr__(key, value)
+    #     if self.monitor_fields:
+    #         if key in self.monitor_fields and key not in self.field_trackers:
+    #             self.field_trackers[key] = value
+    #     else:
+    #         self.field_trackers[key] = value
+
+    def changed_data(self):
+        """
+        :return: `list` of `str` the names of all monitor_fields which have changed
+        """
+        changed_data = {}
+        for field in self.monitor_fields:
+            orig = '__original_%s' % field
+            if getattr(self, orig) != getattr(self, field):
+                changed_data[self._meta.get_field(field).verbose_name] = '%s => %s' % (
+                getattr(self, orig), getattr(self,
+                                             field))
+        return changed_data
+
+        # for field, initial_field_val in self.field_trackers.items():
+        #     if getattr(self, field) != initial_field_val:
+        #         # changed_fields.append(field)
+        #         changed_data[self._meta.get_field(field).verbose_name] = '%s => %s' % (
+        #             getattr(self, field), initial_field_val)
+        #
+        # return changed_data

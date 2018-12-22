@@ -1,3 +1,5 @@
+import collections
+
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation, ContentType
 from django.db import models
 from django.urls import reverse
@@ -65,6 +67,23 @@ class TurnBackOrder(models.Model):
             if not is_cancel:
                 return is_cancel, cancel_msg
         return is_done, msg
+
+    def get_total(self):
+        """
+        template使用方式
+        {% for key, item in object.get_total.items %}
+        {{ key }}:{% if item.part %}{{ item.part }}夹 / {% endif %}{{ item.piece }}件 / {{ item.quantity }}{{ item.uom }}<br>
+        {% endfor %}
+        """
+        d = collections.defaultdict(lambda: 0)
+        total = {}
+        for item in self.items.all():
+            a = total.setdefault(item.product.get_type_display(), d)
+            a['piece'] += item.piece
+            a['quantity'] += item.quantity
+            a['part'] += item.package_list.get_part() if item.package_list else 0
+            a['uom'] = item.uom
+        return total
 
 
 class TurnBackOrderItem(OrderItemBase):

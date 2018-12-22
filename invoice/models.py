@@ -9,6 +9,8 @@ from django.utils import timezone
 from public.fields import OrderField, LineField
 from django.contrib.contenttypes.views import shortcut
 
+from public.models import HasChangedMixin
+
 TYPE_CHOICES = (
     ('-1', '付款'),
     ('1', '收款')
@@ -104,7 +106,7 @@ class CreateInvoice:
         return invoice
 
 
-class Invoice(models.Model):
+class Invoice(HasChangedMixin, models.Model):
     state = models.CharField('状态', max_length=10, choices=STATE_CHOICES, default='draft')
     order = OrderField(order_str='IV', max_length=26, default='New', db_index=True, verbose_name='订单号码')
     created = models.DateTimeField('创建时间', auto_now_add=True)
@@ -157,12 +159,14 @@ class Invoice(models.Model):
     def confirm(self):
         self.state = 'confirm'
         self.save()
+        print(self.changed_data())
         return True, ''
 
     def done(self):
         if self.due_amount == 0:
             self.state = 'done'
             self.save()
+            print(self.changed_data())
             return True, ''
         return False, '该账单下还有金额 {} 未完成付款。'.format(self.due_amount)
 
@@ -192,7 +196,7 @@ class Invoice(models.Model):
         Assign.objects.create(invoice=self, payment=payment, amount=payment.amount, entry=entry)
 
 
-class InvoiceItem(models.Model):
+class InvoiceItem(HasChangedMixin, models.Model):
     order = models.ForeignKey('Invoice', on_delete=models.CASCADE, related_name='items', verbose_name='账单', null=True,
                               blank=True)
     line = LineField(for_fields=['order'], blank=True, verbose_name='行')
@@ -267,11 +271,19 @@ class Payment(models.Model):
     def get_balance(self):
         # 可分配的余额
         return self.amount - sum(assign.amount for assign in self.assign_invoice.all())
+
     #
     # def get_undercharge_partner_account(self):
     #     partner = self.partner.get_undercharge_partner()
     #     account = self.account.get_undercharge_account()
     #     return partner, account
+
+    def done(self):
+        self.confirm = True
+        self.save()
+        for assign in self.assign_invoice.all():
+            assign.invoice.done()
+        return True, ''
 
 
 class Account(models.Model):

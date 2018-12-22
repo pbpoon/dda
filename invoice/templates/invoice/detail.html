@@ -87,7 +87,12 @@
         <tr>
             <th colspan="4" class="right-align">未付余额：</th>
             <th class="right-align">{{ object.due_amount }}</th>
-            <th><a href="#" onclick="confirm_option('{% url 'invoice_quick_assign_undercharge_payment' object.id %}')">少收此货款</a>
+
+            <th>
+                {% if object.due_amount > 0 %}
+                    <a href="#"
+                       onclick="confirm_option('{% url 'invoice_quick_assign_undercharge_payment' object.id %}')">少收此货款</a>
+                {% endif %}
             </th>
         </tr>
         </tfoot>

@@ -91,8 +91,7 @@ class PaymentDetailView(StateChangeMixin, DetailView):
                 }[state]
 
     def confirm(self):
-        self.object.confirm = True
-        self.object.save()
+        self.object.done()
         return True, ''
 
 
@@ -200,6 +199,7 @@ class AssignPaymentFormView(TemplateResponseMixin, View):
             return HttpResponse(render_to_string(self.template_name, {'form': form}))
 
 
+# 账单快速少收货款操作
 class QuickInvoiceAssignUnderchargePayment(ModalOptionsMixin):
     model = Invoice
 
