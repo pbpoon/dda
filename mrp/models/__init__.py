@@ -7,3 +7,4 @@ from .production import ProductionType, ProductionOrderRawItem, ProductionOrder,
 from .in_out_stock import InOutOrder, InOutOrderItem
 from .turn_back_order import TurnBackOrder, TurnBackOrderItem
 from .inventory_order import InventoryOrder, InventoryOrderItem,InventoryOrderNewItem
+from public.stock_operate import StockOperate

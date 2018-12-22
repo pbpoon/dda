@@ -5,6 +5,7 @@ from django.views.generic import ListView, DetailView, CreateView, UpdateView
 from cart.cart import Cart
 from product.models import Slab
 from public.forms import LocationForm
+from public.utils import Package
 from public.views import OrderItemEditMixin
 from .models import Warehouse, Location, Stock
 
@@ -76,5 +77,10 @@ class StockDetailView(DetailView):
 class StockSlabsView(DetailView):
     model = Stock
     template_name = 'stock/package_list.html'
-    context_object_name = 'package'
 
+    def get_context_data(self, **kwargs):
+        product = self.object.product
+        slabs = self.object.items.all()
+        package = Package(product, slabs)
+        kwargs['package'] = package
+        return super().get_context_data(**kwargs)

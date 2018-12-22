@@ -8,8 +8,8 @@ from django.urls import reverse
 from mrp.models import MrpOrderAbstract, OrderItemBase
 from product.models import Product
 from public.fields import OrderField
-
 # from stock.stock_operate import StockOperate
+from public.stock_operate import StockOperate
 
 UOM_CHOICES = (('t', '吨'), ('m3', '立方'), ('m2', '平方'))
 TYPE_CHOICES = (('block', '荒料'), ('semi_slab', '毛板'), ('slab', '板材'))
@@ -60,6 +60,23 @@ class ProductionOrder(MrpOrderAbstract):
 
     def get_location_dest(self):
         return self.warehouse.get_production_location()
+
+    def get_stock(self):
+        items = list(self.items.all())
+        items.extend(list(self.produce_items.all()))
+        return StockOperate(order=self, items=items)
+
+    def done(self):
+        is_done, msg = self.get_stock().handle_stock()
+        if is_done:
+            self.state = 'done'
+            self.save()
+        return is_done, msg
+
+    def cancel(self):
+        self.state = 'cancel'
+        self.save()
+        return True, ''
 
 
 class ProductionOrderRawItem(OrderItemBase):

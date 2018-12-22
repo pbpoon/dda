@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'list.html' %}
 {% block content %}
     <ul class="list-group">
         {% for object in object_list %}
@@ -9,6 +9,6 @@
     </ul>
 {% endblock %}
 
-{% block siderbar %}
+{% block sidebar %}
     <a href="{% url 'account_create' %}">新建账号</a>
 {% endblock %}

@@ -5,6 +5,7 @@ from datetime import datetime
 
 from mrp.models import MrpOrderAbstract, OrderItemBase
 from public.fields import OrderField
+from public.stock_operate import StockOperate
 
 UOM_CHOICES = (('t', '吨'), ('m3', '立方'), ('m2', '平方'))
 OPERATION_TYPE = (('in', '入库'), ('out', '出库'))
@@ -49,6 +50,21 @@ class TurnBackOrder(models.Model):
 
     def __str__(self):
         return '{}/库存回退({})'.format(self.get_obj(), self.order[-8:])
+
+    def get_stock(self):
+        return StockOperate(order=self, items=self.items.all())
+
+    def done(self):
+        is_done, msg = self.get_stock().handle_stock()
+        if is_done:
+            form_order = self.get_obj()
+            is_cancel, cancel_msg = form_order.cancel()
+            self.state = 'done'
+            self.save()
+            # form_order.comments.create(user=self.request.user, content='由%s设置状态：取消，原因是：%s' % (self.object, self.object.reason),)
+            if not is_cancel:
+                return is_cancel, cancel_msg
+        return is_done, msg
 
 
 class TurnBackOrderItem(OrderItemBase):

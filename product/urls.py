@@ -47,10 +47,13 @@ urlpatterns += [
     # --------------------------回退操作库码单
     path('turn_back_order_package_list/<pk>/', views.TurnBackOrderPackageListDetailView.as_view(),
          name='turn_back_order_package_detail'),
-    # --------------------------销售单创建码单
+    # --------------------------销售单创建 及 编辑 码单
     path('package_list/create/<app_label_lower>/<item_id>/<product_id>/<location_id>/',
          views.OrderItemPackageListCreateView.as_view(),
          name='order_item_package_create'),
+    path('package_list/<pk>/<location_id>/',
+         views.SaleOrderPackageListView.as_view(),
+         name='sales_order_package_list'),
     # --------------------------生产码单打开
     path('package_list/production/<pk>/', views.ProductionOrderPackageListDetailView.as_view(),
          name='package_production_detail'),

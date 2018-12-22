@@ -46,18 +46,13 @@ class MoveLocationOrderDetailView(StateChangeMixin, GetItemsMixin, DetailView):
         return btn_visible
 
     def done(self):
-        stock = StockOperate(self.request, order=self.object, items=self.object.items.all())
-        if self.object.state == 'confirm':
-            stock.reserve_stock(unlock=True)
-        return stock.handle_stock()
+        return self.object.done()
 
     def confirm(self):
-        stock = StockOperate(self.request, order=self.object, items=self.object.items.all())
-        return stock.reserve_stock()
+        return self.object.confirm()
 
     def draft(self):
-        stock = StockOperate(self.request, order=self.object, items=self.object.items.all())
-        return stock.reserve_stock(unlock=True)
+        return self.object.draft()
 
 
 class MoveLocationOrderEditMixin(OrderFormInitialEntryMixin):
@@ -124,10 +119,7 @@ class ProductionOrderDetailView(StateChangeMixin, DetailView):
         return btn_visible
 
     def done(self):
-        items = [i for i in self.object.items.all()]
-        items.extend([i for i in self.object.produce_items.all()])
-        stock = StockOperate(self.request, order=self.object, items=items)
-        return stock.handle_stock()
+        return self.object.done()
 
 
 class ProductionOrderEditMixin(OrderFormInitialEntryMixin):
@@ -210,12 +202,10 @@ class InOutOrderDetailView(StateChangeMixin, DetailView):
         return btn_visible
 
     def done(self):
-        stock = StockOperate(self.request, self.object, self.object.items.all())
-        if self.object.sales_order:
-            unlock, msg = stock.reserve_stock(unlock=True)
-            if not unlock:
-                return unlock, msg
-        return stock.handle_stock()
+        return self.object.done()
+
+    def cancel(self):
+        return self.object.cancel()
 
 
 class InOutOrderDeleteView(BaseDeleteView):
@@ -262,7 +252,7 @@ class InOutOrderEditView(OrderFormInitialEntryMixin):
         for item in purchase_order_items:
             InOutOrderItem.objects.create(product=item.product, piece=item.piece,
                                           quantity=item.quantity,
-                                          uom=item.uom, order=self.object)
+                                          uom=item.uom, order=self.object, purchase_order_item=item)
         return self.object.items.all()
 
     def get_sales_order_items(self):
@@ -277,17 +267,18 @@ class InOutOrderEditView(OrderFormInitialEntryMixin):
             for item in sales_order_items:
                 package = None
                 if item.product.type == 'slab':
-                    slabs_id_lst = [item.get_slab_id() for item in
-                                    item.package_list.items.filter(slab__stock__isnull=False,
-                                                                   slab__stock__location=self.object.warehouse.get_main_location())]
+                    # slabs_id_lst = [item.get_slab_id() for item in
+                    #                 item.package_list.items.filter(slab__stock__isnull=False,
+                    #                                                slab__stock__location=self.object.warehouse.get_main_location())]
                     # 如果有码单，就生成一张新码单，并把码单的from_package_list链接到旧的码单，
                     # 为了在提货单draft状态下可以选择到旧码单的slab
-                    package = item.package_list.make_package_from_list(item.product_id, slabs_id_lst,
+                    # ps：后来更改为建一张空码单， 提货时候再选择
+                    package = item.package_list.make_package_from_list(item.product_id,
                                                                        from_package_list=item.package_list)
                 defaults = {'piece': item.piece if not package else package.get_piece(),
                             'quantity': item.quantity if not package else package.get_quantity(),
                             'package_list': package, 'product': item.product, 'order': self.object,
-                            'uom': item.uom}
+                            'uom': item.uom, 'sales_order_item': item}
                 InOutOrderItem.objects.create(**defaults)
         return self.object.items.all()
 
@@ -354,12 +345,9 @@ class MrpItemExpenseEditView(ModelFormMixin, View):
         context = self.get_context_data(**kwargs)
         form = context['form']
         if form.is_valid:
-            return self.form_valid(form)
+            self.object = form.save()
+            return JsonResponse({'state': 'ok'})
         return HttpResponse(render_to_string(self.template_name, context))
-
-    def form_valid(self, form):
-        self.object = form.save()
-        return JsonResponse({'state': 'ok'})
 
 
 class MrpExpensesItemListView(ListView):
@@ -395,13 +383,7 @@ class TurnBackOrderDetailView(StateChangeMixin, DetailView):
         return btn_visible
 
     def done(self):
-        items = self.object.items.all()
-        stock = StockOperate(self.request, order=self.object, items=items)
-        form_order = self.object.get_obj()
-        form_order.state = 'cancel'
-        # form_order.comments.create(user=self.request.user, content='由%s设置状态：取消，原因是：%s' % (self.object, self.object.reason),)
-        form_order.save()
-        return stock.handle_stock()
+        return self.object.done()
 
 
 class TurnBackOrderDeleteView(BaseDeleteView):
@@ -499,31 +481,14 @@ class InventoryOrderDetailView(StateChangeMixin, DetailView):
             btn_visible.update({'done': True, 'draft': True})
         return btn_visible
 
-    def check_items(self):
-        if any((item for item in self.object.items.all() if not item.is_done)):
-            return False
-        return True
-
-    def make_items(self):
-        items = self.object.items.exclude(Q(report='is_equal') | Q(report=None))
-        new_items = self.object.new_items.all()
-        if new_items:
-            items = list(items)
-            items.extend(list(new_items))
-        return items
-
     def confirm(self):
-        if not self.check_items():
-            return False, '有明细行没有进行盘点'
-        return True, ''
+        return self.object.confirm()
 
     def done(self):
-        items = self.make_items()
-        stock = StockOperate(self.request, self.object, items)
-        return stock.handle_stock()
+        return self.object.done()
 
     def draft(self):
-        return True, ''
+        return self.object.draft()
 
 
 class InventoryOrderEditMixin(OrderFormInitialEntryMixin):

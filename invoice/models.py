@@ -6,7 +6,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelatio
 from django.urls import reverse
 from django.utils import timezone
 
-from public.fields import OrderField
+from public.fields import OrderField, LineField
 from django.contrib.contenttypes.views import shortcut
 
 TYPE_CHOICES = (
@@ -16,7 +16,7 @@ TYPE_CHOICES = (
 USAGE_CHOICES = (
     ('货款', '货款'),
     ('加工费', '加工费'),
-    ('运费', '运费'),
+    ('杂费', '杂费'),
     ('装车费', '装车费'),
     ('佣金', '佣金'),
 )
@@ -25,6 +25,14 @@ STATE_CHOICES = (
     ('draft', '草稿'),
     ('confirm', '确认'),
     ('cancel', '取消'),
+)
+UOM_CHOICES = (
+    ('t', '吨'),
+    ('m3', '立方'),
+    ('m2', '平方'),
+    ('cart', '车'),
+    ('part', '夹'),
+    ('piece', '件'),
 )
 
 
@@ -107,32 +115,85 @@ class Invoice(models.Model):
         verbose_name = '账单'
         ordering = ('-created',)
 
-    def get_amount(self):
-        return Decimal('{0:.2f}'.format(sum(item.get_amount for item in self.items.all())))
+    def get_obj(self):
+        return self.content_type.model_class().objects.get(pk=self.object_id)
 
-    def get_due_amount(self):
+    @property
+    def amount(self):
+        return Decimal('{0:.2f}'.format(sum(item.amount for item in self.items.all())))
+
+    @property
+    def due_amount(self):
         # 未付余额
-        return self.get_amount() - sum(assign.amount for assign in self.assign_payments.all())
+        return self.amount - self.paid_amount
+
+    @property
+    def paid_amount(self):
+        return sum(assign.amount for assign in self.assign_payments.all())
 
     def get_absolute_url(self):
         return reverse('invoice_detail', args=[self.id])
 
+    def get_create_item_url(self):
+        return reverse('invoice_item_create', args=[self.id])
+
     def __str__(self):
-        return self.order
+        return '{}/金额:{}'.format(self.order, self.amount)
+
+    def confirm(self):
+        self.state = 'confirm'
+        self.save()
+        return True, ''
+
+    def done(self):
+        if self.due_amount == 0:
+            self.state = 'done'
+            self.save()
+            return True, ''
+        return False, '该账单下还有金额 {} 未完成付款。'.format(self.due_amount)
+
+    def cancel(self):
+        msg = ''
+        if self.assign_payments.all():
+            amt = sum(ass.amount for ass in self.assign_payments.all())
+            msg = '该账单下被分配的付款金额 {} ，将退回付款方名下'.format(amt)
+            self.assign_payments.all().delete()
+        self.state = 'cancel'
+        self.save()
+        return True, msg
+
+    def draft(self):
+        is_done, msg = self.cancel()
+        self.state = 'draft'
+        self.save()
+        return is_done, msg
 
 
 class InvoiceItem(models.Model):
     order = models.ForeignKey('Invoice', on_delete=models.CASCADE, related_name='items', verbose_name='账单', null=True,
                               blank=True)
+    line = LineField(for_fields=['order'], blank=True, verbose_name='行')
     item = models.CharField('项目', max_length=200)
     quantity = models.DecimalField('数量', max_digits=8, decimal_places=2)
+    uom = models.CharField('计量单位', null=False, choices=UOM_CHOICES, max_length=10, default='m2')
     price = models.DecimalField('单价', max_digits=8, decimal_places=2)
+    sales_order_item = models.ForeignKey('sales.SalesOrderItem', on_delete=models.CASCADE,
+                                         related_name='invoice_items', blank=True, null=True,
+                                         verbose_name='销售订单明细行')
+    purchase_order_item = models.ForeignKey('purchase.PurchaseOrderItem', on_delete=models.CASCADE,
+                                            related_name='invoice_items', blank=True, null=True,
+                                            verbose_name='采购订单明细行')
 
     class Meta:
         verbose_name = '账单项'
 
-    def get_amount(self):
+    @property
+    def amount(self):
         return Decimal('{0:.2f}'.format(self.quantity * self.price))
+
+    @property
+    def state(self):
+        return self.order.state
 
 
 class Assign(models.Model):
@@ -142,6 +203,9 @@ class Assign(models.Model):
     created = models.DateTimeField('创建时间', auto_now_add=True)
     entry = models.ForeignKey('auth.User', on_delete=models.CASCADE, verbose_name='登记')
 
+    class Meta:
+        verbose_name = '收款分配'
+
 
 class Payment(models.Model):
     date = models.DateField('日期')
@@ -150,6 +214,7 @@ class Payment(models.Model):
     created = models.DateTimeField('创建时间', auto_now_add=True)
     updated = models.DateTimeField('更新时间', auto_now=True)
     account = models.ForeignKey('Account', on_delete=models.CASCADE, verbose_name='帐户')
+    type = models.CharField('支付/收款', choices=TYPE_CHOICES, null=False, max_length=2, default='-1')
     amount = models.DecimalField('金额', decimal_places=2, max_digits=10)
     entry = models.ForeignKey('auth.User', on_delete=models.CASCADE, verbose_name='登记',
                               related_name='%(class)s_entry')
@@ -160,7 +225,7 @@ class Payment(models.Model):
     def get_absolute_url(self):
         return reverse('invoice_detail', args=[self.id])
 
-    def get_due_amount(self):
+    def get_balance(self):
         # 可分配的余额
         return self.amount - sum(assign.amount for assign in self.assign_invoice.all())
 
@@ -176,4 +241,5 @@ class Account(models.Model):
         return reverse('account_detail', args=[self.id])
 
     def __str__(self):
-        return '{}({})'.format(self.name, self.activate)
+        desc = '(%s)' % (self.desc) if self.desc else ''
+        return '{}'.format(self.name, desc)

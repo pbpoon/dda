@@ -44,7 +44,11 @@ $('#item_form').on('submit', function (e) {
         success: function (data) {
             if (data['state'] == 'ok') {
                 md.modal('close');
-                location.replace(data['url'])
+                if (data['url']) {
+                    location.replace(data['url'])
+                } else {
+                    location.reload()
+                }
             }
             else {
                 $('#modal1 .container').html(data);

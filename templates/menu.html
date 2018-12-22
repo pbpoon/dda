@@ -75,8 +75,20 @@
             </div>
         </li>
     </ul>
+
+    <ul class="collapsible">
+
+        <li>
+            <div class="collapsible-header">基础资料</div>
+            <div class="collapsible-body">
+                <ul>
+                    <li><a href="{% url 'account_list' %}">账户列表</a></li>
+                </ul>
+            </div>
+        </li>
+    </ul>
     <!--采购app-->
-    <li><a onclick="show_car_detail('{% url 'cart_detail' %}')">选择了：{{ cart|length }}项</a></li>
+    <li><a href="#" onclick="show_car_detail('{% url 'cart_detail' %}')">选择了：{{ cart|length }}项</a></li>
 </ul>
 {#<ul class="right hide-on-med-and-down">#}
 {#    <li><a href="#!">First Sidebar Link</a></li>#}

@@ -10,7 +10,11 @@ from django.views.generic import ListView, DetailView, CreateView, UpdateView, F
 
 from public.forms import AddExcelForm
 from public.utils import ImportData
-from .models import Partner, Province, City
+from .models import Partner, Province, City, MainInfo
+
+
+class MainInfoDetail(DetailView):
+    model = MainInfo
 
 
 class PartnerListView(ListView):

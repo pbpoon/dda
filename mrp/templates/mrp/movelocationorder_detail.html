@@ -33,8 +33,9 @@
                 <td>{% if object.state == 'draft' %}
                     <!-- Dropdown Trigger -->
 
-                    <a class='dropdown-trigger btn-floating grey' href='#' data-target='dropdown{{ forloop.counter }}'> <i
-                            class="material-icons">more_vert</i></a>
+                    <a class='dropdown-trigger btn-small btn-floating grey' href='#' data-target='dropdown{{ forloop.counter }}'>
+                        <i
+                                class="material-icons">more_vert</i></a>
 
                     <!-- Dropdown Structure -->
                     <ul id='dropdown{{ forloop.counter }}' class='dropdown-content'>

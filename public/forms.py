@@ -6,6 +6,10 @@ from django import forms
 from stock.models import Location
 
 
+class ConfirmOptionsForm(forms.Form):
+    options = forms.CharField(label='选项')
+
+
 class StateForm(forms.Form):
     state = forms.HiddenInput
 

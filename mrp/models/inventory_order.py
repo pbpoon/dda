@@ -1,8 +1,10 @@
 from django.db import models
+from django.db.models import Q
 from django.urls import reverse
 from datetime import datetime
 
 from public.fields import OrderField, LineField
+from public.stock_operate import StockOperate
 
 TYPE_CHOICES = (('block', '荒料'), ('semi_slab', '毛板'), ('slab', '板材'))
 UOM_CHOICES = (('t', '吨'), ('m3', '立方'), ('m2', '平方'))
@@ -43,6 +45,35 @@ class InventoryOrder(models.Model):
 
     def __str__(self):
         return self.name
+
+    def get_stock(self):
+        items = self.items.exclude(Q(report='is_equal') | Q(report=None))
+        new_items = self.new_items.all()
+        if new_items:
+            items = list(items)
+            items.extend(list(new_items))
+        return StockOperate(self, items)
+
+    def done(self):
+        is_done, msg = self.get_stock().handle_stock()
+        if is_done:
+            self.state = 'done'
+            self.save()
+        return is_done, msg
+
+    def confirm(self):
+        if any((item for item in self.items.all() if not item.is_done)):
+            return False, '有明细行没有进行盘点'
+        self.state = 'confirm'
+        self.save()
+        return True, ''
+
+    def draft(self):
+        if self.state == 'confirm':
+            self.state = 'draft'
+            self.save()
+            return True, ''
+        return False, ''
 
 
 class InventoryOrderItem(models.Model):

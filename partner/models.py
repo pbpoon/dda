@@ -113,3 +113,18 @@ class Partner(models.Model):
         loc, _ = Location.objects.get_or_create(is_virtual=True, name=self.type, usage=self.type,
                                                 is_activate=True)
         return loc
+
+    @staticmethod
+    def get_expenses_partner():
+        partner, _ = Partner.objects.get_or_create(name='杂费支出', is_company=True, type='supplier', phone='88888888888')
+        return partner
+
+
+class MainInfo(models.Model):
+    company = models.OneToOneField('partner.Partner', on_delete=models.CASCADE, verbose_name='公司资料')
+
+    class Meta:
+        verbose_name = '公司资料'
+
+    def __str__(self):
+        return self.company.name

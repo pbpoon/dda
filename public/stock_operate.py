@@ -3,7 +3,6 @@
 # Created by pbpoon on 2018/11/7
 
 from stock.models import Stock, StockTrace
-from product.models import Slab
 
 
 class StockOperate:
@@ -27,7 +26,9 @@ class StockOperate:
         """
 
     # def __init__(self, request, order, items, location, location_dest):
-    def __init__(self, request, order, items):
+    def __init__(self, order, items):
+        from product.models import Slab
+
         """
         Args:
             order: object, 对应的订单object，这是一个content_type
@@ -35,7 +36,6 @@ class StockOperate:
             location: 原库位
             location_dest: 目标库位
         """
-        self.request = request
         self.stock_model = Stock
         self.trace_model = StockTrace
         self.slab_model = Slab
@@ -170,13 +170,14 @@ class StockOperate:
         return False
 
     def clean_items(self):
+
         # 循环检查item的product的需求是否超出可以数量,
         # 如果超出就记载日error list，用作message返回
         error = []
         for item in self.items:
             if not item.location.is_virtual:
                 package_list = getattr(item, 'package_list', None)
-                slabs = Slab.objects.filter(
+                slabs = self.slab_model.objects.filter(
                     id__in=package_list.items.values_list('slab', flat=True)) if package_list else None
                 av_piece, av_quantity = self.get_available(product=item.product, location=item.location, slabs=slabs)
                 if (av_piece - item.piece) < 0:
@@ -189,6 +190,7 @@ class StockOperate:
 
     # @transaction.atomic()
     def reserve_stock(self, unlock=False):
+
         state = -1 if unlock else 1
 
         if not unlock:
@@ -201,7 +203,7 @@ class StockOperate:
             for item in self.items:
                 if not item.location.is_virtual:
                     package_list = getattr(item, 'package_list', None)
-                    slabs = Slab.objects.filter(
+                    slabs = self.slab_model.objects.filter(
                         id__in=package_list.items.values_list('slab', flat=True)) if package_list else None
                     if not self.update_reserve(product=item.product, location=item.location, piece=state * item.piece,
                                                quantity=state * item.quantity, slabs=slabs):
@@ -224,7 +226,7 @@ class StockOperate:
             for item in self.items:
                 if not item.location.is_virtual:
                     package_list = getattr(item, 'package_list', None)
-                    slabs = Slab.objects.filter(
+                    slabs = self.slab_model.objects.filter(
                         id__in=package_list.items.values_list('slab', flat=True)) if package_list else None
                     if not self.update_available(product=item.product, location=item.location, piece=-item.piece,
                                                  quantity=-item.quantity, slabs=slabs):
@@ -232,7 +234,7 @@ class StockOperate:
                 # 操作入库
                 if not item.location_dest.is_virtual:
                     package_list = getattr(item, 'package_list', None)
-                    slabs = Slab.objects.filter(
+                    slabs = self.slab_model.objects.filter(
                         id__in=package_list.items.values_list('slab', flat=True)) if package_list else None
                     if not self.update_available(product=item.product, location=item.location_dest,
                                                  piece=item.piece,

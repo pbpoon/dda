@@ -35,6 +35,40 @@ class MoveLocationOrder(MrpOrderAbstract):
     def get_update_url(self):
         return reverse('move_location_order_update', args=[self.id])
 
+    def get_stock(self):
+        from mrp.models import StockOperate
+        return StockOperate(order=self, items=self.items.all())
+
+    def done(self):
+        stock = self.get_stock()
+        if self.state == 'confirm':
+            is_done, msg = stock.reserve_stock(unlock=True)
+            if not is_done:
+                return is_done, msg
+        is_done, msg = stock.handle_stock()
+        if is_done:
+            self.state = 'done'
+            self.save()
+        return is_done, msg
+
+    def confirm(self):
+        stock = self.get_stock()
+        is_done, msg = stock.reserve_stock()
+        if is_done:
+            self.state = 'confirm'
+            self.save()
+        return is_done, msg
+
+    def draft(self):
+        stock = self.get_stock()
+        if self.state == 'confirm':
+            is_done, msg = stock.reserve_stock(unlock=True)
+            if is_done:
+                self.state = 'draft'
+                self.save()
+            return is_done, msg
+        return False, ''
+
 
 class MoveLocationOrderItem(OrderItemBase):
     location = models.ForeignKey('stock.Location', related_name='%(class)s_location', verbose_name='库位',

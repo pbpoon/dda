@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import copy
 from decimal import Decimal
 from django.conf import settings
 
@@ -52,7 +53,7 @@ class Cart:
     def __iter__(self):
         product_id_list = self.cart.keys()
         products = Product.objects.filter(id__in=product_id_list)
-        cart = self.cart.copy()
+        cart = copy.deepcopy(self.cart)
         for product in products:
             cart[str(product.id)]['product'] = product
             if product.type == 'slab':

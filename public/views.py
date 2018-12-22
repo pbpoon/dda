@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Created by pbpoon on 2018/11/23
+from django import forms
 from django.contrib import messages
 from django.db import transaction
 from django.http import JsonResponse, HttpResponse
@@ -8,9 +9,12 @@ from django.shortcuts import render_to_response, redirect
 from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.views import View
+from django.views.generic import TemplateView, DetailView
+from django.views.generic.detail import BaseDetailView
 from django.views.generic.edit import BaseDeleteView, ModelFormMixin, ProcessFormView, FormMixin
 
-from public.forms import StateForm
+from public.forms import StateForm, ConfirmOptionsForm
+from public.widgets import CheckBoxWidget, RadioWidget
 
 
 class GetItemsMixin:
@@ -109,9 +113,9 @@ class StateChangeMixin:
             if is_done:
                 msg += ',成功设置状态为:{}'.format(state)
                 messages.success(self.request, msg)
-                self.object.state = state
-                self.object.save()
-                self.make_invoice()
+                # self.object.state = state
+                # self.object.save()
+                # self.make_invoice()
                 return redirect(self.get_success_url())
             # 回滚数据库到保存点
             transaction.savepoint_rollback(sid)
@@ -131,3 +135,38 @@ class StateChangeMixin:
 
     def draft(self):
         raise ValueError('define draft')
+
+
+# 前端modal form 选项
+class ModalOptionsMixin(BaseDetailView):
+    model = None
+    template_name = 'item_form.html'
+    form_class = ConfirmOptionsForm
+
+    def get_options(self):
+        raise ValueError('pls define get_options')
+
+    def get_form(self):
+        form = self.form_class()
+        form.fields['options'] = forms.ChoiceField(widget=RadioWidget(), choices=self.get_options())
+        return form
+
+    def get_success_url(self):
+        return self.object.get_absolute_url()
+
+    def get(self, *args, **kwargs):
+        self.object = self.get_object()
+        context = self.get_context_data(**kwargs)
+        context['form'] = self.get_form()
+        return HttpResponse(render_to_string(self.template_name, context))
+
+    def post(self, *args, **kwargs):
+        self.object = self.get_object()
+        url = self.get_success_url()
+        option = self.request.POST.get('options')
+        is_done, msg = getattr(self, option)
+        if is_done:
+            messages.success(self.request, msg)
+            return JsonResponse({'state': 'ok', 'msg': msg, 'url': url})
+        messages.error(self.request, msg)
+        return JsonResponse({'state': 'ok', 'msg': msg, 'url': url})

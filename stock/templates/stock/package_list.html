@@ -23,7 +23,7 @@
                     <li class="tab col s3"><a href="#{{ part_number }}">{{ part_number }}#</a></li>
                 {% endfor %}
             </ul>
-            {% regroup package.items.all by part_number as package_list %}
+            {% regroup package.items by part_number as package_list %}
             {% with select_slabs=cart.get_select_slabs %}
                 {% for part_number in package_list %}
                     <div id="{{ part_number.grouper }}" class="col s12">

@@ -47,7 +47,7 @@
                                                 {% if state != 'draft' %}
                                                disabled
                                                 {% endif %}
-                                                {% if item.is_reserve %}
+                                                {% if item.get_slab_id in is_reserve_list %}
                                                disabled
                                                 {% endif %}
                                                 {% if item.get_slab_id in package_slabs_ids %}
@@ -124,8 +124,12 @@
                 data: $form.serialize(),
                 method: 'POST',
                 success: function (data) {
-                    md_package_list.modal('close')
-                    window.location.reload()
+                    if (data['state'] == 'ok'){
+                    md_package_list.modal('close');
+                    location.reload()
+                    }else{
+                        alert(data['message'])
+                    }
                 },
                 error: function (e) {
                     alert('网络遇到错误')

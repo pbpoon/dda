@@ -57,6 +57,10 @@ class OrderItemBase(models.Model):
         abstract = True
         unique_together = ('order', 'product')
 
+    @property
+    def state(self):
+        return self.order.state
+
     def get_location(self):
         return self.order.location
 
@@ -79,7 +83,8 @@ class Expenses(models.Model):
     class Meta:
         verbose_name = '费用明细'
 
-    def get_quantity(self):
+    @property
+    def quantity(self):
         obj = self.content_type.model_class().objects.get(pk=self.object_id)
         if self.expense_by_uom == 'part':
             quantity = None if not obj.package_list else obj.package_list.get_part()
@@ -90,7 +95,8 @@ class Expenses(models.Model):
         quantity = 0 if not quantity else quantity
         return quantity
 
-    def get_uom(self):
+    @property
+    def uom(self):
         obj = self.content_type.model_class().objects.get(pk=self.object_id)
         if self.expense_by_uom == 'part':
             uom = '夹'
@@ -101,11 +107,15 @@ class Expenses(models.Model):
         return uom
 
     @property
+    def price(self):
+        return self.expense.price
+
+    @property
     def amount(self):
-        return Decimal('{0:.2f}'.format(self.get_quantity() * self.expense.price))
+        return Decimal('{0:.2f}'.format(self.quantity * self.expense.price))
 
     def __str__(self):
-        return '{}: {}*{}/{}'.format(self.expense.name, self.get_quantity(), self.expense.price, self.get_uom())
+        return '{}: {}*{}/{}'.format(self.expense.name, self.quantity, self.expense.price, self.uom)
 
 
 class ExpensesItem(models.Model):

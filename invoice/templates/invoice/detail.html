@@ -1,31 +1,18 @@
-{% extends "base.html" %}
-{% load crispy_forms_tags %}
-{% block banner-title %}{{ object.order }}
-    <a href="{{ object.to_order.get_absolute_url }}">{{ object.to_order }}</a> {% endblock %}
-{% block bnaner-content %}
-    对方名称：{{ object.partner }} / 金额：{{ object.get_amount }}
+{% extends "detail.html" %}
+{% block headline %}[{{ object.get_state_display }}]{{ object.order }}
+    <a href="{{ object.get_obj.get_absolute_url }}">{{ object.get_obj }}</a>
 {% endblock %}
-{% block btn %}
-    {% if state_form %}
-        <form action="" method="post">
-            {% csrf_token %}
-            {{ state_form }}
-            {% if btn_visible.draft %}
-                <input type="submit" class="btn btn-outline-secondary" value="设成草稿" name="draft">
-            {% endif %}
-            {% if btn_visible.confirm %}
-                <input type="submit" class="btn btn-outline-primary" value="确定" name="confirm">
-            {% endif %}
-            {% if btn_visible.cancel %}
-                <input type="submit" class="btn btn-outline-danger" value="取消" name="cancel">
-            {% endif %}
-        </form>
+{% block subheadline %}
+    对方名称：{{ object.partner }} / 总金额：{{ object.amount }}
+    {% if object.due_amount %}
+    <a onclick="add_item('{% url 'payment_create_from_invoice' object.id object.partner.id %}')" class="btn right">登记收款
+    </a>
     {% endif %}
 {% endblock %}
 {% block content %}
-    <table class="table table-sm">
+    <table class="striped">
         <thead>
-        <tr>
+        <tr><th>#</th>
             <th>项目</th>
             <th>数量</th>
             <th>单价</th>
@@ -33,75 +20,92 @@
             <th>编辑</th>
         </tr>
         </thead>
-
         <tbody>
-        {% for object in object_list %}
-            <tr id="block_list_tr">
-                <td>{{ object.item }}</td>
-                <td>{{ object.quantity }}</td>
-                <td>{{ object.price }}</td>
-                <td>{{ object.get_amount }}</td>
-                <td>
-                    <div class="dropdown">
-                        <button type="button" class="btn btn-sm " data-toggle="dropdown"
-                                aria-haspopup="true" aria-expanded="false">
-                            ...
-                        </button>
-                        <div class="dropdown-menu">
-                            <a class="dropdown-item" data-toggle="modal" data-target=".bd-example-modal-sm"
-                               href="{% url 'import_block_edit' %}">修改</a>
-                            <a class="dropdown-item" href="#">Another action</a>
-                            <a class="dropdown-item" href="#">Something else here</a>
-                            <div class="dropdown-divider"></div>
-                            <a class="dropdown-item" href="#">Separated link</a>
-                        </div>
-                    </div>
-                </td>
+        {% for item in object.items.all %}
+            <tr>
+            <td>{{ item.line }}</td>
+                <td>{{ item.item }}</td>
+                <td class="right-align">{{ item.quantity }}{{ item.uom }}</td>
+                <td class="right-align">{{ item.price }}</td>
+                <td class="right-align">{{ item.amount }}</td>
+                <td>{% if object.state == 'draft' %}
+                    <!-- Dropdown Trigger -->
+
+                    <a class='dropdown-trigger btn-small btn-floating grey' href='#' data-target='dropdown{{ forloop.counter }}'> <i
+                            class="material-icons">more_vert</i></a>
+
+                    <!-- Dropdown Structure -->
+                    <ul id='dropdown{{ forloop.counter }}' class='dropdown-content'>
+                        <li>
+                            <a onclick="edit_item('{% url 'invoice_item_edit' item.id %}')">修改
+                            </a>
+                        </li>
+                        <li>
+                            <a onclick="item_remove('{% url 'invoice_item_delete' item.id %}')">
+                                删除
+                            </a>
+                        </li>
+                    </ul>
+                {% endif %}</td>
             </tr>
         {% endfor %}
+
         </tbody>
         <tfoot>
         <tr>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td>{{ object.get_amount }}</td>
-            <td></td>
+            <th colspan="4" class="right-align">总金额：</th>
+            <th class="right-align">{{ object.amount }}</th>
+            <th></th>
+        </tr>
+         {% if object.assign_payments.all %}
+                <tr>
+            {% for payment in object.assign_payments.all %}
+                    <form action="{% url 'assign_delete' payment.id %}" method="post">
+
+                        <td colspan="4" class="right-align">
+                            <i>{{ payment.payment.amount }}({{ payment.payment.account }})-{{ payment.created }}</i>
+
+                        </td>
+                        <td class="right-align">
+                            {{ payment.amount }}
+                        </td>
+                        <td>
+                            <button class="btn-floating btn-small red waves-effect waves-red" type="submit">
+                                <i class="material-icons">money_off</i>
+                            </button>
+                        </td>
+                        {% csrf_token %}
+
+                    </form>
+            {% endfor %}
+                </tr>
+        {% endif %}
+        <tr>
+            <th colspan="4" class="right-align">未付余额：</th>
+            <th class="right-align">{{ object.due_amount }}</th>
+            <th></th>
         </tr>
         </tfoot>
     </table>
 
-    <p>lenp</p>
-
 {% endblock %}
-{% block siderbar %}
-    {% if object.assign_payments.all %}
-        <p class="h3">已分配的款项：</p>
-        <ui class="list-group">
-            {% for payment in object.assign_payments.all %}
-                <form action="{% url 'assign_delete' payment.id %}" method="post">
-                    <li class="list-group-item">{{ payment.amount }}-{{ payment.updated }}
-                        <input class="btn btn-link float-right" value="取消分配" type="submit"></li>
-                    {% csrf_token %}
-                </form>
-            {% endfor %}
-        </ui>
-            <hr>
-
-    {% endif %}
-    {% if object.get_due_amount %}
-        <p class="h3" >可分配的付款项：</p>
+{% block sidebar %}
+    {% if object.due_amount %}
+        <p class="h3">该对方名下，可分配的付款项：</p>
         <ul class="list-group">
             {% for payment in object.partner.payments.all %}
-                {% if payment.get_due_amount %}
-
-                    <li class="list-group-item">{{ payment.get_due_amount }}:{{ payment.account.name }}
-                        <a href="{% url 'assign_payment' object.id payment.id %}" class="float-md-right">分配到此账单</a>
+                {% if payment.get_balance %}
+                    <li class="list-group-item">{{ payment.get_balance }}({{ payment.account }}):{{ payment.created }}
+                        <button class="btn-floating  btn-small blue waves-effect waves-blue"
+                                onclick="add_item('{% url 'assign_payment' object.id payment.id %}')">
+                            <i class="material-icons">attach_money</i></button>
                     </li>
                 {% endif %}
             {% endfor %}
         </ul>
     {% endif %}
-    <a href="{% url 'payment_create' object.id object.partner.id %}"
-       class="btn btn-outline-info">登记收款</a>
+{% endblock %}
+{% block domready %}
+    {{ block.super }}
+    $('.dropdown-trigger').dropdown();
 {% endblock %}

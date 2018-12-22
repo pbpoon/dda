@@ -24,6 +24,7 @@ urlpatterns = [
     path('order/update/<pk>/', views.SalesOrderUpdateView.as_view(), name='sales_order_update'),
     path('order/quick/create/', views.SalesOrderQuickCreateView.as_view(), name='sales_order_quick_create'),
     path('order/create/', views.SalesOrderCreateView.as_view(), name='sales_order_create'),
+    path('order/invoice/options/<pk>/', views.SalesOrderInvoiceOptionsEditView.as_view(), name='sales_order_invoice_options'),
     path('order/<pk>/', views.SalesOrderDetailView.as_view(), name='sales_order_detail'),
     path('order/', views.SalesOrderListView.as_view(), name='sales_order_list'),
 ]

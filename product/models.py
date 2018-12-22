@@ -1,7 +1,7 @@
 from decimal import Decimal
 
 import decimal
-from django.db import models, transaction
+from django.db import models
 from django.urls import reverse
 
 from public.fields import LineField
@@ -284,12 +284,13 @@ class PackageList(models.Model):
         return reverse('package_list_item_create', args=[self.id])
 
     @staticmethod
-    def make_package_from_list(product_id, lst, from_package_list=None):
+    def make_package_from_list(product_id, lst=None, from_package_list=None):
         # with transaction.atomic():
         order = PackageList.objects.create(product_id=product_id, from_package_list=from_package_list)
-        for id in lst:
-            slab = Slab.objects.get(pk=id)
-            PackageListItem.objects.create(slab=slab, part_number=slab.part_number, order=order)
+        if lst:
+            for id in lst:
+                slab = Slab.objects.get(pk=id)
+                PackageListItem.objects.create(slab=slab, part_number=slab.part_number, order=order)
         return order
 
     @staticmethod

@@ -157,6 +157,11 @@ class PackageListDetail(DetailView):
                  stock.items.filter(is_reserve=False).order_by('part_number', 'line')]
         return slabs
 
+    # 取出已经锁货的列表
+    def get_is_reserve_list(self, slabs):
+        if slabs:
+            return [s.get_slab_id() for s in slabs if s.is_reserve]
+
     def get(self, *args, **kwargs):
         state = self.request.GET.get('state')
         self.object = self.get_object()
@@ -168,18 +173,23 @@ class PackageListDetail(DetailView):
             slabs = self.get_state_draft_slabs()
         package = Package(self.object.product, slabs)
 
+        is_reserve_list = self.get_is_reserve_list(slabs)
         cart = Cart(self.request)
-        # edit_url = self.object.get_absolute_url
-        # 'edit_url': edit_url,
+
         data = {'package': package, 'cart': cart, 'package_slabs_ids': package_slabs_ids,
-                'state': state, 'object': self.object}
+                'state': state, 'object': self.object, 'is_reserve_list': is_reserve_list}
         return HttpResponse(render_to_string(self.template_name, data))
 
     def post(self, *args, **kwargs):
         self.object = self.get_object()
         slab_list = self.request.POST.getlist('select')
-        package = self.object.update(self.object, slab_list)
-        return JsonResponse({'state': 'ok'})
+        if slab_list:
+            self.object.update(self.object, slab_list)
+            data = {'state': 'ok'}
+        else:
+            message = '选择无效'
+            data = {'state': 'error', 'message':message}
+        return JsonResponse(data)
 
 
 # 生产（板材入库）的码单draft显示
@@ -233,6 +243,9 @@ class InventoryOrderNewItemPackageListDetailView(PackageListDetail):
 # 提货单的码单显示
 class OutOrderPackageListDetailView(PackageListDetail):
 
+    def get_is_reserve_list(self, slabs):
+        return []
+
     def get_state_draft_slabs(self):
         slabs = list(self.object.from_package_list.items.filter(slab__stock__isnull=False))
         return slabs
@@ -240,7 +253,7 @@ class OutOrderPackageListDetailView(PackageListDetail):
 
 # 销售订单项目码单创建
 class OrderItemPackageListCreateView(View):
-    template_name = 'package_list.html'
+    template_name = 'product/package_list.html'
 
     def get(self, *args, **kwargs):
         location_id = self.kwargs.get('location_id')
@@ -264,6 +277,20 @@ class OrderItemPackageListCreateView(View):
         item.quantity = package.get_quantity()
         item.save()
         return JsonResponse({'state': 'ok'})
+
+
+# 销售单编辑状态，按location筛选
+class SaleOrderPackageListView(PackageListDetail):
+    location_id = None
+
+    def get_state_draft_slabs(self):
+        slabs = [item for stock in self.object.product.stock.filter(location_id=self.location_id) for item in
+                 stock.items.filter(is_reserve=False)]
+        return slabs
+
+    def dispatch(self, request, *args, **kwargs):
+        self.location_id = kwargs.get('location_id')
+        return super().dispatch(request, *args, **kwargs)
 
 
 # 提货单的码单显示
