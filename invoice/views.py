@@ -203,13 +203,13 @@ class AssignPaymentFormView(TemplateResponseMixin, View):
 class QuickInvoiceAssignUnderchargePayment(ModalOptionsMixin):
     model = Invoice
 
-    def do_yes(self):
+    def do_yes(self, *args):
         account = Account.get_undercharge_account()
         partner = self.object.partner.get_undercharge_partner()
         self.object.quick_assign_due_payment(partner=partner, account=account, entry=self.request.user)
         return True, '已成功登记款项'
 
-    def do_no(self):
+    def do_no(self, *args):
         return False, ''
 
     def get_options(self):

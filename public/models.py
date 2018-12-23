@@ -97,8 +97,7 @@ class HasChangedMixin:
             orig = '__original_%s' % field
             if getattr(self, orig) != getattr(self, field):
                 changed_data[self._meta.get_field(field).verbose_name] = '%s => %s' % (
-                getattr(self, orig), getattr(self,
-                                             field))
+                    getattr(self, orig), getattr(self, field))
         return changed_data
 
         # for field, initial_field_val in self.field_trackers.items():

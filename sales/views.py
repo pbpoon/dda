@@ -38,11 +38,6 @@ class SalesOrderDetailView(StateChangeMixin, DetailView):
 class SalesOrderInvoiceOptionsEditView(ModalOptionsMixin):
     model = SalesOrder
 
-    def __getattr__(self, item):
-        if item[:2] == 'do':
-            _, order_str = item.split('_')
-            return getattr(self, 'do_option')(order_str)
-
     def get_options(self):
         if not self.object.can_make_invoice:
             return [('do_nothing', '没有可开项')]
@@ -53,7 +48,8 @@ class SalesOrderInvoiceOptionsEditView(ModalOptionsMixin):
              in_out_orders if not order.has_from_order_invoice])
         return choices
 
-    def do_option(self, order_str):
+    def do_option(self, option):
+        _, order_str = option.split('_')
         if order_str == 'nothing':
             return False, '没有可开账单项'
         try:

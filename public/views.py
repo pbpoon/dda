@@ -106,7 +106,7 @@ class StateChangeMixin:
             # 创建数据库事务保存点
             state = self.request.POST.get('state')
             sid = transaction.savepoint()
-            is_done, msg = getattr(self, state)()
+            is_done, msg = getattr(self, state)
             if is_done:
                 msg += ',成功设置状态为:{}'.format(state)
                 messages.success(self.request, msg)
@@ -161,11 +161,17 @@ class ModalOptionsMixin(BaseDetailView):
         context['form'] = self.get_form()
         return HttpResponse(render_to_string(self.template_name, context))
 
+    def run_option(self, option):
+        if hasattr(self, option):
+            return getattr(self, option)()
+        else:
+            return getattr(self, 'do_option')(option)
+
     def post(self, *args, **kwargs):
         self.object = self.get_object()
         url = self.get_success_url()
         option = self.request.POST.get('options')
-        is_done, msg = getattr(self, option)()
+        is_done, msg = self.run_option(option)
         if is_done:
             messages.success(self.request, msg)
             return JsonResponse({'state': 'ok', 'msg': msg, 'url': url})
