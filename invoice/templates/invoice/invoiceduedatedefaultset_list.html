@@ -1,0 +1,48 @@
+{% extends 'detail.html' %}
+{% block content %}
+    <table>
+        <thead>
+        <tr>
+            <th>订单类型</th>
+            <th>默认值</th>
+            <th>设置时间</th>
+            <th></th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for object in object_list %}
+            <tr>
+                <td>{{ object.content_type }}</td>
+                <td>{{ object.get_default_display }}</td>
+                <td>{{ object.updated|date:"SHORT_DATE_FORMAT" }}</td>
+                <td>
+                    <a class='dropdown-trigger btn-small btn-floating grey' href='#'
+                       data-target='dropdown{{ forloop.counter }}'> <i
+                            class="material-icons">more_vert</i></a>
+
+                    <!-- Dropdown Structure -->
+                    <ul id='dropdown{{ forloop.counter }}' class='dropdown-content'>
+                        <li>
+                            <a onclick="edit_item('{% url 'invoice_due_date_default_update' object.id %}')">修改
+                            </a>
+                        </li>
+                    </ul>
+
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="fixed-action-btn">
+        <a href="#" onclick="add_item('{% url 'invoice_due_date_default_create' %}')"
+           class="btn-floating btn-large red">
+            <i class="large material-icons">add</i>
+        </a>
+    </div>
+{% endblock %}
+
+{% block domready %}
+    {{ block.super }}
+    $('.dropdown-trigger').dropdown();
+{% endblock %}

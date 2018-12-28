@@ -7,6 +7,7 @@ from datetime import datetime
 
 from mrp.models import MrpOrderAbstract, OrderItemBase
 from public.fields import OrderField
+from public.models import HasChangedMixin
 from public.stock_operate import StockOperate
 
 UOM_CHOICES = (('t', '吨'), ('m3', '立方'), ('m2', '平方'))
@@ -19,7 +20,7 @@ STATE_CHOICES = (
 )
 
 
-class TurnBackOrder(models.Model):
+class TurnBackOrder(HasChangedMixin, models.Model):
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
     from_order = GenericForeignKey()  # 对应的order
@@ -37,6 +38,8 @@ class TurnBackOrder(models.Model):
     date = models.DateField('日期', default=datetime.now)
     created = models.DateField('创建日期', auto_now_add=True)
     updated = models.DateTimeField('更新时间', auto_now=True)
+    comments = GenericRelation('comment.Comment')
+    invoices = GenericRelation('invoice.Invoice')
 
     class Meta:
         verbose_name = '库存回退'
@@ -63,7 +66,10 @@ class TurnBackOrder(models.Model):
             is_cancel, cancel_msg = form_order.cancel()
             self.state = 'done'
             self.save()
-            # form_order.comments.create(user=self.request.user, content='由%s设置状态：取消，原因是：%s' % (self.object, self.object.reason),)
+            self.create_comment()
+            comment = '通过 %s <a herf="%s">%s</a>状态:%s, 取消本订单,原因是：%s,库存已逆向操作成功' % (
+                self._meta.verbose_name, self.get_absolute_url(), self, self.state, self.reason)
+            form_order.create_comment(**{'comment': comment})
             if not is_cancel:
                 return is_cancel, cancel_msg
         return is_done, msg

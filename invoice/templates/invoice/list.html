@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "list.html" %}
 {% block content %}
 
     <table class="table table-sm">
@@ -23,20 +23,6 @@
                 <td>{{ object.partner }}</td>
                 <td>{{ object.get_amount }}</td>
                 <td>
-                    <div class="dropdown">
-                        <button type="button" class="btn btn-sm " data-toggle="dropdown"
-                                aria-haspopup="true" aria-expanded="false">
-                            ...
-                        </button>
-                        <div class="dropdown-menu">
-                            <a class="dropdown-item" data-toggle="modal" data-target=".bd-example-modal-sm"
-                               href="{% url 'import_block_edit' %}">修改</a>
-                            <a class="dropdown-item" href="#">Another action</a>
-                            <a class="dropdown-item" href="#">Something else here</a>
-                            <div class="dropdown-divider"></div>
-                            <a class="dropdown-item" href="#">Separated link</a>
-                        </div>
-                    </div>
                 </td>
             </tr>
         {% endfor %}

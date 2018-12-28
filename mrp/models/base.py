@@ -5,6 +5,7 @@ from django.db import models
 from django.urls import reverse
 
 from public.fields import LineField
+from public.models import OrderItemSaveCreateCommentMixin
 from purchase.models import OrderAbstract
 
 UOM_CHOICES = (('t', '吨'), ('m3', '立方'), ('m2', '平方'))
@@ -42,7 +43,7 @@ class MrpOrderAbstract(OrderAbstract):
         return self.order
 
 
-class OrderItemBase(models.Model):
+class OrderItemBase(OrderItemSaveCreateCommentMixin, models.Model):
     line = LineField(for_fields=['order'], blank=True, verbose_name='行')
     location = models.ForeignKey('stock.Location', related_name='%(class)s_location', verbose_name='库位',
                                  on_delete=models.DO_NOTHING, blank=True, null=True)

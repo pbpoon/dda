@@ -173,7 +173,7 @@ class StockOperate:
 
         # 循环检查item的product的需求是否超出可以数量,
         # 如果超出就记载日error list，用作message返回
-        error = []
+        error = ''
         for item in self.items:
             if not item.location.is_virtual:
                 package_list = getattr(item, 'package_list', None)
@@ -181,9 +181,9 @@ class StockOperate:
                     id__in=package_list.items.values_list('slab', flat=True)) if package_list else None
                 av_piece, av_quantity = self.get_available(product=item.product, location=item.location, slabs=slabs)
                 if (av_piece - item.piece) < 0:
-                    error.append('{product}#可用库存为:{av_piece}件/{av_quantity}{uom},超出需求{piece}件/{quantity}{uom}'.format(
+                    error += '{product}#可用库存为:{av_piece}件/{av_quantity}{uom},超出需求{piece}件/{quantity}{uom}。'.format(
                         product=item.product, av_piece=av_piece, av_quantity=av_quantity, piece=item.piece,
-                        quantity=item.quantity, uom=item.product.uom))
+                        quantity=item.quantity, uom=item.product.uom)
         if error:
             return False, error
         return True, error

@@ -1,11 +1,19 @@
 {% if object %}
-    <div class="album text-muted">
-    <div class="container">
-        <ul>
-            {% for comment in object.comments.all %}
-            <li>{{ comment.comment }}</li>
-            {% endfor %}
-        </ul>
+        {% for comment in object.comments.all %}
+    <div class="row">
+            <div class="col s2 left">
+{#                <a href="#user"><img class="circle" src="#"></a>#}
+                <a href="#name"><span class="name">{{ comment.user }}</span></a>
+            </div>
+            <div class="col s10 right">
+                {#                <div class="card-panel">#}
+                <span class="grey-text">
+                <span class="right">{{ comment.created }}</span><br>
+                <hr>
+            {{ comment.content|safe }}
+                </span>
+                {#                </div>#}
+            </div>
     </div>
-    </div>
+        {% endfor %}
 {% endif %}

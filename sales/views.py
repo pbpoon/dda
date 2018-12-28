@@ -23,26 +23,29 @@ class SalesOrderListView(ListView):
 class SalesOrderDetailView(StateChangeMixin, DetailView):
     model = SalesOrder
 
+    def get_btn_visible(self, state):
+        return {'draft': {'cancel': True, 'confirm': True},
+                'confirm': {'draft': True},
+                'cancel': {'draft': True},
+                'done': {}}[state]
+
     def confirm(self):
         return self.object.confirm()
 
     def draft(self):
         return self.object.draft()
 
-    # def make_invoice(self):
-    #     items_list = [{'item': item.product, 'quantity': item.quantity, 'price': item.price} for item in
-    #                   self.object.items.all()]
-    #     return CreateInvoice(order=self.object, partner=self.object.partner, items_dict_lst=items_list).make()
-
 
 class SalesOrderInvoiceOptionsEditView(ModalOptionsMixin):
     model = SalesOrder
 
     def get_options(self):
-        if not self.object.can_make_invoice:
+        if self.object.can_make_invoice_amount == 0:
             return [('do_nothing', '没有可开项')]
+        # 如果有已经确认的出货单，就把可开的出货单列出
         in_out_orders = self.object.in_out_order.filter(Q(state='confirm') | Q(state='done'))
-        choices = [('do_all', '{}'.format('按全部订单行' if not in_out_orders else '按剩余可开项'))]
+        choices = [('do_all', '{}'.format(
+            '按全部订单行' if not in_out_orders else '按剩余可开项/金额:{}'.format(self.object.can_make_invoice_amount)))]
         choices.extend(
             [('do_' + str(order.pk), '提货单：{}:金额{:.2f}'.format(order.order, order.get_products_amount())) for order in
              in_out_orders if not order.has_from_order_invoice])
@@ -58,9 +61,16 @@ class SalesOrderInvoiceOptionsEditView(ModalOptionsMixin):
             if in_out_order:
                 order = in_out_order[0]
                 invoice = order.make_from_order_invoice()
+                comment = "按出货单 <a href='%s'>%s</a>,创建账单<a href='%s'>%s</a><br>" % (order.get_absolute_url(), order,
+                                                                                    invoice.get_absolute_url(),
+                                                                                    invoice)
+                self.object.create_comment(**{'comment': comment})
                 return True, '已按提货单{}创建账单:{}'.format(order.order, invoice.order)
         except Exception as e:
             invoice = self.object.make_invoice()
+            comment = "创建账单<a href='%s'>%s</a><br>" % (
+                invoice.get_absolute_url(), invoice)
+            self.object.create_comment(**{'comment': comment})
             return True, '已创建账单:{}'.format(invoice.order)
         return False, '错误'
 

@@ -12,7 +12,6 @@ from stock.models import Location, Stock, Warehouse
 from public.utils import qs_to_dict, Package
 
 from .models import Product, PackageList, DraftPackageList, DraftPackageListItem, Slab, Block, PackageListItem
-from django.core import serializers
 
 
 def get_block_list(request):

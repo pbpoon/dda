@@ -16,6 +16,13 @@ from django.views.generic.edit import BaseDeleteView, ModelFormMixin, ProcessFor
 from public.forms import StateForm, ConfirmOptionsForm
 from public.widgets import CheckBoxWidget, RadioWidget
 
+STATE_CHOICES = (
+    ('draft', '草稿'),
+    ('confirm', '确认'),
+    ('cancel', '取消'),
+    ('done', '完成'),
+)
+
 
 class GetItemsMixin:
     def get_context_data(self, **kwargs):
@@ -27,9 +34,9 @@ class GetItemsMixin:
 
 class OrderFormInitialEntryMixin:
     def get_initial(self):
-        data = super().get_initial()
-        data.update({'entry': self.request.user.id})
-        return data
+        initial = super().get_initial()
+        initial.update({'entry': self.request.user.id})
+        return initial
 
 
 class OrderItemEditMixin(OrderFormInitialEntryMixin, ModelFormMixin, View):
@@ -106,9 +113,9 @@ class StateChangeMixin:
             # 创建数据库事务保存点
             state = self.request.POST.get('state')
             sid = transaction.savepoint()
-            is_done, msg = getattr(self, state)
+            is_done, msg = getattr(self, state)()
             if is_done:
-                msg += ',成功设置状态为:{}'.format(state)
+                msg += ' 成功设置状态为:{}'.format(dict(STATE_CHOICES).get(state))
                 messages.success(self.request, msg)
                 # self.object.state = state
                 # self.object.save()
@@ -116,7 +123,7 @@ class StateChangeMixin:
                 return redirect(self.get_success_url())
             # 回滚数据库到保存点
             transaction.savepoint_rollback(sid)
-            msg += ',设置状态为:{} 失败'.format(state)
+            msg += ' 设置状态为:%s 失败' % (dict(STATE_CHOICES).get(state))
             messages.error(self.request, msg)
         return redirect(self.get_success_url())
 
@@ -124,11 +131,7 @@ class StateChangeMixin:
         raise ValueError('define confirm')
 
     def cancel(self):
-        if self.object.state == 'draft':
-            self.object.state = 'cancel'
-            self.object.save()
-            return True, ''
-        return False, ''
+        raise ValueError('define confirm')
 
     def draft(self):
         raise ValueError('define draft')

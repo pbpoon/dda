@@ -49,6 +49,29 @@ class PurchaseOrder(OrderAbstract):
     def get_update_url(self):
         return reverse('purchase_order_update', args=[self.id])
 
+    def confirm(self, **kwargs):
+        for item in self.items.all():
+            item.confirm()
+        self.state = 'confirm'
+        self.save()
+        # 日后生产invoice
+        self.create_comment(**kwargs)
+        msg = '设置订单%s设置成 %s 状态' % (self.order, self.get_state_display())
+        return True, msg
+
+    def draft(self, **kwargs):
+        for item in self.items.all():
+            item.draft()
+        self.state = 'draft'
+        self.save()
+        content = self.get_logs()
+        self.create_comment(**kwargs)
+        msg = '设置订单%s设置成 %s 状态' % (self.order, self.get_state_display())
+        return True, msg
+
+    def done(self, **kwargs):
+        self.create_comment(**kwargs)
+        return True,''
 
 class PurchaseOrderItem(models.Model):
     line = LineField(for_fields=['order'], blank=True, verbose_name='行')
@@ -95,4 +118,9 @@ class PurchaseOrderItem(models.Model):
         p_kwarg = {f.name: getattr(self, f.name) for f in self._meta.fields if f.name in block_fields}
         self.product = Product.create(type='block', defaults=p_kwarg)
         # 日后product action 添加action记录
+        self.product.activate = True
+        return self.save()
+
+    def draft(self):
+        self.product.activate = False
         return self.save()

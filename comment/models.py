@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.postgres.fields import JSONField
+
+
 #
 #
 class Comment(models.Model):
@@ -17,8 +19,8 @@ class Comment(models.Model):
     class Meta:
         verbose_name = '评论信息'
         ordering = ('-created',)
-#
-#
+
+
 class OperationLogs(models.Model):
     """操作日志"""
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
@@ -29,6 +31,8 @@ class OperationLogs(models.Model):
 
     class Meta:
         verbose_name = '操作日志'
+
+
 #
 
 

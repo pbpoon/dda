@@ -43,7 +43,7 @@
                 <td>{% if object.state == 'draft' %}
                     <!-- Dropdown Trigger -->
 
-                    <a class='dropdown-trigger btn-floating grey' href='#' data-target='dropdown{{ forloop.counter }}'> <i
+                    <a class='dropdown-trigger btn-small btn-floating grey' href='#' data-target='dropdown{{ forloop.counter }}'> <i
                             class="material-icons">more_vert</i></a>
 
                     <!-- Dropdown Structure -->
@@ -67,15 +67,15 @@
             <td>
                 <a href="#" onclick="add_item('{{ object.get_create_item_url }}')">添加</a>
             </td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td>{{ object.get_quantity }}</td>
-            <td>{{ object.uom }}</td>
-            <td>{{ object.get_amount }}</td>
-            <td></td>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th>{{ object.get_quantity }}</th>
+            <th>{{ object.uom }}</th>
+            <th>{{ object.get_amount }}</th>
+            <th></th>
         </tr>
         </tfoot>
     </table>
@@ -88,8 +88,4 @@
             <li class="list_group_item"><a href="{{ invoice.invoice.get_absolute_url }}">{{ invoice.invoice }}</a></li>
         {% endfor %}
     </ul>
-{% endblock %}
-
-{% block script %}
-
 {% endblock %}

@@ -5,15 +5,18 @@
     <table class="table table-sm">
         <thead>
         <tr>
+            <th>#</th>
             <th>编号</th>
             <th>数量</th>
             <th>库位=>目标库位</th>
+            <th>费用</th>
             <th>编辑</th>
         </tr>
         </thead>
         <tbody>
         {% for item in object_list %}
             <tr id="block_list_tr">
+                <td>{{ item.line }}</td>
                 <td>{{ item.product }}</td>
                 <td>
                     {% if item.package_list %}
@@ -30,10 +33,14 @@
                     {% endif %}
                 </td>
                 <td>{{ item.location }}=>{{ item.location_dest }}</td>
+                <td>{% for expense in item.expenses.all %}
+                    <div class=text-right>
+                        {{ expense }}={{ expense.amount }}<br></div>{% endfor %}</td>
                 <td>{% if object.state == 'draft' %}
                     <!-- Dropdown Trigger -->
 
-                    <a class='dropdown-trigger btn-small btn-floating grey' href='#' data-target='dropdown{{ forloop.counter }}'>
+                    <a class='dropdown-trigger btn-small btn-floating grey' href='#'
+                       data-target='dropdown{{ forloop.counter }}'>
                         <i
                                 class="material-icons">more_vert</i></a>
 
@@ -48,6 +55,12 @@
                                 删除
                             </a>
                         </li>
+                            <hr>
+                        <li>
+                            <a onclick="add_item('{% url 'mrp_item_expenses_create' item|model_name item.id %}')">
+                                添加费用
+                            </a>
+                        </li>
                     </ul>
                 {% endif %}</td>
             </tr>
@@ -56,28 +69,35 @@
         </tbody>
         <tfoot>
         <tr>
-            <td></td>
-            <td></td>
-            <td>{{ object.get_quantity }}</td>
-            <td></td>
+            <th colspan="2">合计</th>
+            <th>
+                {% for key, item in object.get_total.items %}
+                    {{ key }}:{% if item.part %}{{ item.part }}夹 / {% endif %}{{ item.piece }}件 /
+                    {{ item.quantity }}{{ item.uom }}<br>
+                {% endfor %}
+            </th>
+            <th></th>
+            <th>{{ object.get_expenses_amount }}</th>
+            <th></th>
         </tr>
         </tfoot>
     </table>
-    <datalist id="product_list">
-        {% for product in product_list %}
-            <option value="{{ product.weight }}"
-                    data-id="{{ product.id }}"
-                    data-quantity="{{ product }}">{{ product.name }}</option>
-        {% endfor %}
-    </datalist>
     <!--右下角浮动按钮组-->
     {% include 'float_btn.html' %}
 
 {% endblock %}
-{% block siderbar %}
-    <div class="btn-group-vertical">
-        <a class="mdui-btn" href="">编辑业务资料</a>
-    </div>
+{% block sidebar %}
+  {% if object.invoices.all %}
+        <span>账单</span>
+        <hr>
+        <div class="collection">
+            {% for invoice in object.invoices.all %}
+                {% if invoice.state not in 'cancel' %}
+                <a href="{{ invoice.get_absolute_url }}" class="collection-item">{{ invoice }}<span class="badge">{{ invoice.get_state_display }}</span></a>
+                {% endif %}
+            {% endfor %}
+        </div>
+    {% endif %}
 {% endblock %}
 
 {% block headline %}

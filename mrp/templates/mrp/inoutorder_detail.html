@@ -45,7 +45,8 @@
                 </td>
             <td>
                 {% for expense in item.expenses.all %}<div class=text-right>
-                                {{ expense }}={{ expense.amount }}<br></div>{% endfor %}</td>
+                                {{ expense }}={{ expense.amount }}<br></div>{% endfor %}
+            </td>
 {#                <td><!---费用显示-->#}
 {#                    {% if item.expenses.all %}#}
 {#                        <a href="#" class="tooltipped" data-position="bottom"#}
@@ -58,7 +59,7 @@
                 <td>{% if object.state == 'draft' %}
                     <!-- Dropdown Trigger -->
 
-                    <a class='dropdown-trigger btn-floating grey' href='#' data-target='dropdown{{ forloop.counter }}'> <i
+                    <a class='dropdown-trigger btn-small btn-floating grey' href='#' data-target='dropdown{{ forloop.counter }}'> <i
                             class="material-icons">more_vert</i></a>
 
                     <!-- Dropdown Structure -->
@@ -100,7 +101,9 @@
         <hr>
         <div class="collection">
             {% for invoice in object.invoices.all %}
-                <a href="{{ invoice.get_absolute_url }}" class="collection-item">{{ invoice }}</a>
+                 {% if invoice.state not in 'cancel' %}
+                <a href="{{ invoice.get_absolute_url }}" class="collection-item">{{ invoice }}<span class="badge">{{ invoice.get_state_display }}</span></a>
+                {% endif %}
             {% endfor %}
         </div>
     {% endif %}

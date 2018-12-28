@@ -56,6 +56,9 @@ class City(models.Model):
 #
 #     def __str__(self):
 #         return self.name
+class InvoicePartnerManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(is_invoice=True)
 
 
 class Partner(models.Model):
@@ -76,6 +79,9 @@ class Partner(models.Model):
                                 on_delete=models.SET_NULL,
                                 null=True, blank=True, verbose_name='所属公司')
     is_production = models.BooleanField('是生产商', default=False)
+    is_invoice = models.BooleanField('是账单账户类型', default=False)
+    objects = models.Manager()
+    invoices = InvoicePartnerManager()
 
     class Meta:
         verbose_name = '伙伴资料'
@@ -116,13 +122,21 @@ class Partner(models.Model):
 
     @classmethod
     def get_expenses_partner(cls):
-        partner, _ = cls.objects.get_or_create(name='杂费支出', is_company=True, type='supplier', phone='88888888888')
+        partner, _ = cls.objects.get_or_create(name='杂费支出', is_company=True, type='supplier', phone='88888888888',
+                                               is_invoice=True)
         return partner
 
     @classmethod
     def get_undercharge_partner(cls):
-        partner, _ = cls.objects.get_or_create(name='货款少收/坏账', is_company=True, type='supplier', phone='88888888881')
+        partner, _ = cls.objects.get_or_create(name='货款少收/坏账', is_company=True, type='supplier', phone='88888888881',
+                                               is_invoice=True)
         return partner
+
+
+class InvoicePartner(Partner):
+    class Meta:
+        verbose_name = '账单账号'
+        proxy = True
 
 
 class MainInfo(models.Model):

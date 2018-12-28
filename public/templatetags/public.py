@@ -32,6 +32,13 @@ def label_name(obj):
     except AttributeError:
         return None
 
+@register.filter
+def verbose_name(obj):
+    try:
+        return obj._meta.verbose_name
+    except AttributeError:
+        return None
+
 
 @register.filter
 def percentage(value):

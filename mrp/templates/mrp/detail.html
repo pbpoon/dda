@@ -1,5 +1,9 @@
 {% extends 'detail.html' %}
+{% load public %}
 {% block domready %}
     {{ block.super }}
-        $('.dropdown-trigger').dropdown();
+    $('.dropdown-trigger').dropdown();
+{% endblock %}
+{% block operate %}
+    <a class="btn default" href="{% url 'invoice_create' object|label_name object.id %}">创建账单</a>
 {% endblock %}

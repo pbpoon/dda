@@ -6,6 +6,7 @@ from . import views
 
 urlpatterns = [
     path('<invoice_id>/payment/<partner_id>/', views.PaymentEditView.as_view(), name='payment_create_from_invoice'),
+    path('<invoice_id>/payment/<partner_id>/', views.PaymentEditView.as_view(), name='payment_create_from_invoice'),
     path('payment/edit/<pk>/', views.PaymentEditView.as_view(), name='payment_edit'),
     path('payment/<pk>/', views.PaymentDetailView.as_view(), name='payment_detail'),
     path('payment/', views.PaymentListView.as_view(), name='payment_list'),
@@ -19,6 +20,14 @@ urlpatterns = [
     path('item/edit/<pk>/', views.InvoiceItemEditView.as_view(), name='invoice_item_edit'),
     path('<pk>/quick-assign-undercharge-payment/', views.QuickInvoiceAssignUnderchargePayment.as_view(),
          name='invoice_quick_assign_undercharge_payment'),
+    path('invoice_due_date_default_update/<pk>/', views.InvoiceDueDateDefaultSetUpdateView.as_view(),
+         name='invoice_due_date_default_update'),
+    path('invoice_due_date_default_create/', views.InvoiceDueDateDefaultSetCreateView.as_view(),
+         name='invoice_due_date_default_create'),
+    path('invoice_due_date_default_list/', views.InvoiceDueDateDefaultSetListView.as_view(),
+         name='invoice_due_date_default_list'),
+    path('create/<app_label_lower>/<order_id>/', views.InvoiceCreateView.as_view(), name='invoice_create'),
+    path('update/<pk>/', views.InvoiceUpdateView.as_view(), name='invoice_update'),
     path('<pk>/', views.InvoiceDetailView.as_view(), name='invoice_detail'),
     path('', views.InvoiceListView.as_view(), name='invoice_list'),
 ]

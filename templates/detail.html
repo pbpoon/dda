@@ -2,18 +2,34 @@
 {% block header %}
     <div class="row">
         <div class="col s12 m8">
-            <div class="card base">
+
+            <div class="card sticky-action">
+                {#                <div class="card-image waves-effect waves-block waves-light">#}
+                {#                    <img class="activator" src="images/office.jpg">#}
+                {#                </div>#}
                 <div class="card-content">
-                    <span class="card-title">{% block headline %}{% endblock %}</span>
+                    {#                    <span class="card-title">#}
+                    <span class="card-title activator grey-text text-darken-4"><i
+                            class="material-icons right">more_vert</i>
+                        {% block headline %}{% endblock %}</span>
                     <p>{% block subheadline %}
                     {% endblock %}</p>
                 </div>
-                <div class="card-action right-align grey lighten-3">
+                <div class="card-action">
                     {% block state %}
                         {% include 'state.html' %}<!--状态按钮组-->
                     {% endblock %}
+                <div class="right">
+                    {% block operate %}
+                    {% endblock %}
+                </div>
+                </div>
+                <div class="card-reveal">
+                    <span class="card-title grey-text text-darken-4">Card Title<i class="material-icons right">close</i></span>
+                    <p>Here is some more information about this product that is only revealed once clicked on.</p>
                 </div>
             </div>
+
         </div>
     </div>
     {% block action_btn %}
@@ -29,14 +45,17 @@
             <div class="card-panel ">
                 {% block content %}
                 {% endblock %}
-                {% include 'comment.html' %}
             </div>
+
         </div>
         <div class="col s12 m4 l4">
-            {#            <div class="card-panel white">#}
             {% block sidebar %}
             {% endblock %}
-            {#            </div>#}
+        </div>
+        <div class="col s12 m8 l8">
+            <div class="card-panel">
+                {% include 'comment.html' %}
+            </div>
         </div>
     </div>
 {% endblock %}

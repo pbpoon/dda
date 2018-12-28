@@ -99,6 +99,16 @@ function get_autocomplete(url) {
         return mark_safe(html)
 
 
+class DatePickerWidget(forms.DateInput):
+    def build_attrs(self, base_attrs, extra_attrs=None):
+        data = super().build_attrs(base_attrs, extra_attrs)
+        if data.get('class'):
+            data['class'] += ' datepicker'
+        else:
+            data['class'] = 'datepicker'
+        return data
+
+
 class CheckBoxWidget(forms.CheckboxInput):
     template_name = 'public/checkbox.html'
 

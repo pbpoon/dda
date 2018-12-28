@@ -22,6 +22,12 @@ class MoveLocationOrderForm(forms.ModelForm):
             'entry': forms.HiddenInput,
         }
 
+    def clean(self):
+        cd = self.cleaned_data
+        if cd['warehouse'] == cd['warehouse_dest']:
+            raise forms.ValidationError('移出仓库 与 目标仓库 不能相同')
+        return cd
+
 
 class MoveLocationOrderItemForm(FormUniqueTogetherMixin, forms.ModelForm):
     product_autocomplete = forms.CharField(label='产品编号', widget=AutocompleteWidget(url='get_product_list'))
@@ -324,7 +330,8 @@ class InventoryOrderItemForm(FormUniqueTogetherMixin, forms.ModelForm):
 
 class InventoryOrderNewItemForm(forms.ModelForm):
     name_autocomplete = forms.CharField(label='产品编号',
-                                        widget=AutocompleteWidget(url='get_block_list', onAutocomplete_function='set_block'))
+                                        widget=AutocompleteWidget(url='get_block_list',
+                                                                  onAutocomplete_function='set_block'))
 
     class Meta:
         model = InventoryOrderNewItem
@@ -362,7 +369,6 @@ class InventoryOrderNewItemForm(forms.ModelForm):
             self.fields['product_type'].required = True
         if instance:
             self.fields['name_autocomplete'].initial = instance.product
-
 
     def clean_block(self):
         block = self.cleaned_data.get('block')

@@ -1,19 +1,22 @@
 from django import forms
+from django.apps import apps
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.http import JsonResponse, HttpResponse
-from django.shortcuts import render, get_object_or_404, redirect
+from django.shortcuts import render, get_object_or_404, redirect, reverse
 from django.template.loader import render_to_string
 from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
 from django.contrib import messages
-from invoice.form import AssignInvoiceForm
+from invoice.form import AssignInvoiceForm, InvoiceForm
+from partner.models import Partner
 from public.views import GetItemsMixin, OrderItemEditMixin, StateChangeMixin, OrderItemDeleteMixin, ModalOptionsMixin
 from django.views.generic.edit import CreateView, UpdateView, ModelFormMixin
 from django.views.generic.base import TemplateResponseMixin, View
 
-from invoice.models import Invoice, Payment, Account, Assign, InvoiceItem
-from public.widgets import CheckBoxWidget
+from invoice.models import Invoice, Payment, Account, Assign, InvoiceItem, InvoiceDueDateDefaultSet
+from public.widgets import CheckBoxWidget, RadioWidget, DatePickerWidget
 
 
 class InvoiceDetailView(StateChangeMixin, DetailView):
@@ -26,7 +29,7 @@ class InvoiceDetailView(StateChangeMixin, DetailView):
     def get_btn_visible(self, state):
         return {'draft': {'confirm': True, 'cancel': True},
                 'confirm': {'done': True, 'draft': True},
-                'done': {}
+                'done': {}, 'cancel': {'draft': True}
                 }[state]
 
     def confirm(self):
@@ -47,14 +50,54 @@ class InvoiceListView(ListView):
     template_name = 'invoice/list.html'
 
 
+class InvoiceEditMixin:
+    model = Invoice
+    template_name = 'form.html'
+    form_class = InvoiceForm
+
+
+class InvoiceCreateView(InvoiceEditMixin, CreateView):
+    def dispatch(self, request, app_label_lower=None, order_id=None):
+        self.object = None
+        if app_label_lower:
+            app_label, model_name = app_label_lower.split('.')
+            self.from_order = apps.get_model(app_label=app_label, model_name=model_name).objects.get(pk=order_id)
+        return super().dispatch(request)
+
+    def get_initial(self):
+        initial = super().get_initial()
+        initial['content_type'] = ContentType.objects.get_for_model(self.from_order)
+        initial['object_id'] = self.from_order.id
+        initial['entry'] = self.request.user.id
+        return initial
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['partner'] = self.from_order.partner
+        return kwargs
+    #
+    # def get_form(self, form_class=None):
+    #     form = super().get_form(form_class)
+    #     p = Partner.objects.filter(pk=self.from_order.partner.id)
+    #     qs = p.union(Partner.invoices.all())
+    #     form.fields['partner'].queryset = qs
+    #     return form
+
+
+class InvoiceUpdateView(InvoiceEditMixin, UpdateView):
+    pass
+
+
 class InvoiceItemEditView(OrderItemEditMixin):
     model = InvoiceItem
     fields = '__all__'
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        form.fields['order'].widget = forms.HiddenInput()
         form.fields['order'].initial = self.order
+        form.fields['order'].widget = forms.HiddenInput()
+        form.fields['sales_order_item'].widget = forms.HiddenInput()
+        form.fields['purchase_order_item'].widget = forms.HiddenInput()
         form.fields['line'].widget = forms.HiddenInput()
         return form
 
@@ -93,6 +136,9 @@ class PaymentDetailView(StateChangeMixin, DetailView):
     def confirm(self):
         self.object.done()
         return True, ''
+
+    def draft(self):
+        return self.object.draft()
 
 
 class PaymentListView(ListView):
@@ -143,13 +189,14 @@ class PaymentEditView(ModelFormMixin, View):
         msg = '修改' if self.object else '添加'
         invoice = self.get_invoice()
         if form.is_valid():
+            instance = form.save(commit=False)
             if invoice:
-                form.type = invoice.type
-            instance = form.save()
+                instance.type = invoice.type
+            instance.save()
             if invoice:
                 assign = Assign.objects.create(invoice=invoice, payment=instance, amount=instance.amount,
                                                entry=self.request.user)
-            form.save()
+            instance.create_comment()
             msg += '成功'
             messages.success(self.request, msg)
             # return redirect(path)
@@ -161,7 +208,8 @@ class PaymentEditView(ModelFormMixin, View):
 class AssignDeleteView(View):
     def post(self, *args, **kwargs):
         assign = get_object_or_404(Assign, pk=self.kwargs.get('assign_id'))
-        path = assign.invoice.get_absolute_url()
+        # path = assign.invoice.get_absolute_url()
+        path = self.request.META.get('HTTP_REFERER')
         assign.delete()
         return redirect(path)
 
@@ -217,3 +265,32 @@ class QuickInvoiceAssignUnderchargePayment(ModalOptionsMixin):
 
     def get_content(self):
         return '是否登记少收货款,金额:{}'.format(self.object.due_amount)
+
+
+class InvoiceDueDateDefaultSetListView(ListView):
+    model = InvoiceDueDateDefaultSet
+
+
+class InvoiceDueDateDefaultSetDetailView(DetailView):
+    model = InvoiceDueDateDefaultSet
+
+
+class InvoiceDueDateDefaultSetEditMixin:
+    model = InvoiceDueDateDefaultSet
+    fields = '__all__'
+    template_name = 'item_form.html'
+
+    def get_success_url(self):
+        return reverse('invoice_due_date_default_list')
+
+    def form_valid(self, form):
+        self.object = form.save()
+        return JsonResponse({'state': 'ok'})
+
+
+class InvoiceDueDateDefaultSetCreateView(InvoiceDueDateDefaultSetEditMixin, CreateView):
+    pass
+
+
+class InvoiceDueDateDefaultSetUpdateView(InvoiceDueDateDefaultSetEditMixin, UpdateView):
+    pass

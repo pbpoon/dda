@@ -20,7 +20,8 @@ def unpack_lst(lst):
         if isinstance(l, list):
             ls.extend(unpack_lst(l))
         else:
-            ls.append(l)
+            if l:
+                ls.append(l)
     return ls
 
 
@@ -78,36 +79,56 @@ class InOutOrder(MrpOrderAbstract):
     def get_expenses_amount(self):
         return sum(item.get_expenses_amount() for item in self.items.all())
 
-    def done(self):
+    def done(self, **kwargs):
         stock = self.get_stock()
         if self.sales_order:
+            # 如果是对应的是销售订单
             unlock, unlock_msg = stock.reserve_stock(unlock=True)
+            # 如果解库成功就操作库存移动
+            # 否则就把不能解库的状态及msg返回
             if unlock:
                 is_done, msg = stock.handle_stock()
+                # 如果库存移动成功就更改状态并create comment
+                # 否则就把不能库存移动的状态及msg返回
                 if is_done:
                     self.make_invoice()
                     self.state = 'done'
                     self.save()
+                    self.create_comment(**kwargs)
+                    comment = '完成 %s :<a href="%s">%s</a>' % (self._meta.verbose_name,
+                                                              self.get_absolute_url(), self,)
+                    self.from_order.done(**{'comment': comment})
                 else:
                     stock.reserve_stock()
                     return is_done, msg
             return unlock, unlock_msg
         else:
+            # 如果是对应的是采购订单
             is_done, msg = stock.handle_stock()
             if is_done:
+                # 如果库存移动成功就更改状态及create comment
                 self.make_invoice()
                 self.state = 'done'
                 self.save()
+                self.create_comment(**kwargs)
+                comment = '完成 %s :<a href="%s">%s</a>' % (self._meta.verbose_name,
+                                                          self.get_absolute_url(), self)
+
+                self.from_order.done(**{'comment': comment})
             return is_done, msg
 
-    def cancel(self):
+    def cancel(self, **kwargs):
         stock = self.get_stock()
         if self.sales_order.state == 'confirm':
             is_done, msg = stock.reserve_stock()
             if is_done:
-                self.invoices.all().update(state='cancel')
                 self.state = 'cancel'
                 self.save()
+                self.create_comment(**kwargs)
+                comment = '更改 %s <a href="%s">%s</a>状态:%s, 取消本账单' % (
+                    self._meta.verbose_name, self.get_absolute_url(), self, self.state)
+                for invoice in self.invoices.all():
+                    invoice.cancel(**{'comment': comment})
             return is_done, msg
 
     @property
@@ -119,17 +140,23 @@ class InOutOrder(MrpOrderAbstract):
         return False
 
     def make_from_order_invoice(self):
-        items_dict_lst = [item.prepare_from_order_invoice_item() for item in self.items.all()]
-        return CreateInvoice(self, self.from_order.partner, items_dict_lst, usage='货款', type=1).invoice
+        type = -1 if self.type == 'in' else 1
+        items_dict = {}
+        for item in self.items.all():
+            items_dict.update(item.prepare_from_order_invoice_item())
+        return CreateInvoice(self, self.from_order.partner, items_dict, usage='货款', type=type, state=self.state).invoice
 
     def make_invoice(self):
-        lst = [item.prepare_invoice_item() for item in self.items.all()]
+        from partner.models import Partner
+        lst = unpack_lst(item.prepare_invoice_item() for item in self.items.all())
         if lst:
-            items_dict_lst = unpack_lst(lst)
-            payment = {'partner': self.partner.get_expenses_partner(),
+            items_dict = {}
+            for dt in lst:
+                items_dict[dt['item']] = dt
+            payment = {'partner': Partner.get_expenses_partner(),
                        'account': Account.get_expense_account()}
-            return CreateInvoice(self, self.partner.get_expenses_partner(), items_dict_lst, usage='杂费',
-                                 state='done').make(payment)
+            return CreateInvoice(self, Partner.get_expenses_partner(), items_dict, usage='杂费',
+                                 state='confirm', payment=payment)
 
 
 class InOutOrderItem(OrderItemBase):
@@ -156,13 +183,14 @@ class InOutOrderItem(OrderItemBase):
         return self.sales_order_item or self.purchase_order_item
 
     def prepare_from_order_invoice_item(self):
-        return {'item': str(self.product), 'quantity': self.quantity, 'uom': self.uom,
-                'price': self.get_from_order_item().price,
-                'sales_order_item': self.get_from_order_item()}
+        return {str(self.product): {'line': self.line, 'item': str(self.product), 'quantity': self.quantity,
+                                    'uom': self.uom,
+                                    'price': self.get_from_order_item().price,
+                                    'sales_order_item': self.get_from_order_item()}}
 
     def prepare_invoice_item(self):
-        return [{'item': '{}:{}'.format(str(self.product), expense.expense.name), 'quantity': expense.quantity,
-                 'price': expense.price,
+        return [{'item': '{}:{}'.format(str(self.product), expense.expense.name), 'line': self.line,
+                 'quantity': expense.quantity, 'price': expense.price,
                  'uom': expense.uom} for expense in self.expenses.all()]
 
     def get_expenses_amount(self):

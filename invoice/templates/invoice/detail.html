@@ -1,12 +1,20 @@
 {% extends "detail.html" %}
-{% block headline %}[{{ object.get_state_display }}]{{ object.get_type_display }}/{{ object.order }}
-    <a href="{{ object.get_obj.get_absolute_url }}">{{ object.get_obj }}</a>
+{% load public %}
+{% block headline %}[{{ object.get_state_display }}]{{ object.get_type_display }}{{ object.order }}
 {% endblock %}
 {% block subheadline %}
-    对方名称：{{ object.partner }} / 总金额：{{ object.amount }}
-    {% if object.due_amount %}
-        <a onclick="add_item('{% url 'payment_create_from_invoice' object.id object.partner.id %}')" class="btn right">登记收款
-        </a>
+    对应订单：<a href="{{ object.get_obj.get_absolute_url }}">{{ object.get_obj|verbose_name }} {{ object.get_obj }}</a><br>
+    对方名称：{{ object.partner }} / 总金额：{{ object.amount }}<br>
+    账单日期：{{ object.date }} / 到期日期： {{ object.due_date }}
+
+{% endblock %}
+{% block operate %}
+{% if object.state != 'cancel' %}
+        {% if object.due_amount %}
+            <a onclick="add_item('{% url 'payment_create_from_invoice' object.id object.partner.id %}')"
+               class="btn right">登记款项
+            </a>
+        {% endif %}
     {% endif %}
 {% endblock %}
 {% block content %}
@@ -66,11 +74,18 @@
 
                         <td colspan="4" class="right-align">
                             <a href="{{ payment.payment.get_absolute_url }}">
-                                <i>{{ payment.payment.amount }}({{ payment.payment.account }})-{{ payment.created }}</i>
+                                <i>{{ payment.payment }}</i>
+                                {#                                <i>{{ payment.payment.amount }}({{ payment.payment.account }})-{{ payment.created }}</i>#}
                             </a>
                         </td>
                         <td class="right-align">
-                            {{ payment.amount }}
+                            {% if not payment.payment.confirm %}
+                                <s>
+                                    {{ payment.amount }}
+                                </s>
+                            {% else %}
+                                {{ payment.amount }}
+                            {% endif %}
                         </td>
                         <td>
                             {% if object.state != 'done' %}
@@ -86,12 +101,14 @@
         {% endif %}
         <tr>
             <th colspan="4" class="right-align">未付余额：</th>
-            <th class="right-align">{{ object.due_amount }}</th>
+            <th class="right-align">{{ object.confirm_due_amount }}</th>
 
             <th>
-                {% if object.due_amount > 0 %}
-                    <a href="#"
-                       onclick="confirm_option('{% url 'invoice_quick_assign_undercharge_payment' object.id %}')">少收此货款</a>
+                {% if object.state != 'cancel' %}
+                    {% if object.due_amount > 0 %}
+                        <a href="#"
+                           onclick="confirm_option('{% url 'invoice_quick_assign_undercharge_payment' object.id %}')">少收此货款</a>
+                    {% endif %}
                 {% endif %}
             </th>
         </tr>

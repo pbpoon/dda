@@ -92,7 +92,7 @@
         <input type="hidden" name="location" value="{{ object.location_id }}">
         <input type="hidden" name="product" value="{{ package.product.id }}">
         {% if package.product.type == 'block' %}
-            <input type="hidden" name="quantity" value="{{ package.quantity }}">
+            <input type="hidden" name="quantity" value="{{ object.quantity }}">
         {% endif %}
     </form>
 
