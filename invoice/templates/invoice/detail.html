@@ -1,6 +1,7 @@
 {% extends "detail.html" %}
 {% load public %}
-{% block headline %}[{{ object.get_state_display }}]{{ object.get_type_display }}{{ object.order }}
+{% block headline %}{{ object.usage }}<br>
+[{{ object.get_state_display }}]{{ object.get_type_display }}{{ object.order }}
 {% endblock %}
 {% block subheadline %}
     对应订单：<a href="{{ object.get_obj.get_absolute_url }}">{{ object.get_obj|verbose_name }} {{ object.get_obj }}</a><br>

@@ -21,4 +21,17 @@
     <hr>
     业务伙伴：{{ object.partner }} / 经办人:{{ object.handler }}
 {% endblock %}
+{% block sidebar %}
+{% if object.get_invoices %}
+        <span>账单</span>
+        <hr>
+        <div class="collection">
+            {% for invoice in object.get_invoices %}
+                {% if invoice.state not in 'cancel' %}
+                <a href="{{ invoice.get_absolute_url }}" class="collection-item">{{ invoice }}<span class="badge">{{ invoice.get_state_display }}</span></a>
+                {% endif %}
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endblock %}
 

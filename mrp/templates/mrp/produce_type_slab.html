@@ -56,7 +56,7 @@
                     <td>{{ produce.product }}</td>
                     <td>{% if produce.package_list %}
                         <a href="#"
-                           onclick="open_package_list('{% url 'package_production_detail' produce.package_list.id %}','{{ object.state }}')">
+                           onclick="open_package_list('{% url 'inventory_order_new_package_detail' produce.package_list.id %}','{{ object.state }}')">
                             {{ produce.package_list.get_part }}夹/ {{ produce.piece }}件/
                             {{ produce.quantity }}{{ produce.product.get_uom }}</a>
                     {% else %}

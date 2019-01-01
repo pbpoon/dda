@@ -66,7 +66,7 @@ class Invoice(HasChangedMixin, models.Model):
                                 verbose_name='对方', related_name='%(class)s_partner')
     # payments = models.ManyToManyField('Payment', through='Assign', related_name='assign_invoices')
     entry = models.ForeignKey('auth.User', on_delete=models.CASCADE, related_name='%(class)s_entry', verbose_name='登记')
-    usage = models.CharField('款项用途', choices=USAGE_CHOICES, null=False, max_length=20, default='货款')
+    usage = models.CharField('款项用途',  max_length=50)
     type = models.CharField('付款/收款', choices=TYPE_CHOICES, null=False, max_length=2, default='-1')
     comments = GenericRelation('comment.Comment')
 
@@ -172,6 +172,10 @@ class Invoice(HasChangedMixin, models.Model):
 
 
 class InvoiceItem(OrderItemSaveCreateCommentMixin, models.Model):
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, blank=True, null=True)
+    object_id = models.PositiveIntegerField(blank=True, null=True)
+    from_order_item = GenericForeignKey('content_type', 'object_id')
+
     order = models.ForeignKey('Invoice', on_delete=models.CASCADE, related_name='items', verbose_name='账单', null=True,
                               blank=True)
     line = LineField(for_fields=['order'], blank=True, verbose_name='行')
@@ -179,16 +183,17 @@ class InvoiceItem(OrderItemSaveCreateCommentMixin, models.Model):
     quantity = models.DecimalField('数量', max_digits=8, decimal_places=2)
     uom = models.CharField('计量单位', null=False, choices=UOM_CHOICES, max_length=10, default='m2')
     price = models.DecimalField('单价', max_digits=8, decimal_places=2)
-    sales_order_item = models.ForeignKey('sales.SalesOrderItem', on_delete=models.CASCADE,
-                                         related_name='invoice_items', blank=True, null=True,
-                                         verbose_name='销售订单明细行')
-    purchase_order_item = models.ForeignKey('purchase.PurchaseOrderItem', on_delete=models.CASCADE,
-                                            related_name='invoice_items', blank=True, null=True,
-                                            verbose_name='采购订单明细行')
+    # sales_order_item = models.ForeignKey('sales.SalesOrderItem', on_delete=models.CASCADE,
+    #                                      related_name='invoice_items', blank=True, null=True,
+    #                                      verbose_name='销售订单明细行')
+    # purchase_order_item = models.ForeignKey('purchase.PurchaseOrderItem', on_delete=models.CASCADE,
+    #                                         related_name='invoice_items', blank=True, null=True,
+    #                                         verbose_name='采购订单明细行')
     monitor_fields = ['item', 'quantity', 'uom', 'price']
 
     class Meta:
         verbose_name = '账单项'
+        ordering = ('line',)
 
     @property
     def amount(self):
@@ -402,7 +407,7 @@ class CreateInvoice:
         self.order = order
         self.partner = partner
         self.entry = self.order.entry
-        self.usage = usage if usage else '货款'
+        self.usage = usage if usage else self.order.invoice_usage
         self.type = type if type else '-1'
         self.date = getattr(self.order, 'date', datetime.date.today())
         self.due_date = self.get_default_due_date() if due_date is None else due_date
@@ -434,6 +439,7 @@ class CreateInvoice:
                 item.line = self.items_dict[item.item]['line']
                 item.quantity = self.items_dict[item.item]['quantity']
                 item.price = self.items_dict[item.item]['price']
+                item.from_order_item = self.items_dict[item.item]['from_order_item']
                 item.save()
                 update_list.append(item.item)
             else:

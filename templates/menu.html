@@ -1,7 +1,8 @@
 <ul id="slide-out" class="sidenav sidenav-fixed">
 
     <ul class="collapsible">
-        <li>
+            <li {% if request.path|slice:'5' == '/stock/' %} class="active" {% endif %}>
+
             <div class="collapsible-header">库存</div>
             <div class="collapsible-body">
                 <ul>
@@ -12,7 +13,8 @@
         </li>
     </ul>
     <ul class="collapsible">
-        <li>
+        <li {% if request.path|slice:'9' == '/product/' %} class="active" {% endif %}>
+
             <div class="collapsible-header">产品</div>
             <div class="collapsible-body">
                 <ul>
@@ -24,7 +26,8 @@
         </li>
     </ul>
     <ul class="collapsible">
-        <li>
+        <li {% if request.path|slice:'7' == '/sales/' %} class="active" {% endif %}>
+
             <div class="collapsible-header">销售</div>
             <div class="collapsible-body">
                 <ul>
@@ -34,7 +37,7 @@
         </li>
     </ul>
     <ul class="collapsible">
-        <li class="active">
+        <li {% if request.path|slice:'5' == '/mrp/' %} class="active" {% endif %}>
             <div class="collapsible-header">出入库管理</div>
             <div class="collapsible-body">
                 <ul>
@@ -55,7 +58,8 @@
     </ul>
     <ul class="collapsible">
 
-        <li>
+        <li {% if request.path|slice:'10' == '/purchase/' %} class="active" {% endif %}>
+
             <div class="collapsible-header">采购</div>
             <div class="collapsible-body">
                 <ul>
@@ -66,7 +70,8 @@
     </ul>
     <ul class="collapsible">
 
-        <li>
+               <li {% if request.path|slice:'9' == '/partner/' %} class="active" {% endif %}>
+
             <div class="collapsible-header">业务伙伴</div>
             <div class="collapsible-body">
                 <ul>
@@ -78,7 +83,8 @@
 
     <ul class="collapsible">
 
-        <li>
+                <li {% if request.path|slice:'9' == '/invoice/' %} class="active" {% endif %}>
+
             <div class="collapsible-header">账单</div>
             <div class="collapsible-body">
 

@@ -18,6 +18,7 @@ from . import views
 
 
 urlpatterns = [
+    path('order/pdf/<order_id>/', views.admin_order_pdf, name='sales_order_pdf'),
     path('order/item/delete/<pk>/', views.SalesOrderItemDeleteView.as_view(), name='sales_order_item_delete'),
     path('order/item/edit/<pk>/', views.SalesOrderItemEditView.as_view(), name='sales_order_item_edit'),
     path('order/item/create/<order_id>/', views.SalesOrderItemEditView.as_view(), name='sales_order_item_create'),

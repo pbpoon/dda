@@ -4,25 +4,30 @@
 {% block headline %}{{ object.get_state_display }}{{ object.order }}{% endblock %}
 {% block subheadline %}
     供应商：{{ object.partner }} / 经办人：{{ object.handler }}
+
+{% endblock %}
+{% block operate %}
     {% if object.state == 'confirm' %}
-        <a href="{% url 'purchase_order_in_order' object.id %}" class="float-right">收货</a>
+        <a href="{% url 'purchase_order_in_order' object.id %}" class="btn waves-effect">收货</a>
     {% endif %}
+    <a class="btn waves-effect" href="#"
+       onclick="confirm_option('{% url 'purchase_order_invoice_options' object.id %}')">创建账单</a>
+    <a class="btn waves-effect red" href="{%  url 'invoice_create' object|label_name object.id %}">手动创建账单</a>
 {% endblock %}
 {% block btn %}
 {% endblock %}
 {% block content %}
     <table class="table table-sm">
         <thead>
-        <tr><th>#</th>
+        <tr>
+            <th>#</th>
             <th>编号</th>
             <th>重量</th>
-            <th>长</th>
-            <th>宽</th>
-            <th>高</th>
+            <th>长 / 宽 / 高</th>
             <th>立方</th>
             <th>单位</th>
             <th>单价</th>
-            <th>金额</th>
+            <th class="right-align">金额</th>
             <th>编辑</th>
         </tr>
         </thead>
@@ -30,20 +35,21 @@
         <tbody>
         {% for item in object.items.all %}
             <tr>
-            <td>{{ item.line }}</td>
+                <td>{{ item.line }}</td>
                 <td>{{ item.name }}</td>
                 <td>{{ item.weight }}</td>
-                <td>{{ item.long }}</td>
-                <td>{{ item.width }}</td>
-                <td>{{ item.height }}</td>
-                <td>{{ item.m3 }}</td>
+                <td>{{ item.long|default_if_none:'' }} /
+                    {{ item.width|default_if_none:'' }} /
+                    {{ item.height|default_if_none:'' }}</td>
+                <td>{{ item.m3|default_if_none:'' }}</td>
                 <td>{{ item.uom }}</td>
                 <td>{{ item.price }}</td>
-                <td>{{ item.get_amount }}</td>
+                <td class="right-align">{{ item.get_amount }}</td>
                 <td>{% if object.state == 'draft' %}
                     <!-- Dropdown Trigger -->
 
-                    <a class='dropdown-trigger btn-small btn-floating grey' href='#' data-target='dropdown{{ forloop.counter }}'> <i
+                    <a class='dropdown-trigger btn-small btn-floating grey' href='#'
+                       data-target='dropdown{{ forloop.counter }}'> <i
                             class="material-icons">more_vert</i></a>
 
                     <!-- Dropdown Structure -->
@@ -64,28 +70,48 @@
         </tbody>
         <tfoot>
         <tr>
-            <td>
-                <a href="#" onclick="add_item('{{ object.get_create_item_url }}')">添加</a>
-            </td>
-            <th></th>
-            <th></th>
-            <th></th>
-            <th></th>
-            <th></th>
-            <th>{{ object.get_quantity }}</th>
-            <th>{{ object.uom }}</th>
-            <th>{{ object.get_amount }}</th>
+            <th colspan="3">合计</th>
+            <th colspan="4">
+                {% for key, item in object.get_total.items %}
+                    <span>
+                            {{ key }}:{% if item.part %}{{ item.part }}夹 / {% endif %}{{ item.piece }}件 /
+                            {{ item.quantity }}{{ item.uom }}
+                            </span>
+                    <br>
+                {% endfor %}</th>
+
+            <th class="right-align">{{ object.get_amount|format_money:object.currency }}</th>
             <th></th>
         </tr>
         </tfoot>
     </table>
     {% include 'float_btn.html' %}
-
 {% endblock %}
 {% block sidebar %}
-    <ul class="list_group">
-        {% for invoice in object.invoices.all %}
-            <li class="list_group_item"><a href="{{ invoice.invoice.get_absolute_url }}">{{ invoice.invoice }}</a></li>
-        {% endfor %}
-    </ul>
+    {% if object.in_out_order.all %}
+        <span>收货单记录</span>
+        <hr>
+        <div class="collection">
+            {% for order in object.in_out_order.all %}
+                    <a href="{{ order.get_absolute_url }}" class="collection-item">{{ order }}<span
+                            class="badge">{{ order.get_state_display }}</span></a>
+            {% endfor %}
+        </div>
+    {% endif %}
+    {% if object.get_invoices %}
+        <span>账单</span>
+        <hr>
+        <div class="collection">
+            {% for invoice in object.get_invoices %}
+                {% if invoice.state not in 'cancel' %}
+                    <a href="{{ invoice.get_absolute_url }}" class="collection-item">{{ invoice }}<span
+                            class="badge">{{ invoice.get_state_display }}</span></a>
+                {% endif %}
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endblock %}
+{% block domready %}
+    {{ block.super }}
+    $('.dropdown-trigger').dropdown();
 {% endblock %}

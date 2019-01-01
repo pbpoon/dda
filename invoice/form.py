@@ -21,7 +21,7 @@ class AssignInvoiceForm(forms.ModelForm):
 
 
 class InvoiceForm(forms.ModelForm):
-    has_items = forms.BooleanField(label='添加订单明细行', initial=True, widget=CheckBoxWidget)
+    has_items = forms.BooleanField(label='添加原订单明细行', initial=False, widget=CheckBoxWidget, required=False)
     item_text = forms.CharField(label='明细行额外内容', required=False)
 
     class Meta:
@@ -39,11 +39,18 @@ class InvoiceForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
-        partner = kwargs.pop('partner')
+        partner = None
+        instance = kwargs.get('instance')
+        if kwargs.get('partner'):
+            partner = kwargs.pop('partner')
+        else:
+            if instance:
+                partner = kwargs.get('instance').get('partner')
         super().__init__(*args, **kwargs)
         # p = Partner.objects.filter(pk=partner.id)
         lst = [i for i in Partner.invoices.all().values_list('id', flat=True)]
-        lst.append(partner.id)
+        if partner:
+            lst.append(partner.id)
         qs = Partner.objects.filter(id__in=lst)
         # qs = Partner.invoices.all()
         self.fields['partner'].queryset = qs
@@ -61,7 +68,7 @@ class InvoiceForm(forms.ModelForm):
                 if item_text:
                     comment += '<br>明细行额外内容为：%s' % (item_text)
                 for item in inv.from_order.items.all():
-                    InvoiceItem.objects.create(item='%s:%s' % (item_text, str(item.product)), quantity=item.quantity,
-                                               uom=item.uom, price=0, order=inv)
+                    InvoiceItem.objects.create(item='%s:%s' % (str(item.product), item_text), quantity=item.quantity,
+                                               uom=item.uom, price=0, order=inv, from_order_item=item)
             inv.create_comment(**{'comment': comment})
         return inv

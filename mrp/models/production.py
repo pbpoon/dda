@@ -1,10 +1,14 @@
+import collections
 import math
+
+from django.contrib.contenttypes.fields import GenericRelation
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 import decimal
 from django.db import models
 from django.urls import reverse
 
+from invoice.models import CreateInvoice
 from mrp.models import MrpOrderAbstract, OrderItemBase
 from product.models import Product
 from public.fields import OrderField
@@ -45,6 +49,10 @@ class ProductionOrder(MrpOrderAbstract):
 
     class Meta:
         verbose_name = '生产订单'
+        ordering = ('-date',)
+
+    def _get_invoice_usage(self):
+        return '%s费用' % self.production_type.name
 
     def get_absolute_url(self):
         return reverse('production_detail', args=[self.id])
@@ -61,22 +69,93 @@ class ProductionOrder(MrpOrderAbstract):
     def get_location_dest(self):
         return self.warehouse.get_production_location()
 
+    def get_total(self):
+        """
+        template使用方式
+        {% for key, item in object.get_total.items %}
+        {{ key }}:{% if item.part %}{{ item.part }}夹 / {% endif %}{{ item.piece }}件 / {{ item.quantity }}{{ item.uom }}<br>
+        {% endfor %}
+        """
+        total = {}
+        for item in self.get_all_items():
+            if not item.product:
+                continue
+            d = collections.defaultdict(lambda: 0)
+            a = total.setdefault(item.product.get_type_display(), d)
+            a['piece'] += item.piece
+            a['quantity'] += item.quantity
+            d['part'] += item.package_list.get_part() if item.package_list else 0
+            a['uom'] = item.uom
+            # total.setdefault(item.product.get_type_display(), {}).update(d)
+        return total
+
     def get_stock(self):
         items = list(self.items.all())
         items.extend(list(self.produce_items.all()))
         return StockOperate(order=self, items=items)
 
-    def done(self):
+    def get_invoices(self):
+        invoices = set(self.invoices.all())
+        invoices |= {invoice.order for item in self.items.all() for invoice in item.invoice_items.all().distinct()}
+        return invoices
+
+    def done(self, **kwargs):
         is_done, msg = self.get_stock().handle_stock()
         if is_done:
             self.state = 'done'
             self.save()
+            self.create_comment(**kwargs)
+            self.make_invoice()
+            self.make_expenses_invoice()
         return is_done, msg
 
-    def cancel(self):
+    def cancel(self, **kwargs):
         self.state = 'cancel'
         self.save()
+        self.create_comment(**kwargs)
+        for invoice in self.get_invoices():
+            invoice.state = 'cancel'
+            invoice.save()
+            comment = '更新 %s <a href="%s">%s</a>状态:%s, 修改本账单' % (
+                self._meta.verbose_name, self.get_absolute_url(), self, self.state)
+            invoice.create_comment(**{'comment': comment})
         return True, ''
+
+    def get_all_items(self):
+        items = list(self.items.all())
+        items.extend(list(self.produce_items.all()))
+        return items
+
+    def get_make_invoice_items(self):
+        if self.production_type.expense_by == 'raw':
+            return self.items.all()
+        elif self.production_type.expense_by == 'produce':
+            return self.produce_items.all()
+        else:
+            return self.get_all_items()
+
+    def make_invoice(self):
+        items = self.get_make_invoice_items()
+        items_dict = {}
+        for item in items:
+            items_dict.update(item.prepare_invoice_item())
+        state = self.state if self.state != 'done' else 'confirm'
+        return CreateInvoice(self, self.partner, items_dict, type=1, state=state).invoice
+
+    def get_expenses_amount(self):
+        return sum(item.get_expenses_amount() for item in self.get_all_items())
+
+    def make_expenses_invoice(self):
+        from partner.models import Partner
+        from invoice.models import Account, CreateInvoice
+        if self.get_expenses_amount() > 0:
+            items_dict = {}
+            for item in self.get_all_items():
+                items_dict.update(item.prepare_invoice_item())
+            if items_dict:
+                partner = Partner.get_expenses_partner() if not self.partner else self.partner
+                return CreateInvoice(self, partner, items_dict, usage='杂费',
+                                     state='confirm')
 
 
 class ProductionOrderRawItem(OrderItemBase):
@@ -104,10 +183,22 @@ class ProductionOrderRawItem(OrderItemBase):
     def __str__(self):
         return str(self.product)
 
-    # def get_available(self):
-    #     stock = StockOperate()
-    #     piece, quantity = stock.get_available(product=self.product, location=self.location)
-    #     return piece, quantity
+    def get_expenses_amount(self):
+        return sum(expense.amount for expense in self.expenses.all())
+
+    def prepare_expenses_invoice_item(self):
+        return [{'item': '{}:{}'.format(str(self.product), expense.expense.name), 'from_order_item': self,
+                 'line': self.line,
+                 'quantity': expense.quantity, 'price': expense.price,
+                 'uom': expense.uom} for expense in self.expenses.all()]
+
+    def prepare_invoice_item(self):
+        return {'%s:%s费' % (str(self.product), self.order.production_type): {
+            'item': '%s:%s费' % (str(self.product), self.order.production_type),
+            'from_order_item': self,
+            'quantity': self.quantity,
+            'line': self.line,
+            'price': self.price}}
 
     # 估算毛板的出材率
     def semi_slab_single_qty(self):
@@ -175,18 +266,35 @@ class ProductionOrderProduceItem(OrderItemBase):
     def get_location_dest(self):
         return self.order.location
 
-    def save(self, *args, **kwargs):
-        self.order = self.raw_item.order
-        thickness = self.thickness or self.raw_item.product.thickness
-        self.product = self.raw_item.product.create_product(type=self.order.production_type.produce_item_type,
-                                                            thickness=thickness)
-        if self.draft_package_list:
-            self.package_list = self.draft_package_list.make_package_list(product=self.product)
-            self.piece = self.package_list.get_piece()
-            self.quantity = self.package_list.get_quantity()
-            self.draft_package_list = None
-        self.uom = self.product.get_uom()
-        super().save(*args, **kwargs)
+    # def save(self, *args, **kwargs):
+    # self.order = self.raw_item.order
+    # thickness = self.thickness or self.raw_item.product.thickness
+    # self.product = self.raw_item.product.create_product(type=self.order.production_type.produce_item_type,
+    #                                                     thickness=thickness)
+    # if self.draft_package_list:
+    #     self.package_list = self.draft_package_list.make_package_list(product=self.product)
+    #     self.piece = self.package_list.get_piece()
+    #     self.quantity = self.package_list.get_quantity()
+    #     self.draft_package_list = None
+    # self.uom = self.product.get_uom()
+    # super().save(*args, **kwargs)
+
+    def get_expenses_amount(self):
+        return sum(expense.amount for expense in self.expenses.all())
+
+    def prepare_invoice_item(self):
+        return {'%s:%s费' % (str(self.product), self.order.production_type): {
+            'item': '%s:%s费' % (str(self.product), self.order.production_type),
+            'from_order_item': self,
+            'quantity': self.quantity,
+            'line': self.line,
+            'price': self.price}}
+
+    def prepare_expenses_invoice_item(self):
+        return [{'item': '{}:{}'.format(str(self.product), expense.expense.name), 'from_order_item': self,
+                 'line': self.line,
+                 'quantity': expense.quantity, 'price': expense.price,
+                 'uom': expense.uom} for expense in self.expenses.all()]
 
 
 # 更新毛板平方数的

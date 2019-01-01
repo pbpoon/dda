@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="zh-hans">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="{{ STATIC_URL }}/css/materialize.css">
+    <title>Document</title>
+</head>
+<body>
+<header>
+    <div class="container">
+        <div class="left" style="border: black">
+            客户名称：{{ object.partner.get_full_name }}<br/>
+            {{ object.partner.phone }}<br>
+            发往：{{ object.get_address }}<br/>
+            <div class="divider"></div>
+            经办人:{{ object.handler }}
+        </div>
+        <div class="right"><h3>宏建石材</h3></div>
+    </div>
+</header>
+<div class="container">
+    <table>
+        <thead>
+        <tr>
+            <th>#</th>
+            <th>产品</th>
+            <th>数量</th>
+            <th>单价</th>
+            <th>金额</th>
+            <th></th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for item in object.items.all %}
+            <tr>
+                <td>{{ item.line }}</td>
+                <td>{{ item.product }}</td>
+                <td>
+                    {% if item.package_list %}
+                        {{ item.package_list.get_part }}夹/ {{ item.piece }}件/
+                        {{ item.quantity }}{{ item.product.get_uom }}
+                    {% else %}
+                        {{ item.piece }}件/
+                        {{ item.quantity }}{{ item.product.get_uom }}
+                    {% endif %}
+                </td>
+                <td>{{ item.price }}</td>
+                <td>{{ item.amount }}</td>
+                <td></td>
+            </tr>
+        {% endfor %}
+        </tbody>
+        <tfoot>
+        <tr>
+            <th colspan="2">合计：</th>
+            <th>
+                {% for key, item in object.get_total.items %}
+                    {{ key }}:{% if item.part %}{{ item.part }}夹 / {% endif %}{{ item.piece }}件 /
+                    {{ item.quantity }}{{ item.uom }}<br>
+                {% endfor %}
+            </th>
+            <th></th>
+            <th>{{ object.amount }}</th>
+            <th></th>
+        </tr>
+        <tr>
+            <th colspan="2">收到货款</th>
+            <th></th>
+        </tr>
+        </tfoot>
+    </table>
+</div>
+</body>
+</html>

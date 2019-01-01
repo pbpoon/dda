@@ -4,3 +4,30 @@
 {% endblock %}
 {% block action_btn %}
 {% endblock %}
+{% block ul %}
+    <ul class="collection">
+        {% for object in object_list %}
+            <a class="collection-item avatar grey-text" href="{{ object.get_absolute_url }}">
+                <div class="right">
+                    <div class="right-align">
+                    <span class="new badge {% if object.state == 'draft' %}default{% elif object.state == 'cancel' %}grey{% elif object.state == 'done' %}yellow{% else %}blue{% endif %}"
+                          data-badge-caption="{{ object.get_state_display }}"></span>{{ object.order }}<span>
+                    </div>
+                    <div class=" black-text right-align">
+                        {% for key, item in object.get_total.items %}
+                            <span>
+                            {{ key }}:{% if item.part %}{{ item.part }}夹 / {% endif %}{{ item.piece }}件 /
+                            {{ item.quantity }}{{ item.uom }}
+                            </span>
+                        {% endfor %}
+                    </div>
+                </div>
+                <i class="material-icons circle">{{ object.partner.name|slice:'1' }}</i>
+                <span class="title black-text">{{ object.get_type_display }}=>{{ object.from_order }}</span>
+                <p>{{ object.partner }}<br>
+                    <i>{{ object.get_address }}</i>
+                </p><span>{{ object.date|date:"Y/m/d" }}</span>
+            </a>
+        {% endfor %}
+    </ul>
+{% endblock %}

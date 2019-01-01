@@ -21,6 +21,9 @@ class MoveLocationOrder(MrpOrderAbstract):
     class Meta:
         verbose_name = '移库单'
 
+    def _get_invoice_usage(self):
+        return '运输费'
+
     def get_location(self):
         return self.warehouse.get_main_location()
 
@@ -54,7 +57,7 @@ class MoveLocationOrder(MrpOrderAbstract):
             self.state = 'done'
             self.save()
             self.create_comment(**kwargs)
-            self.make_invoice()
+            self.make_expenses_invoice()
         return is_done, msg
 
     def confirm(self, **kwargs):
@@ -102,7 +105,7 @@ class MoveLocationOrder(MrpOrderAbstract):
             invoice.create_comment(**{'comment': comment})
         return is_done, msg
 
-    def make_invoice(self):
+    def make_expenses_invoice(self):
         from partner.models import Partner
         from invoice.models import Account, CreateInvoice
         if self.get_expenses_amount() > 0:
@@ -141,19 +144,21 @@ class MoveLocationOrderItem(OrderItemBase):
         dest = self.location_dest if self.location_dest else self.order.location_dest
         return dest
 
-    def prepare_invoice_item(self):
+    def prepare_expenses_invoice_item(self):
 
         if not self.expenses.all():
             item = '{}({}=>{})'.format(str(self.product), self.location,
                                        self.location_dest)
-            return {item: {'item': item, 'line': self.line, 'quantity': 0, 'price': 0, 'uom': self.product.get_uom()}}
+            return {item: {'item': item, 'from_order_item': self, 'line': self.line, 'quantity': 0, 'price': 0,
+                           'uom': self.product.get_uom()}}
 
         items = {}
         for expense in self.expenses.all():
             item = '{} {}({}=>{})'.format(expense.expense.name, str(self.product), self.location,
                                           self.location_dest)
             items.update(
-                {item: {'item': item, 'quantity': expense.quantity, 'price': expense.price, 'uom': expense.uom}})
+                {item: {'item': item, 'from_order_item': self, 'quantity': expense.quantity, 'price': expense.price,
+                        'uom': expense.uom}})
         return items
 
     def get_expenses_amount(self):

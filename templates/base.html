@@ -35,6 +35,15 @@
 
 <!--标题块相关-->
 <header>
+ <nav>
+    <div class="nav-wrapper">
+      <div class="col s12">
+        <a href="#!" class="breadcrumb">First</a>
+        <a href="#!" class="breadcrumb">Second</a>
+        <a href="#!" class="breadcrumb">Third</a>
+      </div>
+    </div>
+  </nav>
     {% block header %}
 
     {% endblock %}
@@ -75,6 +84,7 @@
     $(document).ready(function () {
         $('.sidenav').sidenav();
         $('.fixed-action-btn').floatingActionButton();
+        $('input[name=date]').datepicker({'format': 'yyyy-mm-dd'});
         $('.datepicker').datepicker({'format': 'yyyy-mm-dd'});
         $('select').formSelect();
         $('.collapsible').collapsible();

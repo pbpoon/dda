@@ -1,113 +1,128 @@
 {% load public %}
 {#<div class="row">#}
 <div class="col s12">
-<a href="{% url 'package_full_page' object.id %}?state={{ state }}">
- <i class="material-icons right">open_in_new</i>
-</a>
+    {#{% if not full_view %}#}
+    <a href="{% url 'package_full_page' object.id %}?state={{ state }}&add_new={{ add_new }}">
+        全屏编辑<i class="material-icons right">open_in_new</i>
+    </a>
+    {#{% endif %}#}
     <div><span class="title">{{ object }}</span>
         <p>{{ package.get_piece }}件 / {{ package.get_part_number|length }}夹 /
             {{ package.get_quantity }}{{ package.product.get_uom }}</p>
         <div class="right">
-            <button class="btn-small"
-                    onclick="add_item('{{ object.get_create_item_url }}')">添加
-            </button>
             <button class="btn-small" id="all_select">全选</button>
         </div>
     </div>
-    <ul class="tabs">
-        {% for part_number in package.get_part_number %}
-            <li class="tab col s3 "><a class="{% if forloop.first %}active{% endif %}"
-                                       href="#{{ part_number }}">{{ part_number }}#</a></li>
-        {% endfor %}
-    </ul>
-    {% regroup package.items by part_number as package_list %}
-    {% with select_slabs=cart.get_select_slabs %}
+    <div class="row white">
+        <ul class="tabs">
+            {% if object.state == 'draft' %}
 
-    {% for part_number in package_list %}
-    <div id="{{ part_number.grouper }}" class="col s12">
-        <table>
-            <thead>
-            <tr>
-                <th><p>
-                    <label>
-                        <input type="checkbox" name="select_part"
-                               data-part="{{ part_number.grouper }}"/>
-                        <span>选择</span>
-                    </label>
-                </p>
-                </th>
-                <th>规格</th>
-                <th>面积</th>
-                <th></th>
-            </tr>
-            </thead>
-            <tbody>
-            {% for item in part_number.list %}
+                {% for part_number in package.get_part_number %}
+                    <li class="tab col s3 "><a class="{% if forloop.first %}active{% endif %}"
+                                               href="#{{ part_number }}">{{ part_number }}#</a></li>
+                {% endfor %}
+            {% else %}
+                {% for part_number in object.get_part_number %}
 
-            <tr {% if item.get_slab_id not in package_slabs_ids %}class="green-text"{% endif %}>
-                <td>
-                    <p>
-                        <label>
-                            <input form="select_slab_form" data-quantity="{{ item.get_quantity }}"
-                                   type="checkbox" name="select"
-                                    {% if state != 'draft' %}
-                                   disabled
+                    <li class="tab col s3 "><a class="{% if forloop.first %}active{% endif %}"
+                                               href="#{{ part_number }}">{{ part_number }}#</a></li>
+                {% endfor %}
+            {% endif %}
+        </ul>
+
+        {% if object.state == 'draft' %}
+            {% regroup  package.items by part_number as package_list %}
+        {% else %}
+            {% regroup  object.items.all by part_number as package_list %}
+        {% endif %}
+        {% with select_slabs=cart.get_select_slabs %}
+
+            {% for part_number in package_list %}
+                <div id="{{ part_number.grouper }}" class="col s12">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th><p>
+                                <label>
+                                    <input type="checkbox" name="select_part"
+                                           data-part="{{ part_number.grouper }}"/>
+                                    <span>选择</span>
+                                </label>
+                            </p>
+                            </th>
+                            <th>规格</th>
+                            <th>面积</th>
+                            <th></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for item in part_number.list %}
+
+                            <tr {% if item.get_slab_id not in package_slabs_ids %}class="green-text"{% endif %}>
+                                <td>
+                                    <p>
+                                        <label>
+                                            <input form="select_slab_form" data-quantity="{{ item.get_quantity }}"
+                                                   type="checkbox" name="select"
+                                                    {% if state != 'draft' %}
+                                                   disabled
+                                                    {% endif %}
+                                                    {% if item.get_slab_id in now_slabs_ids %}
+                                                   checked="checked"
+                                                    {% endif %}
+                                                   value="{{ item.get_slab_id }}"/>
+                                            <span>{{ item.line }}</span>
+                                        </label>
+                                    </p>
+                                </td>
+                                <td>
+                                    {% if item.get_slab_id not in now_slabs_ids %}
+                                        <s>{% endif %}
+                                    {{ item }}
+                                    <a href="#!"
+                                       onclick="edit_item({{ item.id }},'{% url 'package_list_draft_item_edit' item.id %}')">
+                                        修改
+                                    </a>
+                                    {% if item.get_slab_id not in now_slabs_ids %}
+                                        </s>
                                     {% endif %}
-                                    {% if item.get_slab_id in now_slabs_ids %}
-                                   checked="checked"
+                                </td>
+                                <td>{{ item.get_quantity }}</td>
+                                <td>
+                                    {{ item.get_location }}
+                                    {% if item.get_slab_id not in old_slabs_ids %}
+                                        <span class="red-text">新增</span>
+                                    {% elif item.get_slab_id not in now_slabs_ids %}
+                                        <span class="red-text">丢失</span>
                                     {% endif %}
-                                   value="{{ item.get_slab_id }}"/>
-                            <span>{{ item.line }}</span>
-                        </label>
-                    </p>
-                </td>
-                <td>
-                    {% if item.get_slab_id not in now_slabs_ids %}
-                        <s>{% endif %}
-                    {{ item }}
-                    <a href="#!"
-                       onclick="edit_item({{ item.id }},'{% url 'package_list_draft_item_edit' item.id %}')">
-                        修改
-                    </a>
-                    {% if item.get_slab_id not in now_slabs_ids %}
-                        </s>
-                    {% endif %}
-                </td>
-                <td>{{ item.get_quantity }}</td>
-                <td>
-                    {{ item.get_location }}
-                    {% if item.get_slab_id not in old_slabs_ids %}
-                        <span class="red-text">新增</span>
-                    {% elif item.get_slab_id not in now_slabs_ids %}
-                        <span class="red-text">丢失</span>
-                    {% endif %}
-                </td>
-            </tr>
+                                </td>
+                            </tr>
+
+                        {% endfor %}
+                        </tbody>
+                        <tfoot>
+                        <tr>
+                            <td>第 {{ part_number.grouper }} 夹</td>
+                            <td>{{ package|add_arg:part_number.grouper|call:'get_piece' }}件</td>
+                            <td>{{ package|add_arg:part_number.grouper|call:'get_quantity' }}m2</td>
+                            <td></td>
+                        </tr>
+                        </tfoot>
+                    </table>
+
+                </div>
 
             {% endfor %}
-            </tbody>
-            <tfoot>
-            <tr>
-                <td>第 {{ part_number.grouper }} 夹</td>
-                <td>{{ package|add_arg:part_number.grouper|call:'get_piece' }}件</td>
-                <td>{{ package|add_arg:part_number.grouper|call:'get_quantity' }}m2</td>
-                <td></td>
-            </tr>
-            </tfoot>
-        </table>
-
+        {% endwith %}
+        {% if state == 'draft' %}
+            <form id="select_slab_form" action="{{ edit_url }}" method="post">
+                <input type="hidden" name="product"
+                       value="{{ package.product.id }}">
+                <input type="hidden" name="package_list_id"
+                       value="{{ package.id }}">
+            </form>
+        {% endif %}
     </div>
-
-    {% endfor %}
-    {% endwith %}
-    {% if state == 'draft' %}
-        <form id="select_slab_form" action="{{ edit_url }}" method="post">
-            <input type="hidden" name="product"
-                   value="{{ package.product.id }}">
-            <input type="hidden" name="package_list_id"
-                   value="{{ package.id }}">
-        </form>
-    {% endif %}
 </div>
 <script>
     //码单的checkbox选择相关

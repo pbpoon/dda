@@ -9,7 +9,7 @@ from django.shortcuts import render_to_response, redirect
 from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.views import View
-from django.views.generic import TemplateView, DetailView
+from django.views.generic import TemplateView, DetailView, ListView
 from django.views.generic.detail import BaseDetailView
 from django.views.generic.edit import BaseDeleteView, ModelFormMixin, ProcessFormView, FormMixin
 
@@ -180,3 +180,20 @@ class ModalOptionsMixin(BaseDetailView):
             return JsonResponse({'state': 'ok', 'msg': msg, 'url': url})
         messages.error(self.request, msg)
         return JsonResponse({'state': 'ok', 'msg': msg, 'url': url})
+
+
+class FilterListView(ListView):
+    filter_class = None
+    paginate_by = 10
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if self.filter_class:
+            self.filter = self.filter_class(self.request.GET, queryset=qs)
+            return self.filter.qs.distinct()
+        return qs
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['filter'] = self.filter if self.filter_class else None
+        return context

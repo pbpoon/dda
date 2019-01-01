@@ -2,8 +2,11 @@
         {% for comment in object.comments.all %}
     <div class="row">
             <div class="col s2 left">
-{#                <a href="#user"><img class="circle" src="#"></a>#}
-                <a href="#name"><span class="name">{{ comment.user }}</span></a>
+{#                <a href="#user"><img cl3ass="circle" src="#"></a>#}
+{#                <img alt="{{  comment.user|slice:'1' }}" class="circle responsive-img">#}
+                                <i class="material-icons circle">{{  comment.user|slice:'1' }}</i>
+
+{#                <a href="#name"><span class="name">{{ comment.user }}</span></a>#}
             </div>
             <div class="col s10 right">
                 {#                <div class="card-panel">#}

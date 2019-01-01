@@ -1,9 +1,13 @@
+import collections
+
+from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from django.db.models import Q
 from django.urls import reverse
 from datetime import datetime
 
 from public.fields import OrderField, LineField
+from public.models import HasChangedMixin
 from public.stock_operate import StockOperate
 
 TYPE_CHOICES = (('block', '荒料'), ('semi_slab', '毛板'), ('slab', '板材'))
@@ -17,7 +21,7 @@ STATE_CHOICES = (
 )
 
 
-class InventoryOrder(models.Model):
+class InventoryOrder(HasChangedMixin, models.Model):
     name = models.CharField('盘点简述', max_length=100)
     state = models.CharField('状态', choices=STATE_CHOICES, max_length=20, default='draft')
 
@@ -32,6 +36,7 @@ class InventoryOrder(models.Model):
     date = models.DateField('日期', default=datetime.now)
     created = models.DateField('创建日期', auto_now_add=True)
     updated = models.DateTimeField('更新时间', auto_now=True)
+    comments = GenericRelation('comment.Comment')
 
     class Meta:
         verbose_name = '盘点库存'
@@ -42,6 +47,28 @@ class InventoryOrder(models.Model):
 
     def get_create_item_url(self):
         return reverse('inventory_order_new_item_create', args=[self.id])
+
+    def get_all_items(self):
+        items = list(self.items.all())
+        items.extend(list(self.new_items.all()))
+        return items
+
+    # def get_total(self):
+    #     """
+    #     template使用方式
+    #     {% for key, item in object.get_total.items %}
+    #     {{ key }}:{% if item.part %}{{ item.part }}夹 / {% endif %}{{ item.piece }}件 / {{ item.quantity }}{{ item.uom }}<br>
+    #     {% endfor %}
+    #     """
+    #     total = {}
+    #     for item in self.get_all_items():
+    #         d = collections.defaultdict(lambda: 0)
+    #         d['piece'] += item.piece
+    #         d['quantity'] += item.quantity
+    #         d['part'] += item.package_list.get_part() if item.package_list else 0
+    #         d['uom'] = item.uom
+    #         total[item.product.get_type_display()] = d
+    #     return total
 
     def __str__(self):
         return self.name
@@ -54,11 +81,12 @@ class InventoryOrder(models.Model):
             items.extend(list(new_items))
         return StockOperate(self, items)
 
-    def done(self):
+    def done(self, **kwargs):
         is_done, msg = self.get_stock().handle_stock()
         if is_done:
             self.state = 'done'
             self.save()
+            self.create_comment(**kwargs)
         return is_done, msg
 
     def confirm(self):

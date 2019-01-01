@@ -1,23 +1,29 @@
 from _decimal import Decimal
 
+import weasyprint
 from django.db import transaction
 from django.db.models import Q
 from django.forms import inlineformset_factory
-from django.http import HttpResponseRedirect
-from django.shortcuts import render
+from django.http import HttpResponseRedirect, HttpResponse
+from django.shortcuts import render, get_object_or_404
+from django.template.loader import render_to_string
 from django.views import View
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from cart.cart import Cart
 from invoice.models import CreateInvoice
 from public.stock_operate import StockOperate
 from public.views import OrderFormInitialEntryMixin, OrderItemEditMixin, OrderItemDeleteMixin, StateChangeMixin, \
-    ModalOptionsMixin
+    ModalOptionsMixin, FilterListView
 from sales.forms import SalesOrderForm, SalesOrderItemForm, SalesOrderItemQuickForm
 from sales.models import SalesOrder, SalesOrderItem
+from stone import settings
+from .filters import SalesOrderFilter
 
 
-class SalesOrderListView(ListView):
+class SalesOrderListView(FilterListView):
     model = SalesOrder
+    filter_class = SalesOrderFilter
+    paginate_by = 10
 
 
 class SalesOrderDetailView(StateChangeMixin, DetailView):
@@ -34,6 +40,9 @@ class SalesOrderDetailView(StateChangeMixin, DetailView):
 
     def draft(self):
         return self.object.draft()
+
+    def cancel(self):
+        return self.object.cancel()
 
 
 class SalesOrderInvoiceOptionsEditView(ModalOptionsMixin):
@@ -139,3 +148,12 @@ class SalesOrderQuickCreateView(SalesOrderEditMixin, CreateView):
                 for f in formset_data:
                     cart.remove(f.product.id)
         return HttpResponseRedirect(self.get_success_url())
+
+
+def admin_order_pdf(request, order_id):
+    order = get_object_or_404(SalesOrder, id=order_id)
+    html = render_to_string('sales/salesorder_pdf.html', {'object': order})
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'filename="order_{}"'.format(order.id)
+    weasyprint.HTML(string=html).write_pdf(response, stylesheets=[weasyprint.CSS(settings.STATIC_ROOT + '/css/materialize.css')])
+    return response

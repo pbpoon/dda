@@ -55,6 +55,10 @@ class OrderItemBase(OrderItemSaveCreateCommentMixin, models.Model):
     uom = models.CharField('计量单位', null=False, choices=UOM_CHOICES, max_length=10, default='t')
     package_list = models.ForeignKey('product.PackageList', on_delete=models.SET_NULL, blank=True, null=True,
                                      verbose_name='码单')
+    invoice_items = GenericRelation('invoice.InvoiceItem')
+
+    expenses = GenericRelation('mrp.Expenses')
+
 
     class Meta:
         abstract = True

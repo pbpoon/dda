@@ -5,5 +5,7 @@
     $('.dropdown-trigger').dropdown();
 {% endblock %}
 {% block operate %}
+    {% if object.state != 'cancel' %}
     <a class="btn default" href="{% url 'invoice_create' object|label_name object.id %}">创建账单</a>
+    {% endif %}
 {% endblock %}

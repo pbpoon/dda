@@ -12,6 +12,15 @@ USAGE_CHOICES = (('supplier', '供应商库位'), ('customer', '客户库位'),
                  ('inventory', '盘点库位'))
 
 
+def tree_view(obj):
+    result = []
+    for c in obj.child.all():
+        result.append(c)
+        if len(c.child.all()) > 0:
+            result.append(tree_view(c))
+    return result
+
+
 class Warehouse(models.Model):
     """
     当创建一个warehouse时候，相应的创建一个内部的库位，为置顶库位
@@ -32,7 +41,7 @@ class Warehouse(models.Model):
         return '{}@{}'.format(self.partner, self.name)
 
     def save(self, *args, **kwargs):
-        super(Warehouse, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
         if not self.locations.filter(is_main=True):
             Location.objects.create(warehouse_id=self.id, name='仓库', is_main=True, usage='internal')
         if self.is_production:
@@ -50,6 +59,9 @@ class Warehouse(models.Model):
 
     def get_update_url(self):
         return reverse('warehouse_update', args=[self.id])
+
+    def get_create_item_url(self):
+        return reverse('location_create', args=[self.id])
 
 
 class Location(models.Model):
@@ -100,12 +112,21 @@ class Location(models.Model):
         loc, _ = Location.objects.get_or_create(usage='inventory', name='盘点库位', is_virtual=True)
         return loc
 
-    def get_child_list(self):
-        child_list = [id for id in self.child.filter(is_activate=True).values_list('id', flat=True)]
-        if child_list:
-            return child_list.append(self.id)
-        return [self.id]
+    def get_child_list(self, container=None):
+        if container is None:
+            container = [self.id]
+        result = container
+        for chl in self.child.all():
+            result.append(chl.id)
+            if chl.child.count() > 0:
+                chl.get_child_list(result)
+        return result
 
+    def get_child(self):
+        return self.__class__.objects.filter(id__in=self.get_child_list()).distinct()
+
+    def tree_view(self):
+        return tree_view(self)
 
 class StockTrace(models.Model):
     """
@@ -179,8 +200,7 @@ class Stock(models.Model):
             if check_in:
                 kwargs['location_id'] = location.id
                 return Stock.objects.filter(**kwargs)
-            location_id_list = [l.id for l in location.child.all()] if location.child.all() else []
-            location_id_list.append(location.id)
+            location_id_list = location.get_child_list()
             kwargs['location_id__in'] = location_id_list
         qs = Stock.objects.filter(**kwargs).distinct()
         if slabs:

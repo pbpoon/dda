@@ -21,12 +21,12 @@ class MoveLocationOrderForm(forms.ModelForm):
         widgets = {
             'entry': forms.HiddenInput,
         }
-
-    def clean(self):
-        cd = self.cleaned_data
-        if cd['warehouse'] == cd['warehouse_dest']:
-            raise forms.ValidationError('移出仓库 与 目标仓库 不能相同')
-        return cd
+    #
+    # def clean(self):
+    #     cd = self.cleaned_data
+    #     if cd['warehouse'] == cd['warehouse_dest']:
+    #         raise forms.ValidationError('移出仓库 与 目标仓库 不能相同')
+    #     return cd
 
 
 class MoveLocationOrderItemForm(FormUniqueTogetherMixin, forms.ModelForm):
@@ -57,8 +57,9 @@ class MoveLocationOrderItemForm(FormUniqueTogetherMixin, forms.ModelForm):
         super(MoveLocationOrderItemForm, self).__init__(*args, **kwargs)
         instance = kwargs.get('instance', None)
         if not instance:
-            loc = Location.objects.filter(id=order.location.id, is_virtual=False)
-            dest = Location.objects.filter(id=order.location_dest.id, is_virtual=False)
+            loc = Location.objects.filter(id__in=Location.objects.get(id=order.location.id).get_child_list())
+            # loc = Location.objects.filter(id=order.location.id, is_virtual=False)
+            dest = Location.objects.filter(id__in=Location.objects.get(id=order.location_dest.id).get_child_list())
             # onchange的ajax取数据url
             get_product_list = reverse_lazy('get_product_list')
             get_product_info = reverse_lazy('get_product_info')
@@ -191,6 +192,7 @@ class ProductionOrderProduceItemForm(FormUniqueTogetherMixin, forms.ModelForm):
             self.fields['raw_product_name'].initial = str(raw_product)
             self.fields['raw_product_thickness'].initial = raw_product.thickness
             self.fields['thickness'].widget = forms.HiddenInput()
+            self.fields['thickness'].initial = raw_product.thickness
         # 根据product type的expense_by来设置price是否显示及是否必填
         if order.production_type.expense_by == 'raw':
             self.fields['price'].widget = forms.HiddenInput()
@@ -205,6 +207,32 @@ class ProductionOrderProduceItemForm(FormUniqueTogetherMixin, forms.ModelForm):
         if thickness in {item.thickness for item in raw_item.produces.all()} and self.cleaned_data.get('product'):
             raise forms.ValidationError('该编号{}#已有相同的的厚度毛板存在！同一编号不允许有重复厚度的毛板行！'.format(raw_item.product))
         return thickness
+
+    def save(self, commit=True):
+        cd = self.cleaned_data
+        instance = super().save(commit=False)
+        # cd['order'] = self.raw_item.order
+        # thickness = self.thickness or self.raw_item.product.thickness
+        if not instance.product:
+            instance.product = instance.raw_item.product.create_product(
+                type=cd['order'].production_type.produce_item_type,
+                thickness=cd['thickness'])
+            if instance.product.type == 'slab':
+                instance.package_list = PackageList.objects.create(product=instance.product,
+                                                                   return_path=instance.order.get_absolute_url())
+        if instance.package_list:
+            instance.quantity = instance.package_list.get_quantity()
+            instance.piece = instance.package_list.get_piece()
+        instance.uom = instance.product.get_uom()
+        if commit:
+            instance.save()
+        return instance
+        # if self.draft_package_list:
+        #     self.package_list = self.draft_package_list.make_package_list(product=self.product)
+        #     self.piece = self.package_list.get_piece()
+        #     self.quantity = self.package_list.get_quantity()
+        #     self.draft_package_list = None
+        # self.uom = self.product.get_uom()
 
 
 class InOutOrderForm(forms.ModelForm):

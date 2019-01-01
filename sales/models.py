@@ -1,6 +1,7 @@
 from _decimal import Decimal
 import collections
 
+from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from django.db.models import Q
 from django.urls import reverse
@@ -77,13 +78,16 @@ class SalesOrder(OrderAbstract):
         return total
 
     # 提货进度百分比
-    def get_out_order_progress(self):
+    def get_out_order_percentage(self):
         out_order_total_quantity = sum(
-            item.quantity for order in self.in_out_order.filter(state='done') for item in order.items.all())
-        if self.get_piece() - sum(
-                item.piece for order in self.in_out_order.filter(state='done') for item in order.items.all()) == 0:
-            return 1
-        number = (out_order_total_quantity / self.quantity)
+            order.get_quantity() for order in self.in_out_order.filter(state='done'))
+        # if self.get_piece() - sum(
+        #         order.get_ for order in self.in_out_order.filter(state='done') for item in order.items.all()) == 0:
+        #     return 1
+        if self.quantity != 0:
+            number = (out_order_total_quantity / self.quantity)
+        else:
+            number = 0
         return number
 
     def confirm(self, **kwargs):
@@ -94,6 +98,8 @@ class SalesOrder(OrderAbstract):
             self.create_comment(**kwargs)
             comment = '更新<a href="%s">%s</a>状态:%s, 修改本账单' % (self.get_absolute_url(), self, self.state)
             for invoice in self.get_invoices():
+                if invoice.state != 'draft':
+                    continue
                 invoice.state = 'confirm'
                 invoice.save()
                 invoice.create_comment(**{'comment': comment})
@@ -101,7 +107,7 @@ class SalesOrder(OrderAbstract):
         return False, msg
 
     def done(self, **kwargs):
-        if self.get_out_order_progress() == 1 and (self.amount - self.due_amount) == 0:
+        if self.get_out_order_percentage() == 1 and (self.amount - self.due_amount) == 0:
             self.state = 'done'
             self.save()
             if kwargs.get('comment'):
@@ -109,24 +115,46 @@ class SalesOrder(OrderAbstract):
         self.create_comment(**kwargs)
 
     def draft(self, **kwargs):
+        is_done, msg = True, ''
         if self.state == 'confirm':
             if self.in_out_order.filter(Q(state='confirm') | Q(state='done')).exists():
                 return False, '已有提货单为出库状态'
             is_done, msg = StockOperate(self, self.items.all()).reserve_stock(unlock=True)
-            if is_done:
-                self.state = 'draft'
-                self.save()
-                self.create_comment(**kwargs)
-                comment = '更新<a href="%s">%s</a>状态:%s, 修改本账单' % (self.get_absolute_url(), self, self.state)
-                for invoice in self.get_invoices():
-                    invoice.state = 'draft'
-                    invoice.save()
-                    invoice.create_comment(**{'comment': comment})
-            return is_done, msg
-        return False, ''
+        if is_done:
+            self.state = 'draft'
+            self.save()
+            self.create_comment(**kwargs)
+            comment = '更新<a href="%s">%s</a>状态:%s, 修改本账单' % (self.get_absolute_url(), self, self.state)
+            for invoice in self.get_invoices():
+                invoice.state = 'draft'
+                invoice.save()
+                invoice.create_comment(**{'comment': comment})
+        return is_done, msg
+
+    def cancel(self, **kwargs):
+        is_done, msg = True, ''
+        if self.state == 'confirm':
+            if self.in_out_order.filter(Q(state='confirm') | Q(state='done')).exists():
+                return False, '已有提货单为出库状态'
+            is_done, msg = StockOperate(self, self.items.all()).reserve_stock(unlock=True)
+        if is_done:
+            self.state = 'cancel'
+            self.save()
+            self.create_comment(**kwargs)
+            comment = '更新<a href="%s">%s</a>状态:%s, 修改本账单' % (self.get_absolute_url(), self, self.state)
+            for invoice in self.get_invoices():
+                invoice.state = 'cancel'
+                invoice.save()
+                invoice.create_comment(**{'comment': comment})
+        return is_done, msg
+
+    def _get_invoice_usage(self):
+        return '销售货款'
 
     def get_invoices(self):
-        return {invoice.order for item in self.items.all() for invoice in item.invoice_items.all().distinct()}
+        invoices = set(self.invoices.all())
+        invoices |= {invoice.order for item in self.items.all() for invoice in item.invoice_items.all().distinct()}
+        return invoices
 
     @property
     def can_make_invoice_amount(self):
@@ -136,7 +164,8 @@ class SalesOrder(OrderAbstract):
         items_dict = {}
         for item in self.items.all():
             items_dict.update(item.prepare_invoice_item())
-        return CreateInvoice(self, self.partner, items_dict, type=1, state=self.state).invoice
+        state = self.state if self.state != 'done' else 'confirm'
+        return CreateInvoice(self, self.partner, items_dict, type=1, state=state).invoice
 
 
 class SalesOrderItem(OrderItemSaveCreateCommentMixin, models.Model):
@@ -154,6 +183,8 @@ class SalesOrderItem(OrderItemSaveCreateCommentMixin, models.Model):
     price = models.DecimalField('单价', max_digits=8, decimal_places=2)
     package_list = models.ForeignKey('product.PackageList', on_delete=models.SET_NULL, blank=True, null=True,
                                      verbose_name='码单')
+
+    invoice_items = GenericRelation('invoice.InvoiceItem')
 
     monitor_fields = ['line', 'product', 'price', 'quantity', 'uom', 'piece']
 
@@ -191,8 +222,18 @@ class SalesOrderItem(OrderItemSaveCreateCommentMixin, models.Model):
         return self.quantity
 
     def prepare_invoice_item(self):
-        return {str(self.product): {'item': str(self.product), 'quantity': self.get_can_make_invoice_qty(),
-                                    'line': self.line, 'price': self.price, 'sales_order_item': self}}
+        return {str(self.product): {'item': str(self.product), 'from_order_item': self,
+                                    'quantity': self.get_can_make_invoice_qty(),
+                                    'line': self.line, 'price': self.price}}
 
     def get_can_make_invoice_amount(self):
         return self.get_can_make_invoice_qty() * self.price
+
+    def get_can_in_out_order_qty(self):
+        quantity, piece, part = 0, 0, 0
+        for item in self.in_out_order_items.all():
+            if item.state in ('confirm', 'done'):
+                quantity += item.quantity
+                piece += item.piece
+                part += item.package_list.get_part() if item.package_list else 0
+        return {'quantity': quantity, 'piece': piece, 'part': part}

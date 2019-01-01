@@ -6,21 +6,49 @@
 {% block subheadline %}
     <input type="hidden" name="return_path" value="{{ return_path }}" form="select_slab_form">
     <a href="{{ object.return_path }}">返回</a>
-    {#    {{ object|call:'get_total_part_number' }} 夹/#}
-    {#    {{ object|call:'get_total_piece' }} 件/#}
-    {#    {{ object|call:'get_total_quantity' }}m2#}
+    {{ object|call:'get_part' }} 夹/
+    {{ object|call:'get_piece' }} 件/
+    {{ object|call:'get_quantity' }}m2
 {% endblock %}
 {% block content %}
+    {#{% include 'product/inventory_package_list.html' %}#}
+    {#{% endblock %}#}
+    <div class="left">
+            <button class="btn-small" id="all_select">全选</button>
+        </div>
+        <div class="right">
+            <button class="btn waves-effect" onclick='move_option("{% url 'package_list_item_move' object.id %}")'>
+                移动到其他夹
+            </button>
+            <script>
+                function move_option(url) {
+                    $.ajax({
+                        url: url,
+                        method: 'GET',
+                        data: $('#select_slab_form').serialize(),
+                        success: function (data) {
+                            $('#modal1 .container').html(data);
+                            $('#item_form').attr('action', url);
+                            md.modal('open')
+                        }
+                    })
+                }
+            </script>
+            <button form="update_line" type="submit" class="btn waves-effect">刷新序号</button>
+            <form id="update_line" action="{% url 'package_full_page_update_line' object.id %}" method="post">
+                {% csrf_token %}
+            </form>
+        </div>
     <div class="row white">
+
         <ul class="tabs">
-            {% for part_number in package.get_part_number %}
+            {% for part_number in object.get_part_number %}
                 <li class="tab col s3 "><a class="{% if forloop.first %}active{% endif %}"
                                            href="#{{ part_number }}">{{ part_number }}#</a></li>
             {% endfor %}
         </ul>
-        {% regroup package.items by part_number as package_list %}
+        {% regroup object.items.all by part_number as package_list %}
         {% with select_slabs=cart.get_select_slabs %}
-
             {% for part_number in package_list %}
                 <div id="{{ part_number.grouper }}" class="col s12">
                     <table>
@@ -48,7 +76,7 @@
                                         <label>
                                             <input form="select_slab_form" data-quantity="{{ item.get_quantity }}"
                                                    type="checkbox" name="select"
-                                                    {% if state != 'draft' %}
+                                                    {% if state not in 'draft, confirm,done' %}
                                                    disabled
                                                     {% endif %}
                                                     {% if item.get_slab_id in now_slabs_ids %}
@@ -64,7 +92,7 @@
                                         <s>{% endif %}
                                     {{ item }}
                                     <a href="#!"
-                                       onclick="edit_item({{ item.id }},'{% url 'package_list_draft_item_edit' item.id %}')">
+                                       onclick="edit_item('{% url 'package_list_item_edit' item.id %}')">
                                         修改
                                     </a>
                                     {% if item.get_slab_id not in now_slabs_ids %}
@@ -87,8 +115,8 @@
                         <tfoot>
                         <tr>
                             <td>第 {{ part_number.grouper }} 夹</td>
-                            <td>{{ package|add_arg:part_number.grouper|call:'get_piece' }}件</td>
-                            <td>{{ package|add_arg:part_number.grouper|call:'get_quantity' }}m2</td>
+                            <td>{{ object|add_arg:part_number.grouper|call:'get_piece' }}件</td>
+                            <td>{{ object|add_arg:part_number.grouper|call:'get_quantity' }}m2</td>
                             <td></td>
                         </tr>
                         </tfoot>
@@ -98,26 +126,30 @@
 
             {% endfor %}
         {% endwith %}
-        {% if state == 'draft' %}
-            <form id="select_slab_form" action="{{ edit_url }}" method="post">
-                <input type="hidden" name="product"
-                       value="{{ package.product.id }}">
-                <input type="hidden" name="package_list_id"
-                       value="{{ package.id }}">
-            </form>
-        {% endif %}
+        <form id="select_slab_form" action="{{ edit_url }}" method="post">
+            <input type="hidden" name="product"
+                   value="{{ object.product.id }}">
+            <input type="hidden" name="package_list_id"
+                   value="{{ object.id }}">
+        </form>
     </div>
 {% endblock %}
+{% block sidebar %}
+
+{% endblock %}
 {% block action_btn %}
-    <div class="fixed-action-btn">
-        <a onclick="add_item('{{ object.get_create_item_url }}')"
-           class="btn-floating btn-large red">
-            <i class="large material-icons">add</i>
-        </a>
-    </div>
+    {% if add_new == 'True' %}
+        <div class="fixed-action-btn">
+            <a onclick="add_item('{{ object.get_create_item_url }}')"
+               class="btn-floating btn-large red">
+                <i class="large material-icons">add</i>
+            </a>
+        </div>
+    {% endif %}
 {% endblock %}
 <script>
     {% block domready %}
+        {{ block.super }}
         $('.tabs').tabs();
         $('.dropdown-trigger').dropdown();
         {#    $('.tabs').on('click', function (){#}
@@ -164,5 +196,6 @@
                 }
             })
         });
+
     {% endblock %}
 </script>

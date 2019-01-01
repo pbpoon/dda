@@ -3,7 +3,7 @@
 # Created by pbpoon on 2018/10/30
 from django import forms
 
-from product.models import  Block
+from product.models import Block
 from .models import PurchaseOrderItem, PurchaseOrder
 
 STATE_CHOICES = (
@@ -44,3 +44,11 @@ class PurchaseOrderItemForm(forms.ModelForm):
         if Block.objects.filter(name=name).exists():
             raise forms.ValidationError('已有编号为：{}#的荒料存在，请确保该编号为全新'.format(name))
         return name
+
+    def clean(self):
+        cd = self.cleaned_data
+        name = cd.get('name')
+        order = cd.get('order')
+        if order.items.filter(name=name).exists():
+            raise forms.ValidationError('本单已有编号为：{}#的荒料存在，请确保该编号不重复'.format(name))
+        return cd

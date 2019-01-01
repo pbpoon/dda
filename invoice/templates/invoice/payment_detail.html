@@ -26,15 +26,15 @@
                     <td>{{ assign.amount }}</td>
                     <td>{{ assign.created }}</td>
                     <td>{{ assign.entry }}</td>
-                <td>
-                    <form action="{% url 'assign_delete' assign.id %}" method="post">
+                    <td>
+                        <form action="{% url 'assign_delete' assign.id %}" method="post">
                             {% if not object.confirm %}
                                 <button class="btn-floating btn-small red waves-effect waves-red" type="submit">
                                     <i class="material-icons">money_off</i>
                                 </button>
                             {% endif %}
-                        {% csrf_token %}
-                    </form>
+                            {% csrf_token %}
+                        </form>
                     </td>
                 </tr>
             {% endfor %}

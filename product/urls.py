@@ -58,8 +58,13 @@ urlpatterns += [
     path('package_list/production/<pk>/', views.ProductionOrderPackageListDetailView.as_view(),
          name='package_production_detail'),
     # --------------------------一般码单打开
+    path('package_list/item/edit/<pk>/', views.PackageListItemEditView.as_view(),
+         name='package_list_item_edit'),
     path('package_list/item/create/<order_id>/', views.PackageListItemCreateView.as_view(),
          name='package_list_item_create'),
+    path('package_list_full_page/item/move/<pk>/', views.PackageListItemMoveView.as_view(),
+         name='package_list_item_move'),
+    path('package_list_full_page/update_line/<pk>/', views.PackageListItemLineUpdateView.as_view(), name='package_full_page_update_line'),
     path('package_list_full_page/<pk>/', views.PackageListFullPageView.as_view(), name='package_full_page'),
     path('package_list/<pk>/', views.PackageListDetail.as_view(), name='package_detail'),
     path('block/<pk>/', views.BlockDetailView.as_view(), name='block_detail'),

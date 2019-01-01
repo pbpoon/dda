@@ -89,5 +89,54 @@ class PackageListItemForm(forms.ModelForm):
                 instance.slab = slab
                 instance.line = data['line']
                 instance.save()
-        instance.order.save()
+            instance.order.save()
         return instance
+
+
+class PackageListItemEditForm(forms.ModelForm):
+    # slab = forms.ModelChoiceField(queryset=Slab.objects.none(), required=False, widget=forms.HiddenInput)
+    # piece = forms.IntegerField(max_value=30, label='件数', widget=forms.NumberInput(), initial=1)
+    long = forms.IntegerField(label='长', widget=forms.NumberInput(), min_value=0)
+    height = forms.IntegerField(label='高', widget=forms.NumberInput(), min_value=0)
+    kl1 = forms.IntegerField(label='长1', widget=forms.NumberInput(), min_value=0, required=False)
+    kh1 = forms.IntegerField(label='高1', widget=forms.NumberInput(), min_value=0, required=False)
+    kl2 = forms.IntegerField(label='长2', widget=forms.NumberInput(), min_value=0, required=False)
+    kh2 = forms.IntegerField(label='高2', widget=forms.NumberInput(), min_value=0, required=False)
+    part_number = forms.ChoiceField(label='夹号', choices=[(i, "第 {} 夹".format(i)) for i in range(1, 11)])
+
+    class Meta:
+        model = PackageListItem
+        fields = ('order', 'slab', 'part_number', 'line', 'long', 'height',
+                  'kl1', 'kh1', 'kl2', 'kh2')
+        widgets = {
+            'order': forms.HiddenInput(),
+            'slab': forms.HiddenInput(),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        slab = kwargs.get('instance').slab
+        self.fields['slab'].initial = slab
+        self.fields['long'].initial = slab.long
+        self.fields['height'].initial = slab.height
+        self.fields['kl1'].initial = slab.kl1
+        self.fields['kh1'].initial = slab.kh1
+        self.fields['kl2'].initial = slab.kl2
+        self.fields['kh2'].initial = slab.kh2
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        cd = self.cleaned_data
+        for k, v in cd.items():
+            if k not in ('slab', 'part_number', 'line') and v is not None:
+                setattr(instance.slab, k, v)
+                instance.slab.save()
+        if commit:
+            instance.save()
+            instance.order.save()
+        return instance
+
+
+class PackageListItemMoveForm(forms.Form):
+    options = forms.ChoiceField(label='选项')
+    select_slab_ids = forms.CharField(required=False, widget=forms.HiddenInput)

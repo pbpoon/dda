@@ -1,5 +1,9 @@
+import collections
 from decimal import Decimal
 
+from django.contrib.contenttypes.fields import GenericRelation
+
+from invoice.models import CreateInvoice
 from product.models import Product
 from public.models import OrderAbstract
 from public.fields import OrderField, LineField
@@ -36,6 +40,28 @@ class PurchaseOrder(OrderAbstract):
     def get_quantity(self):
         return sum(item.get_quantity() for item in self.items.all())
 
+    def get_total(self):
+        """
+        template使用方式
+        {% for key, item in object.get_total.items %}
+        {{ key }}:{% if item.part %}{{ item.part }}夹 / {% endif %}{{ item.piece }}件 / {{ item.quantity }}{{ item.uom }}<br>
+        {% endfor %}
+        """
+        if not self.items.all():
+            return
+        total = {}
+        for item in self.items.all():
+            if not item.product:
+                continue
+            d = collections.defaultdict(lambda: 0)
+            a = total.setdefault(item.product.get_type_display(), d)
+            a['piece'] += item.piece
+            a['quantity'] += item.quantity
+            # d['part'] += item.package_list.get_part() if item.package_list else 0
+            a['uom'] = item.uom
+            # total.setdefault(item.product.get_type_display(), {}).update(d)
+        return total
+
     @property
     def amount(self):
         return self.get_amount()
@@ -64,18 +90,37 @@ class PurchaseOrder(OrderAbstract):
             item.draft()
         self.state = 'draft'
         self.save()
-        content = self.get_logs()
         self.create_comment(**kwargs)
         msg = '设置订单%s设置成 %s 状态' % (self.order, self.get_state_display())
         return True, msg
 
     def done(self, **kwargs):
         self.create_comment(**kwargs)
-        return True,''
+        return True, ''
+
+    def _get_invoice_usage(self):
+        return '采购货款'
+
+    def get_invoices(self):
+        invoices = set(self.invoices.all())
+        invoices |= {invoice.order for item in self.items.all() for invoice in item.invoice_items.all().distinct()}
+        return invoices
+
+    @property
+    def can_make_invoice_amount(self):
+        return sum(item.get_can_make_invoice_amount() for item in self.items.all())
+
+    def make_invoice(self):
+        items_dict = {}
+        for item in self.items.all():
+            items_dict.update(item.prepare_invoice_item())
+        state = self.state if self.state != 'done' else 'confirm'
+        return CreateInvoice(self, self.partner, items_dict, type=-1, state=state).invoice
+
 
 class PurchaseOrderItem(models.Model):
     line = LineField(for_fields=['order'], blank=True, verbose_name='行')
-    name = models.CharField('编号', max_length=20, unique=True)
+    name = models.CharField('编号', max_length=20)
     type = models.CharField('类型', max_length=10, default='block')
     order = models.ForeignKey('PurchaseOrder', on_delete=models.CASCADE, related_name='items', verbose_name='订单')
     product = models.ForeignKey('product.Product', on_delete=models.CASCADE, verbose_name='编号', blank=True, null=True)
@@ -88,10 +133,12 @@ class PurchaseOrderItem(models.Model):
     width = models.IntegerField('宽', null=True, blank=True)
     height = models.IntegerField('高', null=True, blank=True)
     m3 = models.DecimalField('立方', null=True, max_digits=5, decimal_places=2, blank=True)
+    invoice_items = GenericRelation('invoice.InvoiceItem')
 
     class Meta:
         verbose_name = '采购订单行'
         ordering = ['order']
+        unique_together = (('order', 'name'), ('order', 'name', 'product'))
 
     def get_quantity(self):
         return self.weight if self.uom == 't' else self.m3
@@ -124,3 +171,27 @@ class PurchaseOrderItem(models.Model):
     def draft(self):
         self.product.activate = False
         return self.save()
+
+    def get_can_make_invoice_qty(self):
+        already_make_qty = sum(
+            item.quantity for item in self.invoice_items.all() if item.state in ('confirm', 'done'))
+        if already_make_qty:
+            return self.quantity - already_make_qty
+        return self.quantity
+
+    def get_can_make_invoice_amount(self):
+        return self.get_can_make_invoice_qty() * self.price
+
+    def prepare_invoice_item(self):
+        return {str(self.product): {'item': str(self.product), 'from_order_item': self,
+                                    'quantity': self.get_can_make_invoice_qty(), 'uom': self.uom,
+                                    'line': self.line, 'price': self.price}}
+
+    def get_can_in_out_order_qty(self):
+        quantity, piece, part = 0, 0, 0
+        for item in self.in_out_order_items.all():
+            if item.state in ('confirm', 'done'):
+                quantity += item.quantity
+                piece += item.piece
+                part += item.package_list.get_part() if item.package_list else 0
+        return {'quantity': quantity, 'piece': piece, 'part': part}

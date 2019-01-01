@@ -8,13 +8,22 @@ register = template.Library()
 
 
 @register.filter
-def prepend_dollars(dollars):
+def format_money(dollars, format=None):
+    if not format:
+        format = '¥'
     if dollars:
         dollars = round(float(dollars), 2)
-        return "$%s%s" % (intcomma(int(dollars)), ("%0.2f" % dollars)[-3:])
+        return "%s%s%s" % (format, intcomma(int(dollars)), ("%0.2f" % dollars)[-3:])
     else:
         return ''
-register = template.Library()
+
+
+@register.filter
+def format_percentage(number):
+    if number:
+        number = float(number) * 100
+        value = str(number).split('.')[0]
+        return '{}%'.format(value)
 
 
 @register.filter
@@ -32,6 +41,7 @@ def label_name(obj):
     except AttributeError:
         return None
 
+
 @register.filter
 def verbose_name(obj):
     try:
@@ -44,8 +54,6 @@ def verbose_name(obj):
 def percentage(value):
     return format(value, "%")
 
-
-# template_filters.py
 
 @register.filter(name='add_arg')
 def template_args(instance, arg):
@@ -70,6 +78,7 @@ def template_method(instance, method):
         return to_return
     return method()
 
+
 # 在模版里面按照下面的方法调用
 # {{ instance|template_args:"value1"|template_args:"value2"|template_args:"value3"|template_method:"test_template_call" }}
 
@@ -84,3 +93,33 @@ def money(dollars):
         return "$%s%s" % (intcomma(int(dollars)), ("%0.2f" % dollars)[-3:])
     else:
         return ''
+
+
+# 分页解释request path
+@register.simple_tag(takes_context=True)
+def param_replace(context, **kwargs):
+    """
+    Return encoded URL parameters that are the same as the current
+    request's parameters, only with the specified GET parameters added or changed.
+
+    It also removes any empty parameters to keep things neat,
+    so you can remove a parm by setting it to ``""``.
+
+    For example, if you're on the page ``/things/?with_frosting=true&page=5``,
+    then
+
+    <a href="/things/?{% param_replace page=3 %}">Page 3</a>
+
+    would expand to
+
+    <a href="/things/?with_frosting=true&page=3">Page 3</a>
+
+    Based on
+    https://stackoverflow.com/questions/22734695/next-and-before-links-for-a-django-paginated-query/22735278#22735278
+    """
+    d = context['request'].GET.copy()
+    for k, v in kwargs.items():
+        d[k] = v
+    for k in [k for k, v in d.items() if not v]:
+        del d[k]
+    return d.urlencode()

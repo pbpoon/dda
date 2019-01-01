@@ -31,13 +31,22 @@
                         {{ item.piece }}件/
                         {{ item.quantity }}{{ item.product.get_uom }}
                     {% endif %}
+                    {% if object.state in 'confirm, done' %}
+                        <br><span>可提货数量:
+                    {% with item.get_can_in_out_order_qty as can_in_out_order_qty  %}
+                        {% if can_in_out_order_qty.part %}{{ can_in_out_order_qty.part }} 夹/ {% endif %}
+                        {{ can_in_out_order_qty.piece }} 件/ {{ can_in_out_order_qty.quantity }}{{ item.uom }}
+                    {% endwith %}
+                </span>
+                    {% endif %}
                 </td>
                 <td>{{ item.price }}</td>
                 <td>{{ item.amount }}</td>
                 <td>{% if object.state != 'done' %}
                     <!-- Dropdown Trigger -->
 
-                    <a class='dropdown-trigger btn-small btn-floating grey' href='#' data-target='dropdown{{ forloop.counter }}'>
+                    <a class='dropdown-trigger btn-small btn-floating grey' href='#'
+                       data-target='dropdown{{ forloop.counter }}'>
                         <i
                                 class="material-icons">more_vert</i></a>
 
@@ -85,7 +94,7 @@
     {{ object.get_state_display }}{{ object.order }}
     {% if object.in_out_order.all %}
         <div class="progress">
-            <div class="determinate" style="width: {{ object.get_out_order_progress|percentage }}"></div>
+            <div class="determinate" style="width: {{ object.get_out_order_percentage|format_percentage }}"></div>
         </div>
     {% endif %}
 {% endblock %}
@@ -94,13 +103,16 @@
     发往：{{ object.get_address }}<br/>
     <hr>
     经办人:{{ object.handler }}
+
+{% endblock %}
+{% block operate %}
     {% if object.state == 'confirm' %}
-        {% if object.get_out_order_progress < 1 %}
+        {% if object.get_out_order_percentage < 1 %}
             <a class="right" href="{% url 'sales_order_out_order' object.id %}">提货</a>
         {% endif %}
     {% endif %}
     <a href="#" onclick="confirm_option('{% url 'sales_order_invoice_options' object.id %}')">创建账单</a>
-
+    <a href="{% url 'sales_order_pdf' object.id %}">打印pdf</a>
 {% endblock %}
 {% block sidebar %}
     {% if object.in_out_order.all %}
@@ -108,9 +120,8 @@
         <hr>
         <div class="collection">
             {% for order in object.in_out_order.all %}
-                {% if order.state in 'confirm,done' %}
-                <a href="{{ order.get_absolute_url }}" class="collection-item">{{ order }}<span class="badge">{{ order.get_state_display }}</span></a>
-                {% endif %}
+                <a href="{{ order.get_absolute_url }}" class="collection-item">{{ order }}<span
+                        class="badge">{{ order.get_state_display }}</span></a>
             {% endfor %}
         </div>
     {% endif %}
@@ -120,7 +131,8 @@
         <div class="collection">
             {% for invoice in object.get_invoices %}
                 {% if invoice.state not in 'cancel' %}
-                <a href="{{ invoice.get_absolute_url }}" class="collection-item">{{ invoice }}<span class="badge">{{ invoice.get_state_display }}</span></a>
+                    <a href="{{ invoice.get_absolute_url }}" class="collection-item">{{ invoice }}<span
+                            class="badge">{{ invoice.get_state_display }}</span></a>
                 {% endif %}
             {% endfor %}
         </div>

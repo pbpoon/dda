@@ -168,6 +168,13 @@ class OrderAbstract(HasChangedMixin, models.Model):
         abstract = True
         ordering = ['-created']
 
+    @property
+    def invoice_usage(self):
+        return self._get_invoice_usage()
+
+    def _get_invoice_usage(self):
+        raise ValueError('define invoice_usage')
+
     def get_quantity(self):
         return sum(item.quantity for item in self.items.all() if item.quantity)
 
@@ -181,12 +188,17 @@ class OrderAbstract(HasChangedMixin, models.Model):
         {{ key }}:{% if item.part %}{{ item.part }}夹 / {% endif %}{{ item.piece }}件 / {{ item.quantity }}{{ item.uom }}<br>
         {% endfor %}
         """
-        d = collections.defaultdict(lambda: 0)
+        # if not self.items.all():
+        #     return
         total = {}
         for item in self.items.all():
+            if not item.product:
+                continue
+            d = collections.defaultdict(lambda: 0)
             a = total.setdefault(item.product.get_type_display(), d)
             a['piece'] += item.piece
             a['quantity'] += item.quantity
-            a['part'] += item.package_list.get_part() if item.package_list else 0
+            d['part'] += item.package_list.get_part() if item.package_list else 0
             a['uom'] = item.uom
         return total
+

@@ -19,7 +19,10 @@ class LocationForm(forms.ModelForm):
         model = Location
         fields = '__all__'
         widgets = {
+            # 'parent': forms.TypedChoiceField(),
             'warehouse': forms.HiddenInput,
+            'is_main': forms.HiddenInput,
+            'usage': forms.HiddenInput,
         }
 
 

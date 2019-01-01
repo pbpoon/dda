@@ -1,8 +1,17 @@
 {% extends 'list.html' %}
 {% block content %}
+
     <div class="collection">
         {% for object in object_list %}
-            <a href="{{ object.get_absolute_url }}" class="collection-item">{{ object }}</a>
+            <a class="collection-item avatar grey-text" href="{{ object.get_absolute_url }}">
+
+                <i class="material-icons circle">{{ object.name|slice:'1' }}</i>
+                <span class="title black-text">{{ object }}</span>
+                <p><br>
+                    <i>{{ object.get_address }}</i>
+                </p><span>{{ object.date|date:"Y/m/d" }}</span>
+
+            </a>
         {% endfor %}
     </div>
     {% block fixed-action-btn %}

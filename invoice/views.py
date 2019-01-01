@@ -96,8 +96,8 @@ class InvoiceItemEditView(OrderItemEditMixin):
         form = super().get_form(form_class)
         form.fields['order'].initial = self.order
         form.fields['order'].widget = forms.HiddenInput()
-        form.fields['sales_order_item'].widget = forms.HiddenInput()
-        form.fields['purchase_order_item'].widget = forms.HiddenInput()
+        form.fields['content_type'].widget = forms.HiddenInput()
+        form.fields['object_id'].widget = forms.HiddenInput()
         form.fields['line'].widget = forms.HiddenInput()
         return form
 

@@ -40,6 +40,9 @@ class InOutOrder(MrpOrderAbstract):
     class Meta:
         verbose_name = '出入库操作'
 
+    def _get_invoice_usage(self):
+        return '杂费'
+
     @property
     def from_order(self):
         return self.sales_order or self.purchase_order
@@ -134,21 +137,24 @@ class InOutOrder(MrpOrderAbstract):
     @property
     def has_from_order_invoice(self):
         if self.invoices.all():
+            from_order_items_ids = {item.get_from_order_item() for item in self.items.all()}
             for invoice in self.invoices.all():
-                if invoice.usage == '货款':
-                    return True
+                for item in invoice.items.all():
+                    if item.from_order_item in from_order_items_ids:
+                        return True
         return False
 
     def make_from_order_invoice(self):
         type = -1 if self.type == 'in' else 1
         items_dict = {}
+        state = self.state if self.state != 'done' else 'confirm'
         for item in self.items.all():
             items_dict.update(item.prepare_from_order_invoice_item())
-        return CreateInvoice(self, self.from_order.partner, items_dict, usage='货款', type=type, state=self.state).invoice
+        return CreateInvoice(self, self.from_order.partner, items_dict, usage='货款', type=type, state=state).invoice
 
     def make_invoice(self):
         from partner.models import Partner
-        lst = unpack_lst(item.prepare_invoice_item() for item in self.items.all())
+        lst = unpack_lst(item.prepare_expenses_invoice_item() for item in self.items.all())
         if lst:
             items_dict = {}
             for dt in lst:
@@ -182,14 +188,19 @@ class InOutOrderItem(OrderItemBase):
     def get_from_order_item(self):
         return self.sales_order_item or self.purchase_order_item
 
+    def get_can_make_from_order_invoice_qty(self):
+        return self.get_from_order_item().get_can_make_invoice_qty()
+
     def prepare_from_order_invoice_item(self):
-        return {str(self.product): {'line': self.line, 'item': str(self.product), 'quantity': self.quantity,
+        return {str(self.product): {'line': self.line, 'item': str(self.product),
+                                    'quantity': self.quantity,
                                     'uom': self.uom,
                                     'price': self.get_from_order_item().price,
-                                    'sales_order_item': self.get_from_order_item()}}
+                                    'from_order_item': self.get_from_order_item()}}
 
-    def prepare_invoice_item(self):
-        return [{'item': '{}:{}'.format(str(self.product), expense.expense.name), 'line': self.line,
+    def prepare_expenses_invoice_item(self):
+        return [{'item': '{}:{}'.format(str(self.product), expense.expense.name), 'from_order_item': self,
+                 'line': self.line,
                  'quantity': expense.quantity, 'price': expense.price,
                  'uom': expense.uom} for expense in self.expenses.all()]
 

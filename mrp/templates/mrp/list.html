@@ -1,20 +1,47 @@
 {% extends 'list.html' %}
+{% load public %}
 {% block content %}
-    <div class="collection">
+{% block ul %}
+    <ul class="collection">
         {% for object in object_list %}
 
-            <a href="{{ object.get_absolute_url }}" class="collection-item">
-                <span class="new badge {% if object.state == 'draft' %}red{% elif object.state == 'cancel' %}default{% else %}blue{% endif %}"
-                      data-badge-caption="{{ object.get_state_display }}"></span>{{ object }}<span>@
-                {{ object.created|date:"SHORT_DATE_FORMAT" }}</span>
+            <a class="collection-item avatar grey-text" href="{{ object.get_absolute_url }}">
+
+                <div class="right">
+                    <div class="right-align">
+                    <span class="new badge {% if object.state == 'draft' %}default{% elif object.state == 'cancel' %}grey{% elif object.state == 'done' %}yellow{% else %}blue{% endif %}"
+                          data-badge-caption="{{ object.get_state_display }}"></span>{{ object.order }}<span>
+                    </div>
+                    <div class=" black-text right-align">
+                        <span>{{ object.get_out_order_percentage|format_percentage|default_if_none:'' }}</span>
+                        <h5>{{ object.amount|format_money }}</h5></div>
+                </div>
+                <i class="material-icons circle">{{ object.partner.name|slice:'1' }}</i>
+                <span class="title black-text">{{ object.partner }}</span>
+                <p><br>
+                    <i>{{ object.get_address }}</i>
+                </p><span>{{ object.date|date:"Y/m/d" }}</span>
+
             </a>
         {% endfor %}
-    </div>
-    {% block action_btn %}
-        <div class="fixed-action-btn">
-            <a href="{% block add_url %}{% endblock %}" class="btn-floating btn-large red">
-                <i class="large material-icons">add</i>
-            </a>
-        </div>
+    </ul>
     {% endblock %}
+    {% include 'paginatior.html' %}
+    <div class="fixed-action-btn">
+        <a href="{% block add_url %}{% endblock %}" class="btn-floating btn-large red">
+            <i class="large material-icons">add</i>
+        </a>
+    </div>
+{% endblock %}
+{% block sidebar %}
+    <div class="card-panel white">
+        <span>按条件筛选</span>
+        <div class="divider"></div>
+        <form action="" method="GET">
+            <ul>
+                {{ filter.form.as_ul }}
+            </ul>
+            <button class="btn waves-effect" type="submit">确定</button>
+        </form>
+    </div>
 {% endblock %}

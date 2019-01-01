@@ -11,12 +11,13 @@ from django.views.generic.edit import ModelFormMixin, CreateView, UpdateView, Ba
 from django.contrib import messages
 
 from invoice.models import CreateInvoice
+from mrp.filters import InOutOrderFilter, MoveLocationOrderFilter, ProductionOrderFilter, InventoryOrderFilter
 from mrp.models import ProductionOrder, ProductionOrderRawItem, ProductionOrderProduceItem, ProductionType, InOutOrder, \
     InOutOrderItem, Expenses, ExpensesItem, InventoryOrder, InventoryOrderItem, InventoryOrderNewItem
 from mrp.models import TurnBackOrder, TurnBackOrderItem
 from product.models import PackageList
 from public.utils import Package, StockOperateItem
-from public.views import OrderItemEditMixin, OrderItemDeleteMixin, OrderFormInitialEntryMixin
+from public.views import OrderItemEditMixin, OrderItemDeleteMixin, OrderFormInitialEntryMixin, FilterListView
 from purchase.models import PurchaseOrder
 from public.views import GetItemsMixin, StateChangeMixin
 from public.stock_operate import StockOperate
@@ -28,8 +29,9 @@ from .forms import MoveLocationOrderItemForm, MoveLocationOrderForm, ProductionO
     TurnBackOrderItemForm, InventoryOrderForm, InventoryOrderItemForm, InventoryOrderNewItemForm
 
 
-class MoveLocationOrderListView(ListView):
+class MoveLocationOrderListView(FilterListView):
     model = MoveLocationOrder
+    filter_class = MoveLocationOrderFilter
 
 
 class MoveLocationOrderDetailView(StateChangeMixin, GetItemsMixin, DetailView):
@@ -103,8 +105,9 @@ class ProductionTypeUpdateView(UpdateView):
     template_name = 'mrp/form.html'
 
 
-class ProductionOrderListView(ListView):
+class ProductionOrderListView(FilterListView):
     model = ProductionOrder
+    filter_class = ProductionOrderFilter
 
 
 class ProductionOrderDetailView(StateChangeMixin, DetailView):
@@ -120,6 +123,9 @@ class ProductionOrderDetailView(StateChangeMixin, DetailView):
 
     def done(self):
         return self.object.done()
+
+    def cancel(self):
+        return self.object.cancel()
 
 
 class ProductionOrderEditMixin(OrderFormInitialEntryMixin):
@@ -186,8 +192,9 @@ class ProductionOrderProduceItemDeleteView(OrderItemDeleteMixin):
     model = ProductionOrderProduceItem
 
 
-class InOutOrderListView(ListView):
+class InOutOrderListView(FilterListView):
     model = InOutOrder
+    filter_class = InOutOrderFilter
 
 
 class InOutOrderDetailView(StateChangeMixin, DetailView):
@@ -238,6 +245,7 @@ class InOutOrderEditView(OrderFormInitialEntryMixin):
             initial['type'] = 'out'
         else:
             initial['purchase_order'] = self.purchase_order
+            initial['partner'] = self.purchase_order.partner
             initial['type'] = 'in'
         return initial
 
@@ -466,8 +474,9 @@ class TurnBackOrderItemEditMixin:
     template_name = 'item_form.html'
 
 
-class InventoryOrderListView(ListView):
+class InventoryOrderListView(FilterListView):
     model = InventoryOrder
+    filter_class = InventoryOrderFilter
 
 
 class InventoryOrderDetailView(StateChangeMixin, DetailView):
@@ -519,7 +528,7 @@ class InventoryOrderEditMixin(OrderFormInitialEntryMixin):
                 'old_quantity': stock.quantity,
                 'now_quantity': stock.quantity,
             }
-            # 如果是板材，就把建一张码单
+            # 如果是板材，就新建一张吉码单
             if stock.product.type == 'slab':
                 slab_ids = stock.items.all().values_list('id', flat=True)
                 package = PackageList.make_package_from_list(stock.product.id, slab_ids)

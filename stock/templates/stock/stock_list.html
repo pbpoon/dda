@@ -1,3 +1,40 @@
 {% extends 'stock/list.html' %}
 {% block fixed-action-btn %}
 {% endblock %}
+{% block sidebar %}
+    <div class="card-panel white">
+        <span>按条件筛选</span>
+        <div class="divider"></div>
+        <form action="" method="GET">
+            {{ filter.form.as_p }}
+            <button class="btn waves-effect" type="submit">选择</button>
+        </form>
+    </div>
+{% endblock %}
+{% block content %}
+    <div class="card-panel white">
+        <table>
+            <thead>
+            <tr>
+                <th>产品</th>
+                <th>数量</th>
+                <th>位置</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for object in object_list %}
+                <tr>
+                    <td>{{ object.product }}</td>
+                    <td>{% if object.product.type == 'slab' %}{{ object.get_part }} 夹/ {% endif %}
+                        {{ object.piece }} 件/ {{ object.quantity }}{{ object.uom }}</td>
+                    <td>{{ object.location }}</td>
+                    <td></td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+
+        {% include 'paginatior.html' %}
+    </div>
+{% endblock %}

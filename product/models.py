@@ -271,7 +271,7 @@ class PackageList(models.Model):
     def get_piece(self, number=None):
         qs = self.items.all()
         if number:
-            qs.filter(part_number=number)
+            qs = qs.filter(part_number=number)
         return qs.count()
 
     def get_part_number(self):
