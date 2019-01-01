@@ -111,3 +111,15 @@ mysite/__pycache__/
 !/partner_initial_data.json
 !/test_data.json
 !/partner/initial_json/
+!/stone/settings/__init__.py
+!/stone/settings/base.py
+!/stone/settings/local.py
+!/stone/settings/
+!/stone/settings/production.py
+cart/migrations/
+invoice/templates/invoice/Account/
+templates/widget/
+/stone/settings/base.py
+/stone/settings/local.py
+/stone/settings/__init__.py
+/stone/settings/production.py

@@ -22,15 +22,12 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'd6!)x_zzgf_u=^h^u+-7y7^23!az4n6e4bn1jkdq4@okj65%nv'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 
-ALLOWED_HOSTS = []
 
 # Application definition
 
 INSTALLED_APPS = [
     'public.apps.PublicConfig',
-    'materializecssform',
     'partner.apps.PartnerConfig',
     'dal',
     'dal_select2',
@@ -91,24 +88,6 @@ WSGI_APPLICATION = 'stone.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/2.1/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'stone_test',
-        'USER': 'stone',
-        'PASSWORD': 'password'
-        # 'ENGINE': 'django.db.backends.sqlite3',
-        # 'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    }
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.postgresql_psycopg2',
-    #     'NAME': 'stonedev',
-    #     'USER': 'stone',
-    #     'PASSWORD': 'password'
-    #     # 'ENGINE': 'django.db.backends.sqlite3',
-    #     # 'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    # }
-}
 
 # Password validation
 # https://docs.djangoproject.com/en/2.1/ref/settings/#auth-password-validators
