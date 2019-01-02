@@ -14,7 +14,7 @@ from django.views.generic.detail import BaseDetailView
 from django.views.generic.edit import BaseDeleteView, ModelFormMixin, ProcessFormView, FormMixin
 
 from public.forms import StateForm, ConfirmOptionsForm
-from public.widgets import CheckBoxWidget, RadioWidget
+from public.widgets import SwitchesWidget, RadioWidget
 
 STATE_CHOICES = (
     ('draft', '草稿'),

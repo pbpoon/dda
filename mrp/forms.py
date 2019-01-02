@@ -9,7 +9,7 @@ from mrp.models import ProductionOrder, ProductionOrderRawItem, ProductionOrderP
 from mrp.models import TurnBackOrder, TurnBackOrderItem
 from product.models import Product, PackageList
 from public.forms import FormUniqueTogetherMixin
-from public.widgets import AutocompleteWidget, OptionalChoiceField, CheckBoxWidget, RadioWidget
+from public.widgets import AutocompleteWidget, OptionalChoiceField, SwitchesWidget, RadioWidget
 from stock.models import Location, Warehouse
 from mrp.models import MoveLocationOrder, MoveLocationOrderItem
 

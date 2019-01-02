@@ -25,7 +25,7 @@ class ProductionType(models.Model):
     expense_by = models.CharField('费用结算按', max_length=10, choices=EXPENSE_BY_CHOICES)
     raw_item_type = models.CharField('原材料类型', max_length=10, choices=TYPE_CHOICES, default='block')
     produce_item_type = models.CharField('产出品类型', max_length=10, choices=TYPE_CHOICES, default='block')
-    activate = models.BooleanField('启用', default=False)
+    activate = models.BooleanField('启用', default=True)
 
     class Meta:
         verbose_name = '生产业务类型明细'

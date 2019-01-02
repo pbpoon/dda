@@ -1,5 +1,4 @@
 {% extends 'base.html' %}
-{% load crispy_forms_tags %}
 {% block content %}
     <table class="table table-sm">
         <thead>
@@ -53,7 +52,7 @@
 {% endblock %}
 {% block siderbar %}
     <form action="" method="post">
-        {{ form|crispy }}
+        {{ form }}
         <input class="btn btn-primary btn-block" type="submit" value="确认">
         {% csrf_token %}
     </form>

@@ -1,5 +1,4 @@
 {% extends "mrp/detail.html" %}
-{% load materializecss %}
 {% block headline %}<span class="h6">[{{ object.state }}]</span>
     <a href="{{ object.from_order.get_absolute_url }}">{{ object }}</a>
 {% endblock %}

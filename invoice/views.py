@@ -16,7 +16,7 @@ from django.views.generic.edit import CreateView, UpdateView, ModelFormMixin
 from django.views.generic.base import TemplateResponseMixin, View
 
 from invoice.models import Invoice, Payment, Account, Assign, InvoiceItem, InvoiceDueDateDefaultSet
-from public.widgets import CheckBoxWidget, RadioWidget, DatePickerWidget
+from public.widgets import SwitchesWidget, RadioWidget, DatePickerWidget
 
 
 class InvoiceDetailView(StateChangeMixin, DetailView):
@@ -121,7 +121,7 @@ class AccountCreateView(CreateView):
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        form.fields['activate'].widget = CheckBoxWidget()
+        form.fields['activate'].widget = SwitchesWidget()
         return form
 
 

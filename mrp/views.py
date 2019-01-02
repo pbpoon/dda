@@ -18,6 +18,7 @@ from mrp.models import TurnBackOrder, TurnBackOrderItem
 from product.models import PackageList
 from public.utils import Package, StockOperateItem
 from public.views import OrderItemEditMixin, OrderItemDeleteMixin, OrderFormInitialEntryMixin, FilterListView
+from public.widgets import SwitchesWidget
 from purchase.models import PurchaseOrder
 from public.views import GetItemsMixin, StateChangeMixin
 from public.stock_operate import StockOperate
@@ -98,11 +99,21 @@ class ProductionTypeCreateView(CreateView):
     fields = '__all__'
     template_name = 'mrp/form.html'
 
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        form.fileds['activate'].widget = SwitchesWidget()
+        return form
+
 
 class ProductionTypeUpdateView(UpdateView):
     model = ProductionType
     fields = '__all__'
     template_name = 'mrp/form.html'
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        form.fileds['activate'].widget = SwitchesWidget()
+        return form
 
 
 class ProductionOrderListView(FilterListView):

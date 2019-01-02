@@ -1,16 +1,10 @@
 {% extends 'list.html' %}
-{% load materializecss %}
 {% block content %}
     <form action="" method="post">
         <ul>
-            {% for error in form.errors %}
-            <li>
-                {{ error }}:{{ error.label_tag }}
-            </li>
-            {% endfor %}
-        </ul>
-        {{ form|materializecss }}
+        {{ form.as_ul }}
         <input class="btn" type="submit" value="确定">
         {% csrf_token %}
+        </ul>
     </form>
 {% endblock %}

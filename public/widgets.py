@@ -109,7 +109,7 @@ class DatePickerWidget(forms.DateInput):
         return data
 
 
-class CheckBoxWidget(forms.CheckboxInput):
+class SwitchesWidget(forms.CheckboxInput):
     template_name = 'public/checkbox.html'
 
 

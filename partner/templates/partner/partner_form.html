@@ -1,12 +1,11 @@
 {% extends 'base.html' %}
-{% load crispy_forms_tags %}
 {% block bnaner-title %}
     {{ object }}
 {% endblock %}
 {% block content %}
     <form action="" method="post">
     {% csrf_token %}
-    {{ form|crispy}}
+    {{ form}}
         <input type="submit" class="btn btn-outline-primary btn-block " value="确定">
     </form>
 {% endblock %}

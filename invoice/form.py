@@ -4,7 +4,7 @@
 from django.db.models import Q
 
 from partner.models import Partner
-from public.widgets import DatePickerWidget, CheckBoxWidget
+from public.widgets import DatePickerWidget, SwitchesWidget
 from .models import Assign, Invoice, InvoiceItem
 from django import forms
 
@@ -21,7 +21,7 @@ class AssignInvoiceForm(forms.ModelForm):
 
 
 class InvoiceForm(forms.ModelForm):
-    has_items = forms.BooleanField(label='添加原订单明细行', initial=False, widget=CheckBoxWidget, required=False)
+    has_items = forms.BooleanField(label='添加原订单明细行', initial=False, widget=SwitchesWidget, required=False)
     item_text = forms.CharField(label='明细行额外内容', required=False)
 
     class Meta:

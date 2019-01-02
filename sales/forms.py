@@ -7,14 +7,14 @@ from django.urls import reverse, reverse_lazy
 from partner.models import City
 from product.models import Product, PackageList
 from public.forms import FormUniqueTogetherMixin
-from public.widgets import CheckBoxWidget, AutocompleteWidget
+from public.widgets import SwitchesWidget, AutocompleteWidget
 from sales.models import SalesOrder, SalesOrderItem
 from stock.models import Warehouse
 from dal import autocomplete as dal_autocomplete
 
 
 class SalesOrderForm(forms.ModelForm):
-    is_default_address = forms.BooleanField(label='默认地址', required=False, widget=CheckBoxWidget,
+    is_default_address = forms.BooleanField(label='默认地址', required=False, widget=SwitchesWidget,
                                             help_text='此项开启后，下面地址所选无效。发货地址将会用客户默认地址')
     partner_autocomplete = forms.CharField(widget=AutocompleteWidget(url='get_partner_list'), label='客户')
 

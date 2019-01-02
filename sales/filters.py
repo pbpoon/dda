@@ -8,14 +8,10 @@ import django_filters
 from django.db.models import Q
 
 from .models import SalesOrder
-from product.models import Quarry, Batch
-from product.models import TYPE_CHOICES
 
 
 class SalesOrderFilter(django_filters.FilterSet):
     # WH_CHOICES = [(w.id, w) for w in Warehouse.objects.all()]
-    QUARRY = [(q.id, q) for q in Quarry.objects.all()]
-    BATCH = [(b.id, b) for b in Batch.objects.all()]
     # partner = django_filters.ChoiceFilter(label='仓库',  method='filter_by_warehouse')
     partner = django_filters.CharFilter(label='客户资料', method='filter_by_partner',help_text='可输入姓名，电话，公司名称等信息来筛选')
 
