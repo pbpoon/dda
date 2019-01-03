@@ -123,3 +123,4 @@ templates/widget/
 /stone/settings/local.py
 /stone/settings/__init__.py
 /stone/settings/production.py
+!/stone/wsgi.py

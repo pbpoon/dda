@@ -20,6 +20,9 @@ from django.urls import include
 
 from django.views.i18n import JavaScriptCatalog
 
+from django.conf import settings
+from django.conf.urls.static import static
+
 urlpatterns = [
     # path('jsi18n/', JavaScriptCatalog.as_view(), name='javascript-catalog'),
     # 导入 admin。widget需要的url
@@ -32,6 +35,9 @@ urlpatterns = [
     path('invoice/', include('invoice.urls')),
     path('mrp/', include('mrp.urls')),
     path('sales/', include('sales.urls')),
+    path('files/', include('files.urls')),
     # selectable
 
 ]
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

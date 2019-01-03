@@ -3,13 +3,16 @@
     <div class="modal-content">
         <h6>添加明细行</h6>
         <hr>
-        <form id="item_form" method="post">
-
+        <form id="item_form" method="post" enctype="multipart/form-data">
             <div class="container">
-{#                {% include 'item_form.html' %}#}
+
+                {#                {% include 'item_form.html' %}#}
             </div>
             {% csrf_token %}
+{#            <progress class="progress" value="0" max="100"></progress>#}
+
         </form>
+
     </div>
     <div class="modal-footer">
         <button id="quick_create_btn" class='btn' style="display: none"
@@ -19,10 +22,10 @@
             function quick_create_draft_package_list(url) {
                 var $form = $('#item_form');
                 $.ajax({
-                    url:url,
-                    data:$form.serialize(),
-                    method:'POST',
-                    success:function (data) {
+                    url: url,
+                    data: $form.serialize(),
+                    method: 'POST',
+                    success: function (data) {
                         location.replace(data['url'])
                     }
                 })

@@ -34,15 +34,38 @@ function edit_item(url) {
     });
 }
 
-//把item的输入form的submit方法改成ajax
-$('#item_form').on('submit', function (e) {
+
+$("#item_form").on('submit', (function (ev) {
     var $form = $('#item_form');
+    ev.preventDefault();
     $.ajax({
+        xhr: function () {
+            // var progress = $('.progress'),
+            var xhr = $.ajaxSettings.xhr();
+
+            // progress.show();
+
+            xhr.upload.onprogress = function (ev) {
+                if (ev.lengthComputable) {
+                    var percentComplete = parseInt((ev.loaded / ev.total) * 100);
+                    progress.val(percentComplete);
+                    if (percentComplete === 100) {
+                        progress.hide().val(0);
+                    }
+                }
+            };
+
+            return xhr;
+        },
         url: $form.attr('action'),
-        method: 'POST',
-        data: $form.serialize(),
-        success: function (data) {
+        type: 'POST',
+        data: new FormData(this),
+        contentType: false,
+        cache: false,
+        processData: false,
+        success: function (data, status, xhr) {
             if (data['state'] == 'ok') {
+                console.log('ok');
                 md.modal('close');
                 if (data['url']) {
                     location.replace(data['url'])
@@ -54,11 +77,41 @@ $('#item_form').on('submit', function (e) {
                 $('#modal1 .container').html(data);
                 md.modal('open')
             }
+        },
+        error: function (xhr, status, error) {
+            // ...
         }
     });
-    return false
+}));
 
-})
+
+//把item的输入form的submit方法改成ajax
+// $('#item_form').on('submit', function (e) {
+//     var $form = $('#item_form');
+//     var form_data = new FormData($form.get(0));
+//     $.ajax({
+//         url: $form.attr('action'),
+//         method: 'POST',
+//         data: $form.serialize(),
+//         success: function (data) {
+//             if (data['state'] == 'ok') {
+//                 console.log('ok');
+//                 md.modal('close');
+//                 if (data['url']) {
+//                     location.replace(data['url'])
+//                 } else {
+//                     location.reload()
+//                 }
+//             }
+//             else {
+//                 $('#modal1 .container').html(data);
+//                 md.modal('open')
+//             }
+//         }
+//     });
+//     return false
+//
+// });
 
 // 确认删除对话框
 function item_remove(url) {
