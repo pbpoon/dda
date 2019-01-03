@@ -10,17 +10,18 @@ from invoice.models import CreateInvoice
 from public.fields import OrderField, LineField
 from public.models import OrderAbstract, HasChangedMixin, OrderItemSaveCreateCommentMixin
 from public.stock_operate import StockOperate
+from .partner import Customer
 
 UOM_CHOICES = (('t', '吨'), ('m2', '平方'))
 
 
 class SalesOrder(OrderAbstract):
     order = OrderField(order_str='SO', max_length=26, default='New', db_index=True, unique=True, verbose_name='订单号码', )
-    partner = models.ForeignKey('partner.Partner', on_delete=models.CASCADE, limit_choices_to={'type': 'customer'},
-                                verbose_name='客户名称')
+    partner = models.ForeignKey(Customer, on_delete=models.CASCADE,verbose_name='客户名称')
     province = models.ForeignKey('partner.Province', verbose_name='省份', null=True, blank=True,
                                  on_delete=models.SET_NULL)
     city = models.ForeignKey('partner.City', verbose_name='城市', null=True, blank=True, on_delete=models.SET_NULL)
+    invoices = GenericRelation('invoice.SalesInvoice')
 
     class Meta:
         verbose_name = '销售订单'

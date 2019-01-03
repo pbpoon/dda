@@ -1,9 +1,61 @@
 {% extends 'list.html' %}
-
+{% load public %}
 {% block content %}
-    <ul>
+
+    <ul class="collection">
         {% for object in object_list %}
-            <li><a href="{{ object.get_absolute_url }}">{{ object }}</a></li>
+            {#            <div class="collection-item avatar grey-text">#}
+            <a class="collection-item avatar grey-text" href="{{ object.get_absolute_url }}">
+                <div class="col s6">
+
+                    {#                <div class="right">#}
+                    {#                    <div class="right-align">#}
+                    {#                    <span class="new badge {% if object.state == 'draft' %}default{% elif object.state == 'cancel' %}grey{% elif object.state == 'done' %}yellow{% else %}blue{% endif %}"#}
+                    {#                          data-badge-caption="{{ object.get_state_display }}"></span>{{ object.order }}<span>#}
+                    {#                    </div>#}
+
+                    <i class="material-icons circle">folder</i>
+                    <span class="title black-text">{{ object.name }}</span>
+
+                    <p>{% for key, item in object.get_stock_total.items %}
+                        <span>
+                            {{ key }}:{% if item.part %}{{ item.part }}夹 / {% endif %}{{ item.piece }}件 /
+                            {{ item.quantity }}{{ item.uom }}</span><br>
+                    {% endfor %}
+                    </p>
+                </div>
+                <div class="col s6">
+                    <div class=" black-text right-align">
+                        <p>
+                        <b>
+                            {{ object.category }}
+                        </b>
+                        <br>
+                            {{ object.get_batch }}
+                        </p>
+                            <span class="right-align">{{ object.created|date:"Y/m/d" }}</span>
+                    </div>
+                </div>
+            </a>
+            {#            </div>#}
         {% endfor %}
     </ul>
+    {% include 'paginatior.html' %}
+    <div class="fixed-action-btn">
+        <a href="{% block add_url %}{% endblock %}" class="btn-floating btn-large red">
+            <i class="large material-icons">add</i>
+        </a>
+    </div>
+{% endblock %}
+{% block sidebar %}
+    <div class="card-panel white">
+        <span>按条件筛选</span>
+        <div class="divider"></div>
+        <form action="" method="GET">
+            <ul>
+                {{ filter.form.as_ul }}
+            </ul>
+            <button class="btn waves-effect" type="submit">确定</button>
+        </form>
+    </div>
 {% endblock %}

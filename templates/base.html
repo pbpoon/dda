@@ -83,7 +83,7 @@
 <script>
     $(document).ready(function () {
         $('.sidenav').sidenav();
-        $('.fixed-action-btn').floatingActionButton();
+        $('.fixed-action-btn').floatingActionButton({hoverEnabled: false});
         $('input[name=date]').datepicker({'format': 'yyyy-mm-dd'});
         $('.datepicker').datepicker({'format': 'yyyy-mm-dd'});
         $('select').formSelect();

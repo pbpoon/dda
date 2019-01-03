@@ -150,7 +150,8 @@ class InOutOrder(MrpOrderAbstract):
         state = self.state if self.state != 'done' else 'confirm'
         for item in self.items.all():
             items_dict.update(item.prepare_from_order_invoice_item())
-        return CreateInvoice(self, self.from_order.partner, items_dict, usage='货款', type=type, state=state).invoice
+        return CreateInvoice(self.from_order, self.from_order.partner, items_dict, usage='货款', type=type,
+                             state=state).invoice
 
     def make_invoice(self):
         from partner.models import Partner

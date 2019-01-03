@@ -34,7 +34,6 @@ class ProductionOrderFilter(django_filters.FilterSet):
         fields = ('state', 'production_type', 'partner')
 
 
-
 class InventoryOrderFilter(django_filters.FilterSet):
     class Meta:
         model = InventoryOrder

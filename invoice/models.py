@@ -50,6 +50,24 @@ DUE_DATE_DEFAULT_CHOICES = (('0', '立刻'),
                             ('end_of_year', '年底'),)
 
 
+class ExpensesInvoiceManager(models.Manager):
+    def get_queryset(self):
+        lst = ContentType.objects.exclude(model__in=('purchaseorder', 'salesorder'))
+        return super().get_queryset().exclude(content_type__in=lst)
+
+
+class PurchaseInvoiceManager(models.Manager):
+    def get_queryset(self):
+        purchase_ct = ContentType.objects.get(app_label="purchase", model="purchaseorder")
+        return super().get_queryset().filter(content_type=purchase_ct)
+
+
+class SalesInvoiceManager(models.Manager):
+    def get_queryset(self):
+        sales_ct = ContentType.objects.get(app_label="sales", model="salesorder")
+        return super().get_queryset().filter(content_type=sales_ct)
+
+
 class Invoice(HasChangedMixin, models.Model):
     state = models.CharField('状态', max_length=10, choices=STATE_CHOICES, default='draft')
     order = OrderField(order_str='IV', max_length=26, default='New', db_index=True, verbose_name='订单号码')
@@ -66,7 +84,7 @@ class Invoice(HasChangedMixin, models.Model):
                                 verbose_name='对方', related_name='%(class)s_partner')
     # payments = models.ManyToManyField('Payment', through='Assign', related_name='assign_invoices')
     entry = models.ForeignKey('auth.User', on_delete=models.CASCADE, related_name='%(class)s_entry', verbose_name='登记')
-    usage = models.CharField('款项用途',  max_length=50)
+    usage = models.CharField('款项用途', max_length=50)
     type = models.CharField('付款/收款', choices=TYPE_CHOICES, null=False, max_length=2, default='-1')
     comments = GenericRelation('comment.Comment')
 
@@ -169,6 +187,30 @@ class Invoice(HasChangedMixin, models.Model):
                                          amount=self.due_amount,
                                          entry=self.entry)
         Assign.objects.create(invoice=self, payment=payment, amount=payment.amount, entry=entry)
+
+
+class ExpensesInvoice(Invoice):
+    objects = ExpensesInvoiceManager()
+
+    class Meta:
+        proxy = True
+        verbose_name = '费用账单'
+
+
+class PurchaseInvoice(Invoice):
+    objects = PurchaseInvoiceManager()
+
+    class Meta:
+        proxy = True
+        verbose_name = '采购账单'
+
+
+class SalesInvoice(Invoice):
+    objects = SalesInvoiceManager()
+
+    class Meta:
+        proxy = True
+        verbose_name = '销售账单'
 
 
 class InvoiceItem(OrderItemSaveCreateCommentMixin, models.Model):

@@ -13,7 +13,7 @@ from django.contrib import messages
 from invoice.models import CreateInvoice
 from mrp.filters import InOutOrderFilter, MoveLocationOrderFilter, ProductionOrderFilter, InventoryOrderFilter
 from mrp.models import ProductionOrder, ProductionOrderRawItem, ProductionOrderProduceItem, ProductionType, InOutOrder, \
-    InOutOrderItem, Expenses, ExpensesItem, InventoryOrder, InventoryOrderItem, InventoryOrderNewItem
+    InOutOrderItem, Expenses, ExpensesItem, InventoryOrder, InventoryOrderItem, InventoryOrderNewItem, Supplier
 from mrp.models import TurnBackOrder, TurnBackOrderItem
 from product.models import PackageList
 from public.utils import Package, StockOperateItem
@@ -575,3 +575,11 @@ class InventoryOrderNewItemEditView(OrderItemEditMixin):
 
 class InventoryOrderNewItemDeleteView(OrderItemDeleteMixin):
     model = InventoryOrderNewItem
+
+
+class SupplierListView(FilterListView):
+    from sales.filters import CustomerFilter
+    model = Supplier
+    filter_class = CustomerFilter
+    paginate_by = 10
+    template_name = 'sales/customer_list.html'

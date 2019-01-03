@@ -1,3 +1,4 @@
+import collections
 from decimal import Decimal
 
 import decimal
@@ -14,21 +15,34 @@ UOM_CHOICES = (('t', '吨'), ('m3', '立方'))
 
 class Category(models.Model):
     name = models.CharField(max_length=20, null=False, unique=True,
-                            db_index=True, verbose_name=u'品种名称')
+                            db_index=True, verbose_name=u'名称')
+    parent = models.ForeignKey('self', on_delete=models.SET_NULL, blank=True, null=True, verbose_name='上级分类',
+                               related_name='child')
     created = models.DateField(auto_now_add=True, verbose_name=u'添加日期')
 
     class Meta:
-        verbose_name = u'品种信息'
+        verbose_name = u'品种分类'
         verbose_name_plural = verbose_name
 
+    def get_absolute_url(self):
+        return reverse('category_detail', args=[self.id])
+
+    def get_full_name(self):
+        name = self.name
+        parent = self.parent
+        while parent:
+            name = '{}/{}'.format(parent.name, name)
+            parent = parent.parent
+        return name
+
     def __str__(self):
-        return self.name
+        return self.get_full_name()
 
 
 class Quarry(models.Model):
     name = models.CharField(max_length=20, null=False, unique=True,
                             verbose_name=u'矿口名称')
-    desc = models.CharField(max_length=200, verbose_name=u'描述信息')
+    desc = models.CharField(max_length=200, verbose_name=u'描述信息', blank=True, null=True)
     created = models.DateField(auto_now_add=True, verbose_name=u'添加日期')
     updated = models.DateField(auto_now=True, verbose_name=u'更新日期')
 
@@ -38,6 +52,9 @@ class Quarry(models.Model):
 
     def __str__(self):
         return self.name
+
+    def get_absolute_url(self):
+        return reverse('quarry_detail', args=[self.id])
 
 
 class Batch(models.Model):
@@ -57,7 +74,7 @@ class Batch(models.Model):
 class Block(models.Model):
     name = models.CharField('编号', max_length=20, db_index=True, unique=True)
     batch = models.ForeignKey('Batch', null=True, blank=True, on_delete=models.SET_NULL, verbose_name='批次')
-    category = models.ForeignKey('Category', null=True, blank=True, verbose_name='品种名称', on_delete=models.SET_NULL)
+    category = models.ForeignKey('Category', verbose_name='品种名称', on_delete=models.CASCADE)
     quarry = models.ForeignKey('Quarry', null=True, blank=True, verbose_name='矿口', on_delete=models.SET_NULL)
     weight = models.DecimalField('重量', max_digits=5, decimal_places=2, null=True)
     long = models.IntegerField('长', null=True, blank=True)
@@ -74,6 +91,7 @@ class Block(models.Model):
     def get_batch(self):
         if not self.batch:
             return self.name[:2]
+        return self.batch.name
 
     def get_m3(self):
         if self.uom == 't':
@@ -86,32 +104,44 @@ class Block(models.Model):
         return Decimal('{0:.2f}'.format(0))
 
     @staticmethod
-    def create_product(type, defaults, thickness=None):
-        if defaults.get('name'):
-            name = defaults.pop('name')
+    def create_product(type, defaults, name, thickness=None):
         block, is_create = Block.objects.get_or_create(name=name, defaults=defaults)
         product, is_create = Product.objects.get_or_create(block=block, type=type, thickness=thickness)
         return product
 
     def get_stock_trace_all(self):
         stock_traces = [trace for p in self.products.all() for trace in p.product_stock_trace.all()]
-        stock_trace_list = [{'事务': (t.get_obj().order._meta.verbose_name, t.get_obj().order),
-                             '状态': t.get_obj().order.get_state_display(),
-                             '形态': t.get_obj().product.get_type_display(),
-                             '件': t.get_obj().piece,
-                             '数量': str(t.get_obj().quantity) + t.get_obj().uom,
-                             '原库位': t.get_obj().location,
-                             '目标库位': t.get_obj().location_dest,
-                             '日期': t.get_obj().order.date,
-                             'created': t.get_obj().order.created,
-                             } for t in stock_traces if
-                            t.get_obj().order.state not in ('draft', 'cancel')]
-
+        stock_trace_list = []
+        for t in stock_traces:
+            obj = t.get_obj()
+            if obj.order.state in ('draft', 'cancel'):
+                continue
+            stock_trace_list.append({'事务': (obj.order._meta.verbose_name, obj.order),
+                                     '状态': obj.order.get_state_display(),
+                                     '形态': obj.product.get_type_display(),
+                                     '件': obj.piece,
+                                     '数量': str(obj.quantity) + obj.uom,
+                                     '原库位': obj.location,
+                                     '目标库位': obj.location_dest,
+                                     '日期': obj.order.date,
+                                     'created': obj.order.created,
+                                     })
         return sorted(stock_trace_list, key=lambda x: (x['日期'], x['created']))
 
     def get_stock_all(self):
-        stocks = [s for p in self.products.all() for s in p.stock.all()]
+        stocks = [s for p in self.products.select_related().all() for s in p.stock.all()]
         return stocks
+
+    def get_stock_total(self):
+        d = collections.defaultdict(lambda: 0)
+        total = {}
+        for item in self.get_stock_all():
+            a = total.setdefault(item.product.get_type_display(), d)
+            a['piece'] += item.piece
+            a['quantity'] += item.quantity
+            a['part'] += item.get_part() if item.product == 'slab' else 0
+            a['uom'] = item.uom
+        return total
 
     def __str__(self):
         return self.name
@@ -170,16 +200,16 @@ class Product(models.Model):
             raise ValueError('后续产品类型不能相同！')
         if self.thickness:
             thickness = self.thickness
-        block_fields = ('name', 'batch', 'category', 'quarry', 'weight', 'long', 'width', 'height', 'm3', 'uom')
+        block_fields = ('batch', 'category', 'quarry', 'weight', 'long', 'width', 'height', 'm3', 'uom')
         defaults = {f.name: getattr(self.block, f.name) for f in self.block._meta.fields if f.name in block_fields}
-        return self.create(type=type, thickness=thickness, defaults=defaults)
+        return self.create(type=type, thickness=thickness, defaults=defaults, name=self.name)
 
     @staticmethod
-    def create(type, defaults, thickness=None):
+    def create(type, defaults, name, thickness=None):
         dfs = {k: v for k, v in
                defaults.items() if
-               k in {'name', 'batch', 'category', 'quarry', 'weight', 'long', 'width', 'height', 'm3', 'uom'} and v}
-        return Block.create_product(type=type, thickness=thickness, defaults=dfs)
+               k in {'batch', 'category', 'quarry', 'weight', 'long', 'width', 'height', 'm3', 'uom'} and v}
+        return Block.create_product(type=type, thickness=thickness, defaults=dfs, name=name)
 
     def get_available(self, location=None):
         return Stock.get_available(product=self, location=location)

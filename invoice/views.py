@@ -9,20 +9,21 @@ from django.template.loader import render_to_string
 from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
 from django.contrib import messages
+
+from invoice.filters import InvoiceFilter
 from invoice.form import AssignInvoiceForm, InvoiceForm
 from partner.models import Partner
-from public.views import GetItemsMixin, OrderItemEditMixin, StateChangeMixin, OrderItemDeleteMixin, ModalOptionsMixin
+from public.views import GetItemsMixin, OrderItemEditMixin, StateChangeMixin, OrderItemDeleteMixin, ModalOptionsMixin, \
+    FilterListView
 from django.views.generic.edit import CreateView, UpdateView, ModelFormMixin
 from django.views.generic.base import TemplateResponseMixin, View
 
-from invoice.models import Invoice, Payment, Account, Assign, InvoiceItem, InvoiceDueDateDefaultSet
+from invoice.models import Invoice, Payment, Account, Assign, InvoiceItem, InvoiceDueDateDefaultSet, PurchaseInvoice, \
+    SalesInvoice, ExpensesInvoice
 from public.widgets import SwitchesWidget, RadioWidget, DatePickerWidget
 
 
 class InvoiceDetailView(StateChangeMixin, DetailView):
-    """
-    需要有一个完成收款功能
-    """
     model = Invoice
     template_name = 'invoice/detail.html'
 
@@ -45,9 +46,22 @@ class InvoiceDetailView(StateChangeMixin, DetailView):
         return self.object.cancel()
 
 
-class InvoiceListView(ListView):
+class InvoiceListView(FilterListView):
     model = Invoice
+    filter_class = InvoiceFilter
     template_name = 'invoice/list.html'
+
+
+class ExpensesInvoiceListView(InvoiceListView):
+    model = ExpensesInvoice
+
+
+class PurchaseInvoiceListView(InvoiceListView):
+    model = PurchaseInvoice
+
+
+class SalesInvoiceListView(InvoiceListView):
+    model = SalesInvoice
 
 
 class InvoiceEditMixin:

@@ -1,10 +1,14 @@
 {% load public %}
 {#<div class="row">#}
 <div class="col s12">
-<a class="btn waves-effect right" href="{% url 'package_full_page' object.id %}?state={{ state }}">
-        <span>全屏编辑<i class="material-icons right">open_in_new</i></span>
-    </a>
-    <div><span class="title">{{ object }}</span>
+    {% if object %}
+        <a class="btn waves-effect right" href="{% url 'package_full_page' object.id %}?state={{ state }}">
+            <span>全屏编辑<i class="material-icons right">open_in_new</i></span>
+        </a>
+    {% endif %}
+    <div>{% if object %}
+        <span class="title">{{ object }}</span>
+    {% endif %}
         <p>{{ package.get_piece }}件 / {{ package.get_part_number|length }}夹 /
             {{ package.get_quantity }}{{ package.product.get_uom }}</p>
         <div class="right">

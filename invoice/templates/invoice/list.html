@@ -1,32 +1,29 @@
 {% extends "list.html" %}
 {% block content %}
-
-    <table class="table table-sm">
+<div class="card-panel white">
+    <table>
         <thead>
         <tr>
             <th>状态</th>
             <th>单号</th>
             <th>日期</th>
+            <th>限期</th>
             <th>对方</th>
             <th>金额</th>
-            <th>编辑</th>
         </tr>
         </thead>
 
         <tbody>
         {% for object in object_list %}
-
             <tr id="block_list_tr">
-                <td>{{ object.state }}</td>
+                <td>{{ object.get_state_display }}</td>
                 <td><a href="{{ object.get_absolute_url }}">{{ object.order }}</a></td>
-                <td>{{ object.date }}</td>
+                <td>{{ object.date|date:"y/m/d" }}</td>
+                <td>{{ object.due_date|date:'y/m/d' }}</td>
                 <td>{{ object.partner }}</td>
-                <td>{{ object.get_amount }}</td>
-                <td>
-                </td>
+                <td>{{ object.amount }}</td>
             </tr>
         {% endfor %}
-
         </tbody>
         <tfoot>
         <tr>
@@ -39,8 +36,21 @@
         </tr>
         </tfoot>
     </table>
+{% include 'paginatior.html' %}
     {% if not object_list %}
         <p>还未有内容</p>
     {% endif %}
-
+</div>
+{% endblock %}
+{% block sidebar %}
+    <div class="card-panel white">
+        <span>按条件筛选</span>
+        <div class="divider"></div>
+        <form action="" method="GET">
+            <ul>
+                {{ filter.form.as_ul }}
+            </ul>
+            <button class="btn waves-effect" type="submit">确定</button>
+        </form>
+    </div>
 {% endblock %}

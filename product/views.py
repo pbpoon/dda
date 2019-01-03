@@ -3,16 +3,18 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, HttpResponse, redirect
 from django.template.loader import render_to_string
 from django.views import View
-from django.views.generic import ListView, DetailView, CreateView
+from django.views.generic import ListView, DetailView, CreateView, UpdateView
 
 from cart.cart import Cart
+from product.filters import BlockFilter
 from product.forms import DraftPackageListItemForm, PackageListItemForm, PackageListItemEditForm, \
     PackageListItemMoveForm
-from public.views import OrderItemEditMixin, OrderItemDeleteMixin, ModalOptionsMixin
+from public.views import OrderItemEditMixin, OrderItemDeleteMixin, ModalOptionsMixin, FilterListView
 from stock.models import Location, Stock, Warehouse
 from public.utils import qs_to_dict, Package
 
-from .models import Product, PackageList, DraftPackageList, DraftPackageListItem, Slab, Block, PackageListItem
+from .models import Product, PackageList, DraftPackageList, DraftPackageListItem, Slab, Block, PackageListItem, \
+    Category, Quarry
 
 
 def get_block_list(request):
@@ -69,8 +71,53 @@ def get_draft_package_list_info(request):
     return JsonResponse(data)
 
 
-class BlockListView(ListView):
+class CategoryListView(ListView):
+    model = Category
+
+
+class CategoryEditMixin:
+    model = Category
+    fields = '__all__'
+    template_name = 'form.html'
+
+
+class CategoryCreateView(CategoryEditMixin, CreateView):
+    pass
+
+
+class CategoryUpdateView(CategoryEditMixin, UpdateView):
+    pass
+
+
+class CategoryDetailView(DetailView):
+    model = Category
+
+
+class QuarryListView(ListView):
+    model = Quarry
+
+
+class QuarryDetailView(DetailView):
+    model = Quarry
+
+
+class QuarryEditMixin:
+    model = Quarry
+    fields = '__all__'
+    template_name = 'form.html'
+
+
+class QuarryCreateView(QuarryEditMixin, CreateView):
+    pass
+
+
+class QuarryUpdateView(QuarryEditMixin, UpdateView):
+    pass
+
+
+class BlockListView(FilterListView):
     model = Block
+    filter_class = BlockFilter
 
 
 class BlockDetailView(DetailView):

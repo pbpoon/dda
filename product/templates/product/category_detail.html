@@ -1,0 +1,18 @@
+{% extends 'detail.html' %}
+{% load public %}
+{% block content %}
+
+{% endblock %}
+{% block headline %}
+    {{ object.name }}
+{% endblock %}
+{% block subheadline %}
+    {% if object.parent %}
+        <b>上级分类：</b>{{ object.parent }}<br>
+        {% if object.child.all %}
+            <b>子分类:</b>{% for chl in object.child.all %}
+            {{ chl }}<br>
+        {% endfor %}
+        {% endif %}
+    {% endif %}
+{% endblock %}

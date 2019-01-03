@@ -1,5 +1,5 @@
 from _decimal import Decimal
-
+import itertools
 import weasyprint
 from django.db import transaction
 from django.db.models import Q
@@ -15,9 +15,9 @@ from public.stock_operate import StockOperate
 from public.views import OrderFormInitialEntryMixin, OrderItemEditMixin, OrderItemDeleteMixin, StateChangeMixin, \
     ModalOptionsMixin, FilterListView
 from sales.forms import SalesOrderForm, SalesOrderItemForm, SalesOrderItemQuickForm
-from sales.models import SalesOrder, SalesOrderItem
+from sales.models import SalesOrder, SalesOrderItem, Customer
 from stone import settings
-from .filters import SalesOrderFilter
+from .filters import SalesOrderFilter, CustomerFilter
 
 
 class SalesOrderListView(FilterListView):
@@ -155,5 +155,12 @@ def admin_order_pdf(request, order_id):
     html = render_to_string('sales/salesorder_pdf.html', {'object': order})
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = 'filename="order_{}"'.format(order.id)
-    weasyprint.HTML(string=html).write_pdf(response, stylesheets=[weasyprint.CSS(settings.STATIC_ROOT + '/css/materialize.css')])
+    weasyprint.HTML(string=html).write_pdf(response,
+                                           stylesheets=[weasyprint.CSS(settings.STATIC_ROOT + '/css/materialize.css')])
     return response
+
+
+class CustomerListView(FilterListView):
+    model = Customer
+    filter_class = CustomerFilter
+    paginate_by = 10

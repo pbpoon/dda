@@ -18,6 +18,8 @@
             <div class="collapsible-header">产品</div>
             <div class="collapsible-body">
                 <ul>
+                    <li><a href="{% url 'category_list' %}">品种分类</a></li>
+                    <li><a href="{% url 'quarry_list' %}">矿口分类</a></li>
                     <li><a href="{% url 'block_list' %}">编号</a></li>
                     <li><a href="{% url 'product_list' %}">产品</a></li>
                     <li><a href="{% url 'package_list_draft_create' %}">新建码单</a></li>
@@ -32,6 +34,7 @@
             <div class="collapsible-body">
                 <ul>
                     <li><a href="{% url 'sales_order_list' %}">销售订单</a></li>
+                    <li><a href="{% url 'customer_list' %}">客户资料</a></li>
                 </ul>
             </div>
         </li>
@@ -48,6 +51,7 @@
                     <hr/>
                     <li>
                         <ul>
+                            <li><a href="{% url 'supplier_list' %}">供应商资料</a></li>
                             <li><a href="{% url 'production_type_list' %}">生产业务类型设置</a></li>
                             <li><a href="{% url 'expenses_item_list' %}">费用相关设置</a></li>
                         </ul>
@@ -89,6 +93,9 @@
             <div class="collapsible-body">
 
                 <ul>
+                    <li><a href="{% url 'purchase_invoice_list' %}">采购账单</a></li>
+                    <li><a href="{% url 'sales_invoice_list' %}">销售账单</a></li>
+                    <li><a href="{% url 'expenses_invoice_list' %}">生产及杂费账单</a></li>
                     <li><a href="{% url 'account_list' %}">账户列表</a></li>
                     <li><a href="{% url 'invoice_due_date_default_list' %}">账单限期默认值设置</a></li>
                     <li><a href="{% url 'invoice_list' %}">账单列表</a></li>

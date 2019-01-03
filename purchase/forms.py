@@ -51,4 +51,10 @@ class PurchaseOrderItemForm(forms.ModelForm):
         order = cd.get('order')
         if order.items.filter(name=name).exists():
             raise forms.ValidationError('本单已有编号为：{}#的荒料存在，请确保该编号不重复'.format(name))
+        if not cd.get('batch'):
+            if '-' in name:
+                n = name.split('-')[0]
+            else:
+                n = name[:2]
+            cd['batch'] = n
         return cd

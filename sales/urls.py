@@ -28,4 +28,5 @@ urlpatterns = [
     path('order/invoice/options/<pk>/', views.SalesOrderInvoiceOptionsEditView.as_view(), name='sales_order_invoice_options'),
     path('order/<pk>/', views.SalesOrderDetailView.as_view(), name='sales_order_detail'),
     path('order/', views.SalesOrderListView.as_view(), name='sales_order_list'),
+    path('customer/', views.CustomerListView.as_view(), name='customer_list'),
 ]

@@ -5,6 +5,9 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path('expenses/', views.ExpensesInvoiceListView.as_view(), name='expenses_invoice_list'),
+    path('purchase/', views.PurchaseInvoiceListView.as_view(), name='purchase_invoice_list'),
+    path('sales/', views.SalesInvoiceListView.as_view(), name='sales_invoice_list'),
     path('<invoice_id>/payment/<partner_id>/', views.PaymentEditView.as_view(), name='payment_create_from_invoice'),
     path('<invoice_id>/payment/<partner_id>/', views.PaymentEditView.as_view(), name='payment_create_from_invoice'),
     path('payment/edit/<pk>/', views.PaymentEditView.as_view(), name='payment_edit'),

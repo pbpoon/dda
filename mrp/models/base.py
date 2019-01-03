@@ -24,6 +24,7 @@ class MrpOrderAbstract(OrderAbstract):
     date = models.DateField('日期')
     created = models.DateField('创建日期', auto_now_add=True)
     updated = models.DateTimeField('更新时间', auto_now=True)
+    invoices = GenericRelation('invoice.ExpensesInvoice')
 
     class Meta:
         abstract = True

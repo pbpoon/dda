@@ -1,0 +1,28 @@
+{% extends 'list.html' %}
+{% load public %}
+{% block content %}
+
+    <ul class="collection with-header">
+        {% for object in object_list %}
+            <li class="collection-item"><a href="{{ object.get_absolute_url }}">{{ object }}</a></li>
+        {% endfor %}
+    </ul>
+    {% include 'paginatior.html' %}
+    <div class="fixed-action-btn">
+        <a href="{% url 'category_create' %}" class="btn-floating btn-large red">
+            <i class="large material-icons">add</i>
+        </a>
+    </div>
+{% endblock %}
+{% block sidebar %}
+    <div class="card-panel white">
+        <span>按条件筛选</span>
+        <div class="divider"></div>
+        <form action="" method="GET">
+            <ul>
+                {{ filter.form.as_ul }}
+            </ul>
+            <button class="btn waves-effect" type="submit">确定</button>
+        </form>
+    </div>
+{% endblock %}

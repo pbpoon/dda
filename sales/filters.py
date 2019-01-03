@@ -13,9 +13,10 @@ from .models import SalesOrder
 class SalesOrderFilter(django_filters.FilterSet):
     # WH_CHOICES = [(w.id, w) for w in Warehouse.objects.all()]
     # partner = django_filters.ChoiceFilter(label='仓库',  method='filter_by_warehouse')
-    partner = django_filters.CharFilter(label='客户资料', method='filter_by_partner',help_text='可输入姓名，电话，公司名称等信息来筛选')
+    partner = django_filters.CharFilter(label='客户资料', method='filter_by_partner', help_text='可输入姓名，电话，公司名称等信息来筛选')
 
     address = django_filters.CharFilter(label='发货地址', method='filter_by_address')
+
     #
     # quarry = django_filters.ChoiceFilter(label='矿口', choices=QUARRY, method='filter_by_quarry')
     # batch = django_filters.ChoiceFilter(label='批次', choices=BATCH, method='filter_by_batch')
@@ -35,7 +36,8 @@ class SalesOrderFilter(django_filters.FilterSet):
     def filter_by_partner(self, queryset, name, value):
         lst = []
         if value:
-            for key in ['partner__name__contains', 'partner__phone__contains', 'partner__company__name__contains', 'partner__company__phone__contains', ]:
+            for key in ['partner__name__contains', 'partner__phone__contains', 'partner__company__name__contains',
+                        'partner__company__phone__contains', ]:
                 q_obj = Q(**{key: value})
                 lst.append(q_obj)
         return queryset.filter(reduce(operator.or_, lst))
@@ -49,6 +51,25 @@ class SalesOrderFilter(django_filters.FilterSet):
                 lst.append(q_obj)
         return queryset.filter(reduce(operator.or_, lst))
 
-    def filter_by_batch(self, queryset, name, value):
-        expression = {'product__block__batch_id': value}
-        return queryset.filter(**expression)
+
+class CustomerFilter(django_filters.FilterSet):
+    name = django_filters.CharFilter(label='客户资料', method='filter_by_partner', help_text='可输入姓名，电话，公司名称等信息来筛选')
+    address = django_filters.CharFilter(label='发货地址', method='filter_by_address')
+
+    def filter_by_partner(self, queryset, name, value):
+        lst = []
+        if value:
+            for key in ['name__contains', 'phone__contains', 'company__name__contains',
+                        'company__phone__contains', ]:
+                q_obj = Q(**{key: value})
+                lst.append(q_obj)
+        return queryset.filter(reduce(operator.or_, lst))
+
+    def filter_by_address(self, queryset, name, value):
+        lst = []
+        if value:
+            for key in ['province__name__contains',
+                        'city__name__contains', ]:
+                q_obj = Q(**{key: value})
+                lst.append(q_obj)
+        return queryset.filter(reduce(operator.or_, lst))

@@ -4,7 +4,7 @@ from decimal import Decimal
 from django.contrib.contenttypes.fields import GenericRelation
 
 from invoice.models import CreateInvoice
-from product.models import Product
+from product.models import Product, Batch
 from public.models import OrderAbstract
 from public.fields import OrderField, LineField
 from datetime import datetime
@@ -21,11 +21,15 @@ UOM_CHOICES = (('t', '吨'), ('m3', '立方'))
 
 
 class PurchaseOrder(OrderAbstract):
-    partner = models.ForeignKey('partner.Partner', on_delete=models.SET_NULL, null=True, blank=True,
-                                verbose_name='业务伙伴', limit_choices_to={'type': 'supplier', 'is_production': False})
+    partner = models.ForeignKey('purchase.Supplier', on_delete=models.SET_NULL, null=True, blank=True,
+                                verbose_name='供应商')
     order = OrderField(order_str='PO', max_length=10, default='New', db_index=True, unique=True, verbose_name='订单号码', )
     currency = models.CharField('货币', choices=CURRENCY_CHOICE, max_length=10)
     uom = models.CharField('计量单位', null=False, choices=UOM_CHOICES, max_length=10)
+    batch = models.CharField('批次', max_length=10, blank=True, null=True, help_text='如果不填，则采取"-"号前或编号前2位作为批次号')
+    category = models.ForeignKey('product.Category', on_delete=models.CASCADE, verbose_name='品种分类')
+    quarry = models.ForeignKey('product.Quarry', on_delete=models.CASCADE, verbose_name='矿口')
+    invoices = GenericRelation('invoice.PurchaseInvoice')
 
     class Meta:
         verbose_name = '采购订单'
@@ -122,6 +126,7 @@ class PurchaseOrderItem(models.Model):
     line = LineField(for_fields=['order'], blank=True, verbose_name='行')
     name = models.CharField('编号', max_length=20)
     type = models.CharField('类型', max_length=10, default='block')
+    batch = models.CharField('批次', max_length=10, blank=True, null=True)
     order = models.ForeignKey('PurchaseOrder', on_delete=models.CASCADE, related_name='items', verbose_name='订单')
     product = models.ForeignKey('product.Product', on_delete=models.CASCADE, verbose_name='编号', blank=True, null=True)
     price = models.DecimalField('单价', max_digits=8, decimal_places=2)
@@ -144,6 +149,14 @@ class PurchaseOrderItem(models.Model):
         return self.weight if self.uom == 't' else self.m3
 
     @property
+    def category(self):
+        return self.order.category
+
+    @property
+    def quarry(self):
+        return self.order.quarry
+
+    @property
     def amount(self):
         return self.get_amount()
 
@@ -160,10 +173,18 @@ class PurchaseOrderItem(models.Model):
             raise ValueError('重量及立方不能同时为空')
         super().save(*args, **kwargs)
 
+    def prepare_block_default(self):
+        block_fields = ('name', 'category', 'quarry', 'weight', 'long', 'width', 'height', 'm3', 'uom')
+        kwargs = {f.name: getattr(self, f.name) for f in self._meta.fields if f.name in block_fields}
+        batch_name = self.batch
+        batch, _ = Batch.objects.get_or_create(name=batch_name)
+        kwargs['batch'] = batch
+        kwargs['category'] = self.category
+        kwargs['quarry'] = self.quarry
+        return kwargs
+
     def confirm(self):
-        block_fields = ('name', 'batch', 'category', 'quarry', 'weight', 'long', 'width', 'height', 'm3', 'uom')
-        p_kwarg = {f.name: getattr(self, f.name) for f in self._meta.fields if f.name in block_fields}
-        self.product = Product.create(type='block', defaults=p_kwarg)
+        self.product = Product.create(type='block', name=self.name, defaults=self.prepare_block_default())
         # 日后product action 添加action记录
         self.product.activate = True
         return self.save()

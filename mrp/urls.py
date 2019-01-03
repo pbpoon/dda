@@ -89,5 +89,5 @@ urlpatterns = [
     path('in_out_order/delete/<pk>/', views.InOutOrderDeleteView.as_view(), name='in_out_order_delete'),
     path('in_out_order/<pk>/', views.InOutOrderDetailView.as_view(), name='in_out_order_detail'),
     path('in_out_order/', views.InOutOrderListView.as_view(), name='in_out_order_list'),
-
+    path('supplier/', views.SupplierListView.as_view(), name='supplier_list'),
 ]
