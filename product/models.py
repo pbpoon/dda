@@ -38,6 +38,19 @@ class Category(models.Model):
     def __str__(self):
         return self.get_full_name()
 
+    def get_child_list(self, container=None):
+        if container is None:
+            container = [self.id]
+        result = container
+        for chl in self.child.all():
+            result.append(chl.id)
+            if chl.child.count() > 0:
+                chl.get_child_list(result)
+        return result
+
+    def get_child(self):
+        return self.__class__.objects.filter(id__in=self.get_child_list()).distinct()
+
 
 class Quarry(models.Model):
     name = models.CharField(max_length=20, null=False, unique=True,

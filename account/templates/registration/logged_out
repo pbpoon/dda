@@ -1,0 +1,5 @@
+{% extends 'list.html' %}
+{% block content %}
+    <h4>你已登出账号</h4>
+    <div class="divider"></div>
+{% endblock %}

@@ -56,11 +56,23 @@ class ExpensesInvoiceListView(InvoiceListView):
     model = ExpensesInvoice
 
 
+class ExpensesInvoiceDetailView(InvoiceDetailView):
+    model = ExpensesInvoice
+
+
 class PurchaseInvoiceListView(InvoiceListView):
     model = PurchaseInvoice
 
 
+class PurchaseInvoiceDetailView(InvoiceDetailView):
+    model = PurchaseInvoice
+
+
 class SalesInvoiceListView(InvoiceListView):
+    model = SalesInvoice
+
+
+class SalesInvoiceDetailView(InvoiceDetailView):
     model = SalesInvoice
 
 

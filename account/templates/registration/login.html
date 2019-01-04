@@ -1,0 +1,10 @@
+{% extends 'list.html' %}
+{% block content %}
+        <p>请输入账号密码登录</p>
+        <form action="" method="post">
+            {{ form.as_p }}
+            <input type="hidden" name="next" value="{{ next }}">
+            {% csrf_token %}
+            <button class="btn waves-effect" type="submit">登录</button>
+        </form>
+{% endblock %}

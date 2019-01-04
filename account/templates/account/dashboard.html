@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block main %}
+    <div class="container">
+        {% if request.user.is_authenticated %}
+            <h4>欢迎 {{ request.user }}</h4>
+            <div class="divider"></div>
+            <a href="{% url 'logout' %}">登出</a>
+        {% else %}
+            <h4>
+                {{ request.user }} 你好!
+            </h4>
+            <div class="divider"></div>
+            <a href="{% url 'login' %}">登录</a>
+        {% endif %}
+    </div>
+{% endblock %}

@@ -31,6 +31,9 @@ urlpatterns = [
          name='invoice_due_date_default_list'),
     path('create/<app_label_lower>/<order_id>/', views.InvoiceCreateView.as_view(), name='invoice_create'),
     path('update/<pk>/', views.InvoiceUpdateView.as_view(), name='invoice_update'),
+    path('purchase/<pk>/', views.PurchaseInvoiceDetailView.as_view(), name='purchase_invoice_detail'),
+    path('expenses/<pk>/', views.ExpensesInvoiceDetailView.as_view(), name='expenses_invoice_detail'),
+    path('sales/<pk>/', views.SalesInvoiceDetailView.as_view(), name='sales_invoice_detail'),
     path('<pk>/', views.InvoiceDetailView.as_view(), name='invoice_detail'),
     path('', views.InvoiceListView.as_view(), name='invoice_list'),
 ]

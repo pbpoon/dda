@@ -1,7 +1,7 @@
 <ul id="slide-out" class="sidenav sidenav-fixed">
 
     <ul class="collapsible">
-            <li {% if request.path|slice:'5' == '/stock/' %} class="active" {% endif %}>
+        <li {% if request.path|slice:'5' == '/stock/' %} class="active" {% endif %}>
 
             <div class="collapsible-header">库存</div>
             <div class="collapsible-body">
@@ -74,7 +74,7 @@
     </ul>
     <ul class="collapsible">
 
-               <li {% if request.path|slice:'9' == '/partner/' %} class="active" {% endif %}>
+        <li {% if request.path|slice:'9' == '/partner/' %} class="active" {% endif %}>
 
             <div class="collapsible-header">业务伙伴</div>
             <div class="collapsible-body">
@@ -87,7 +87,7 @@
 
     <ul class="collapsible">
 
-                <li {% if request.path|slice:'9' == '/invoice/' %} class="active" {% endif %}>
+        <li {% if request.path|slice:'9' == '/invoice/' %} class="active" {% endif %}>
 
             <div class="collapsible-header">账单</div>
             <div class="collapsible-body">
@@ -107,6 +107,22 @@
         </li>
     </ul>
     <!--采购app-->
+    <ul class="collapsible">
+        <li {% if request.path|slice:'8' == '/account/' %} class="active" {% endif %}>
+
+            <div class="collapsible-header">账号</div>
+            <div class="collapsible-body">
+                <ul>
+                    {% if request.user.is_authenticated %}
+                    <li><a href="{% url 'dashboard' %}">{{ request.user }}</a></li>
+                    {% else %}
+                    <li><a href="{% url 'login' %}">登录</a></li>
+                    {% endif %}
+                    {#                    <li><a href="{% url 'warehouse_list' %}">仓库列表</a></li>#}
+                </ul>
+            </div>
+        </li>
+    </ul>
     <li><a href="#" onclick="show_car_detail('{% url 'cart_detail' %}')">选择了：{{ cart|length }}项</a></li>
 </ul>
 {#<ul class="right hide-on-med-and-down">#}

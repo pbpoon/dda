@@ -15,20 +15,25 @@
 
             {% if object.get_create_item_url %}
                 <li>
-                    <a href="#" onclick="add_item('{{ object.get_create_item_url }}')" class="btn-floating red waves-effect waves-light btn"><i
+                    <a href="#" onclick="add_item('{{ object.get_create_item_url }}')"
+                       class="btn-floating red waves-effect waves-light btn"><i
                             class="material-icons">add</i></a>
                 </li>
             {% endif %}
 
         {% endif %}
         <li>
-            <button class="btn-floating yellow darken-1"><i class="material-icons">format_quote</i></button>
+            <button class="btn-floating yellow darken-1"
+                    onclick="add_item('{% url 'comment_create'  object|label_name object.id %}')"><i
+                    class="material-icons">format_quote</i></button>
         </li>
         <li>
             <button class="btn-floating green"><i class="material-icons">publish</i></button>
         </li>
         <li>
-            <button class="btn-floating blue" onclick="add_item('{% url 'files_create'  object|label_name object.id %}')"><i class="material-icons">attach_file</i></button>
+            <button class="btn-floating blue"
+                    onclick="add_item('{% url 'files_create'  object|label_name object.id %}')"><i
+                    class="material-icons">attach_file</i></button>
         </li>
     </ul>
 </div>

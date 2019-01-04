@@ -196,6 +196,9 @@ class ExpensesInvoice(Invoice):
         proxy = True
         verbose_name = '费用账单'
 
+    def get_absolute_url(self):
+        return reverse('expenses_invoice_detail', args=[self.id])
+
 
 class PurchaseInvoice(Invoice):
     objects = PurchaseInvoiceManager()
@@ -204,6 +207,9 @@ class PurchaseInvoice(Invoice):
         proxy = True
         verbose_name = '采购账单'
 
+    def get_absolute_url(self):
+        return reverse('purchase_invoice_detail', args=[self.id])
+
 
 class SalesInvoice(Invoice):
     objects = SalesInvoiceManager()
@@ -211,6 +217,10 @@ class SalesInvoice(Invoice):
     class Meta:
         proxy = True
         verbose_name = '销售账单'
+
+    def get_absolute_url(self):
+
+        return reverse('sales_invoice_detail', args=[self.id])
 
 
 class InvoiceItem(OrderItemSaveCreateCommentMixin, models.Model):

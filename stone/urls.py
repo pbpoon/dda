@@ -22,11 +22,13 @@ from django.views.i18n import JavaScriptCatalog
 
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.generic.base import RedirectView
 
 urlpatterns = [
     # path('jsi18n/', JavaScriptCatalog.as_view(), name='javascript-catalog'),
     # 导入 admin。widget需要的url
     path('admin/', admin.site.urls),
+    path('account/', include('account.urls')),
     path('cart/', include('cart.urls')),
     path('product/', include('product.urls')),
     path('purchase/', include('purchase.urls')),
@@ -36,6 +38,9 @@ urlpatterns = [
     path('mrp/', include('mrp.urls')),
     path('sales/', include('sales.urls')),
     path('files/', include('files.urls')),
+    path('comment/', include('comment.urls')),
+    path('wechat/', include('action.urls')),
+    path('', RedirectView.as_view(url='account/dashboard/'))
     # selectable
 
 ]

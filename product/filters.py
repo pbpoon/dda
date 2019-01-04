@@ -35,5 +35,5 @@ class BlockFilter(django_filters.FilterSet):
         return queryset.filter(**expression)
 
     def filter_by_category(self, queryset, name, value):
-        expression = {'category_id': value}
-        return queryset.filter(**expression)
+        catgory_ids = Category.objects.get(pk=value).get_child_list()
+        return queryset.filter(**{'category_id__in': catgory_ids})
