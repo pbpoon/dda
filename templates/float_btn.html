@@ -22,6 +22,7 @@
             {% endif %}
 
         {% endif %}
+    {% if object %}
         <li>
             <button class="btn-floating yellow darken-1"
                     onclick="add_item('{% url 'comment_create'  object|label_name object.id %}')"><i
@@ -35,5 +36,6 @@
                     onclick="add_item('{% url 'files_create'  object|label_name object.id %}')"><i
                     class="material-icons">attach_file</i></button>
         </li>
+    {% endif %}
     </ul>
 </div>

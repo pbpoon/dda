@@ -4,7 +4,10 @@
 {% endblock %}
 {% block content %}
     <form action="" method="post">
-    {{ form }}
+    <ul>
+
+    {{ form.as_ul }}
+    </ul>
     {% csrf_token %}
         <input type="submit" class="btn btn-outline-primary btn-block" value="确定">
     </form>

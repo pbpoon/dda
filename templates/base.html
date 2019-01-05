@@ -7,11 +7,13 @@
     <title>{% block title %}stone system{% endblock %}</title>
     <!--Import Google Icon Font-->
     <link href="https://cdn.bootcss.com/material-design-icons/3.0.1/iconfont/material-icons.css" rel="stylesheet">
+    {#    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">#}
     {#        <link href="http://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">#}
     <!--Import materialize.css-->
-    <link rel="stylesheet" href="{% static 'css/materialize.css' %}">
+{#            <link rel="stylesheet" href="{% static 'css/materialize.min.css' %}">#}
+    <link href="https://cdn.bootcss.com/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
     {#    <link rel="stylesheet" href="{% static 'select2-materialize/select2-materialize.css' %}">#}
-{#    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-rc.2/css/materialize.min.css">#}
+    {#    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-rc.2/css/materialize.min.css">#}
 
     <style>
         .ui-autocomplete {
@@ -35,15 +37,15 @@
 
 <!--标题块相关-->
 <header>
- <nav>
-    <div class="nav-wrapper">
-      <div class="col s12">
-        <a href="#!" class="breadcrumb">First</a>
-        <a href="#!" class="breadcrumb">Second</a>
-        <a href="#!" class="breadcrumb">Third</a>
-      </div>
-    </div>
-  </nav>
+    <nav>
+        <div class="nav-wrapper">
+            <div class="col s12">
+                <a href="#!" class="breadcrumb">First</a>
+                <a href="#!" class="breadcrumb">Second</a>
+                <a href="#!" class="breadcrumb">Third</a>
+            </div>
+        </div>
+    </nav>
     {% block header %}
 
     {% endblock %}

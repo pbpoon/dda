@@ -101,7 +101,7 @@ class ProductionTypeCreateView(CreateView):
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        form.fileds['activate'].widget = SwitchesWidget()
+        form.fields['activate'].widget = SwitchesWidget()
         return form
 
 
@@ -112,7 +112,7 @@ class ProductionTypeUpdateView(UpdateView):
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        form.fileds['activate'].widget = SwitchesWidget()
+        form.fields['activate'].widget = SwitchesWidget()
         return form
 
 

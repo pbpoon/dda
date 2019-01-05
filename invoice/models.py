@@ -53,7 +53,7 @@ DUE_DATE_DEFAULT_CHOICES = (('0', '立刻'),
 class ExpensesInvoiceManager(models.Manager):
     def get_queryset(self):
         lst = ContentType.objects.exclude(model__in=('purchaseorder', 'salesorder'))
-        return super().get_queryset().exclude(content_type__in=lst)
+        return super().get_queryset().filter(content_type__in=lst)
 
 
 class PurchaseInvoiceManager(models.Manager):

@@ -48,6 +48,8 @@ class MoveLocationOrderItemForm(FormUniqueTogetherMixin, forms.ModelForm):
         if not instance.package_list and instance.product.type == 'slab':
             instance.piece = 0
             instance.quantity = 0
+        elif instance.product.type == 'semi_slab':
+            instance.quantity = instance.product.semi_slab_single_qty * instance.piece
         if commit:
             instance.save()
         return instance
@@ -165,13 +167,12 @@ class ProductionOrderRawItemForm(FormUniqueTogetherMixin, forms.ModelForm):
 
 class ProductionOrderProduceItemForm(FormUniqueTogetherMixin, forms.ModelForm):
     # 以下2个是为了传值到quick create draft package list
-    raw_product_name = forms.CharField(required=False, widget=forms.HiddenInput)
-    raw_product_thickness = forms.CharField(required=False, widget=forms.HiddenInput)
+    # raw_product_name = forms.CharField(required=False, widget=forms.HiddenInput)
+    # raw_product_thickness = forms.CharField(required=False, widget=forms.HiddenInput)
 
     class Meta:
         model = ProductionOrderProduceItem
-        fields = ('order', 'raw_item', 'thickness', 'piece', 'quantity', 'price', 'package_list', 'draft_package_list',
-                  'raw_product_name', 'raw_product_thickness')
+        fields = ('order', 'raw_item', 'thickness', 'piece', 'quantity', 'price', 'package_list', 'draft_package_list')
         widgets = {
             'order': forms.HiddenInput,
             'raw_item': forms.HiddenInput,
@@ -189,10 +190,13 @@ class ProductionOrderProduceItemForm(FormUniqueTogetherMixin, forms.ModelForm):
             self.fields['quantity'].widget = forms.HiddenInput()
         else:
             raw_product = ProductionOrderRawItem.objects.get(pk=kwargs['initial']['raw_item']).product
-            self.fields['raw_product_name'].initial = str(raw_product)
-            self.fields['raw_product_thickness'].initial = raw_product.thickness
+            # self.fields['raw_product_name'].initial = str(raw_product)
+            # self.fields['raw_product_thickness'].initial = raw_product.thickness
             self.fields['thickness'].widget = forms.HiddenInput()
             self.fields['thickness'].initial = raw_product.thickness
+            self.fields['piece'].widget = forms.HiddenInput()
+            self.fields['quantity'].widget = forms.HiddenInput()
+
         # 根据product type的expense_by来设置price是否显示及是否必填
         if order.production_type.expense_by == 'raw':
             self.fields['price'].widget = forms.HiddenInput()

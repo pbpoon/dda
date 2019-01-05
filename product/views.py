@@ -51,8 +51,8 @@ def get_product_list(request):
         # loc_childs = Location.objects.get(pk=loc_id).get_child_list()
     if type:
         qs = qs.filter(type=type)
-    else:
-        qs = qs.exclude(type='semi_slab')
+    # else:
+    #     qs = qs.exclude(type='semi_slab')
     qs.distinct()
     data = {str(p): {"id": p.id} for p in qs}
     return JsonResponse(data, safe=False)

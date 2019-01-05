@@ -140,7 +140,7 @@ class ProductionOrder(MrpOrderAbstract):
         for item in items:
             items_dict.update(item.prepare_invoice_item())
         state = self.state if self.state != 'done' else 'confirm'
-        return CreateInvoice(self, self.partner, items_dict, type=1, state=state).invoice
+        return CreateInvoice(self, self.partner, items_dict, type=-1, state=state).invoice
 
     def get_expenses_amount(self):
         return sum(item.get_expenses_amount() for item in self.get_all_items())
@@ -155,7 +155,7 @@ class ProductionOrder(MrpOrderAbstract):
             if items_dict:
                 partner = Partner.get_expenses_partner() if not self.partner else self.partner
                 return CreateInvoice(self, partner, items_dict, usage='杂费',
-                                     state='confirm')
+                                     state='confirm', type=-1)
 
 
 class ProductionOrderRawItem(OrderItemBase):

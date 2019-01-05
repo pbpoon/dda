@@ -111,7 +111,7 @@ class MoveLocationOrder(MrpOrderAbstract):
         if self.get_expenses_amount() > 0:
             items_dict = {}
             for item in self.items.all():
-                items_dict.update(item.prepare_invoice_item())
+                items_dict.update(item.prepare_expenses_invoice_item())
             if items_dict:
                 partner = Partner.get_expenses_partner() if not self.partner else self.partner
                 return CreateInvoice(self, partner, items_dict, usage='运输费',

@@ -28,6 +28,7 @@ class MrpOrderAbstract(OrderAbstract):
 
     class Meta:
         abstract = True
+        ordering = ('-date', '-created')
 
     def get_location(self):
         raise ValueError('没有设置get_location')

@@ -13,6 +13,7 @@ from product.models import Slab
 from public.forms import LocationForm
 from public.utils import Package
 from public.views import OrderItemEditMixin, FilterListView
+from public.widgets import SwitchesWidget
 from .models import Warehouse, Location, Stock
 from .filters import StockFilter
 
@@ -25,16 +26,23 @@ class WarehouseDetailView(DetailView):
     model = Warehouse
 
 
-class WarehouseCreateView(CreateView):
+class WarehouseEditMixin:
     model = Warehouse
     fields = '__all__'
     template_name = 'stock/form.html'
 
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        form.fields['is_production'].widget = SwitchesWidget()
+        return form
 
-class WarehouseUpdateView(UpdateView):
-    model = Warehouse
-    fields = '__all__'
-    template_name = 'stock/form.html'
+
+class WarehouseCreateView(WarehouseEditMixin, CreateView):
+    pass
+
+
+class WarehouseUpdateView(WarehouseEditMixin, UpdateView):
+    pass
 
 
 class LocationEditMixin(ModelFormMixin, View):
