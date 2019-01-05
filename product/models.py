@@ -87,7 +87,7 @@ class Batch(models.Model):
 class Block(models.Model):
     name = models.CharField('编号', max_length=20, db_index=True, unique=True)
     batch = models.ForeignKey('Batch', null=True, blank=True, on_delete=models.SET_NULL, verbose_name='批次')
-    category = models.ForeignKey('Category', verbose_name='品种名称', on_delete=models.CASCADE)
+    category = models.ForeignKey('Category', verbose_name='品种名称', on_delete=models.SET_NULL, blank=True, null=True)
     quarry = models.ForeignKey('Quarry', null=True, blank=True, verbose_name='矿口', on_delete=models.SET_NULL)
     weight = models.DecimalField('重量', max_digits=5, decimal_places=2, null=True)
     long = models.IntegerField('长', null=True, blank=True)

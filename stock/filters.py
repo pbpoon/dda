@@ -4,11 +4,11 @@
 
 import django_filters
 from .models import Stock, Warehouse
-from product.models import Quarry, Batch
-from product.models import TYPE_CHOICES
 
 
 class StockFilter(django_filters.FilterSet):
+    from product.models import Quarry, Batch
+    from product.models import TYPE_CHOICES
     WH_CHOICES = [(w.id, w) for w in Warehouse.objects.all()]
     QUARRY = [(q.id, q) for q in Quarry.objects.all()]
     BATCH = [(b.id, b) for b in Batch.objects.all()]

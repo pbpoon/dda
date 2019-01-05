@@ -11,7 +11,7 @@ from wechatpy.replies import BaseReply
 
 corp_id = 'wwb132fd0d32417e5d'
 secret = 'la8maluNMN_imtic0Jp0ECmE71ca2iQ80n3'
-token = ''
+token = 'sdfwf'
 
 
 class WechatView(View):

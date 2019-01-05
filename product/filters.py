@@ -4,11 +4,11 @@
 
 import django_filters
 from .models import Category, Block
-from product.models import Quarry, Batch
-from product.models import TYPE_CHOICES
+
 
 
 class BlockFilter(django_filters.FilterSet):
+    from product.models import Quarry, Batch
     QUARRY = [(q.id, q) for q in Quarry.objects.all()]
     BATCH = [(b.id, b) for b in Batch.objects.all()]
     CATEGORY = [(b.id, b) for b in Category.objects.all()]

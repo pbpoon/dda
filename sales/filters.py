@@ -7,8 +7,6 @@ from functools import reduce
 import django_filters
 from django.db.models import Q
 
-from .models import SalesOrder
-
 
 class SalesOrderFilter(django_filters.FilterSet):
     # WH_CHOICES = [(w.id, w) for w in Warehouse.objects.all()]
@@ -22,6 +20,7 @@ class SalesOrderFilter(django_filters.FilterSet):
     # batch = django_filters.ChoiceFilter(label='批次', choices=BATCH, method='filter_by_batch')
 
     class Meta:
+        from .models import SalesOrder
         model = SalesOrder
         fields = ('state', 'partner', 'address')
 
