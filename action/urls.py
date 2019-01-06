@@ -18,5 +18,6 @@ from django.urls import include
 from . import views
 
 urlpatterns = [
-    # path('', views.WechatView.as_view(), name='wechat'),
+    path('auth/', views.WechatAuthView.as_view(), name='wechat_auth'),
+    path('', views.WechatBaseView.as_view(), name='wechat'),
 ]

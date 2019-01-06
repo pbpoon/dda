@@ -55,10 +55,6 @@ class InvoiceListView(FilterListView):
 class ExpensesInvoiceListView(InvoiceListView):
     model = ExpensesInvoice
 
-    def get_context_data(self, *args, **kwargs):
-        context = super().get_context_data(**kwargs)
-        return context
-
 
 class ExpensesInvoiceDetailView(InvoiceDetailView):
     model = ExpensesInvoice

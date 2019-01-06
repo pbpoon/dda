@@ -1,10 +1,48 @@
 {% extends 'detail.html' %}
-{% block title %}
+{% block headline %}
     {{ object }}
+{% endblock %}
+{% block subheadline %}
+
 {% endblock %}
 {% block content %}
     <ul>
-        <li>{{ object.type }}</li>
-        <li>{{ object.is_activate }}</li>
+        {% if object.sex %}
+            <li>
+                性别：<b>{{ object.sex }}</b>
+            </li>
+        {% endif %}
+        <li>
+            类型：<b>{{ object.get_type_display }}</b>
+        </li>
+        <li>
+            联系电话:<b>{{ object.phone }}</b>
+        </li>
+        <li>
+            地址:<b>
+            {{ object.get_address }}
+        </b>
+        </li>
     </ul>
+{% endblock %}
+{% block sidebar %}
+    {% if object.get_invoices %}
+        <span>账单</span>
+        <div class="divider"></div>
+        <div class="collection">
+            {% for invoice in object.get_invoices %}
+                <a href="{{ invoice.get_absolute_url }}" class="collection-item">{{ invoice }}<span
+                        class="badge">{{ invoice.get_state_display }}</span></a>
+            {% endfor %}
+        </div>
+    {% endif %}
+     {% if object.get_balance %}
+        <span>可分配付款</span>
+        <div class="divider"></div>
+        <div class="collection">
+            {% for pay in object.get_can_assign_payments %}
+                <a href="{{ pay.get_absolute_url }}" class="collection-item">{{ pay }}</a>
+            {% endfor %}
+        </div>
+    {% endif %}
 {% endblock %}

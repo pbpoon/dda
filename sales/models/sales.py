@@ -17,7 +17,8 @@ UOM_CHOICES = (('t', '吨'), ('m2', '平方'))
 
 class SalesOrder(OrderAbstract):
     order = OrderField(order_str='SO', max_length=26, default='New', db_index=True, unique=True, verbose_name='订单号码', )
-    partner = models.ForeignKey(Customer, on_delete=models.CASCADE,verbose_name='客户名称')
+    partner = models.ForeignKey('sales.Customer', on_delete=models.CASCADE, verbose_name='客户名称',
+                                related_name='sales_order')
     province = models.ForeignKey('partner.Province', verbose_name='省份', null=True, blank=True,
                                  on_delete=models.SET_NULL)
     city = models.ForeignKey('partner.City', verbose_name='城市', null=True, blank=True, on_delete=models.SET_NULL)

@@ -4,7 +4,16 @@
 
     <ul class="collection">
         {% for object in object_list %}
+
             <a class="collection-item avatar grey-text" href="{{ object.get_absolute_url }}">
+                {##}
+                {#                <div class="right">#}
+                {#                    <div class="right-align">#}
+                {#                    <span class="new badge {% if object.state == 'draft' %}default{% elif object.state == 'cancel' %}grey{% elif object.state == 'done' %}yellow{% else %}blue{% endif %}"#}
+                {#                          data-badge-caption="{{ object.get_state_display }}"></span>{{ object.order }}<span>#}
+                {#                    </div>#}
+                {#                    <div class=" black-text right-align">#}
+                {#                </div>#}
                 <i class="material-icons circle">{{ object.name|slice:'1' }}</i>
                 <span class="title black-text">{{ object }}</span>
                 <p>{{ object.phone }}<br>
@@ -15,7 +24,7 @@
     </ul>
     {% include 'paginatior.html' %}
     <div class="fixed-action-btn">
-        <a href="{% block add_url %}{% url 'partner_create' %}{% endblock %}" class="btn-floating btn-large red">
+        <a href="{% url 'pro_ser_supplier_create' %}" class="btn-floating btn-large red">
             <i class="large material-icons">add</i>
         </a>
     </div>

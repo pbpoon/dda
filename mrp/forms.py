@@ -5,7 +5,7 @@ from django import forms
 from django.urls import reverse, reverse_lazy
 
 from mrp.models import ProductionOrder, ProductionOrderRawItem, ProductionOrderProduceItem, InOutOrder, InOutOrderItem, \
-    Expenses, InventoryOrder, InventoryOrderItem, InventoryOrderNewItem
+    Expenses, InventoryOrder, InventoryOrderItem, InventoryOrderNewItem, Supplier
 from mrp.models import TurnBackOrder, TurnBackOrderItem
 from product.models import Product, PackageList
 from public.forms import FormUniqueTogetherMixin
@@ -425,3 +425,24 @@ class InventoryOrderNewItemForm(forms.ModelForm):
         if cd['product_type'] == 'slab':
             cd['package_list'] = PackageList.objects.create(product=cd['product'])
         return cd
+
+
+class SupplierForm(forms.ModelForm):
+    type = forms.TypedChoiceField(label='伙伴类型',choices=(('production', '生产单位'), ('service', '运输/服务商')), widget=RadioWidget)
+
+    class Meta:
+        model = Supplier
+        fields = (
+            'is_company', 'type', 'sex', 'name', 'phone', 'province', 'city', 'entry')
+        widgets = {
+            'sex': RadioWidget(),
+            'type': RadioWidget(),
+            'is_company': SwitchesWidget,
+            'is_activate': SwitchesWidget,
+            'entry': forms.HiddenInput()
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['province'].widget.attrs = {'class': 'prov'}
+        self.fields['city'].widget.attrs = {'class': 'city'}

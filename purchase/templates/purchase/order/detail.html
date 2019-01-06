@@ -3,13 +3,15 @@
 {% load public %}
 {% block headline %}{{ object.get_state_display }}{{ object.order }}{% endblock %}
 {% block subheadline %}
-    供应商：{{ object.partner }} / 经办人：{{ object.handler }}
+    供应商：<a href="{{ object.partner.get_absolute_url }} ">{{ object.partner }} </a> / 经办人：{{ object.handler }}
 
 {% endblock %}
-{% block operate %}
-    {% if object.state == 'confirm' %}
+{% block state-right %}
+ {% if object.state == 'confirm' %}
         <a href="{% url 'purchase_order_in_order' object.id %}" class="btn waves-effect">收货</a>
     {% endif %}
+{% endblock %}
+{% block operate %}
     <a class="btn waves-effect" href="#"
        onclick="confirm_option('{% url 'purchase_order_invoice_options' object.id %}')">创建账单</a>
     <a class="btn waves-effect red" href="{%  url 'invoice_create' object|label_name object.id %}">手动创建账单</a>

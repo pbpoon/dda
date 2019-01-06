@@ -27,7 +27,7 @@ from stock.models import Stock, Location
 from .models import MoveLocationOrder, MoveLocationOrderItem
 from .forms import MoveLocationOrderItemForm, MoveLocationOrderForm, ProductionOrderForm, \
     ProductionOrderRawItemForm, ProductionOrderProduceItemForm, InOutOrderForm, MrpItemExpensesForm, TurnBackOrderForm, \
-    TurnBackOrderItemForm, InventoryOrderForm, InventoryOrderItemForm, InventoryOrderNewItemForm
+    TurnBackOrderItemForm, InventoryOrderForm, InventoryOrderItemForm, InventoryOrderNewItemForm, SupplierForm
 
 
 class MoveLocationOrderListView(FilterListView):
@@ -582,4 +582,23 @@ class SupplierListView(FilterListView):
     model = Supplier
     filter_class = CustomerFilter
     paginate_by = 10
-    template_name = 'sales/customer_list.html'
+    template_name = 'mrp/supplier_list.html'
+
+
+class SupplierEditMixin:
+    model = Supplier
+    form_class = SupplierForm
+    template_name = 'sales/form.html'
+
+    def get_initial(self):
+        initial = super().get_initial()
+        initial['entry'] = self.request.user.id
+        return initial
+
+
+class SupplierCreateView(SupplierEditMixin, CreateView):
+    pass
+
+
+class SupplierUpdateView(SupplierEditMixin, UpdateView):
+    pass

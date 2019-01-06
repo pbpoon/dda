@@ -5,11 +5,11 @@
 {% endblock %}
 {% block subheadline %}
     对应订单：<a href="{{ object.get_obj.get_absolute_url }}">{{ object.get_obj|verbose_name }} {{ object.get_obj }}</a><br>
-    对方名称：{{ object.partner }} / 总金额：{{ object.amount }}<br>
+    对方名称：<a href="{{ object.partner.get_absolute_url }}">{{ object.partner }}</a> / 总金额：{{ object.amount }}<br>
     账单日期：{{ object.date }} / 到期日期： {{ object.due_date }}
 
 {% endblock %}
-{% block operate %}
+{% block state-right %}
 {% if object.state != 'cancel' %}
         {% if object.due_amount %}
             <a onclick="add_item('{% url 'payment_create_from_invoice' object.id object.partner.id %}')"

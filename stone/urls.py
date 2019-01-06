@@ -39,7 +39,7 @@ urlpatterns = [
     path('sales/', include('sales.urls')),
     path('files/', include('files.urls')),
     path('comment/', include('comment.urls')),
-    # path('wechat/', include('action.urls')),
+    path('wechat/', include('action.urls')),
     path('', RedirectView.as_view(url='account/dashboard/'))
     # selectable
 

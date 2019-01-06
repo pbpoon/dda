@@ -1,16 +1,19 @@
 from django.db import models
 from django.urls import reverse
 
+from invoice.models import Invoice
 from stock.models import Location
 
 PARTNER_TYPE_CHOICES = (
     ('customer', '客户'),
     ('supplier', '供应商'),
+    ('production', '生产商'),
+    ('service', '运输/服务商'),
+    ('invoice', '账单费用'),
 )
 
 
 class Province(models.Model):
-    # id = models.IntegerField('id')
     name = models.CharField('名称', max_length=20)
     code = models.IntegerField(primary_key=True, verbose_name='省份id', help_text='用于与市级联动')
 
@@ -58,7 +61,7 @@ class City(models.Model):
 #         return self.name
 class InvoicePartnerManager(models.Manager):
     def get_queryset(self):
-        return super().get_queryset().filter(is_invoice=True)
+        return super().get_queryset().filter(type='invoice')
 
 
 class Partner(models.Model):
@@ -78,8 +81,6 @@ class Partner(models.Model):
     company = models.ForeignKey('self', related_name='members', limit_choices_to={'is_company': True},
                                 on_delete=models.SET_NULL,
                                 null=True, blank=True, verbose_name='所属公司')
-    is_production = models.BooleanField('是生产商', default=False)
-    is_invoice = models.BooleanField('是账单账户类型', default=False)
     objects = models.Manager()
     invoices = InvoicePartnerManager()
 
@@ -110,6 +111,10 @@ class Partner(models.Model):
             return '{}{} {}'.format(company, self.name, self.get_title())
 
     def get_absolute_url(self):
+        if self.type == 'customer':
+            return reverse('customer_detail', args=[self.id])
+        elif self.type == 'supplier':
+            reverse('supplier_detail', args=[self.id])
         return reverse('partner_detail', args=[self.id])
 
     def get_location(self):
@@ -122,15 +127,24 @@ class Partner(models.Model):
 
     @classmethod
     def get_expenses_partner(cls):
-        partner, _ = cls.objects.get_or_create(name='杂费支出', is_company=True, type='supplier', phone='88888888888',
+        partner, _ = cls.objects.get_or_create(name='杂费支出', is_company=True, type='invoice', phone='88888888888',
                                                is_invoice=True)
         return partner
 
     @classmethod
     def get_undercharge_partner(cls):
-        partner, _ = cls.objects.get_or_create(name='货款少收/坏账', is_company=True, type='supplier', phone='88888888881',
+        partner, _ = cls.objects.get_or_create(name='货款少收/坏账', is_company=True, type='invoice', phone='88888888881',
                                                is_invoice=True)
         return partner
+
+    def get_invoices(self):
+        return Invoice.objects.filter(partner=self)[:10]
+
+    def get_can_assign_payments(self):
+        return [pay for pay in self.payments.all() if pay.get_balance() > 0]
+
+    def get_balance(self):
+        return sum(pay.get_balance() for pay in self.payments.all() if pay.get_balance() > 0)
 
 
 class InvoicePartner(Partner):

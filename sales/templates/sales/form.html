@@ -1,5 +1,9 @@
 {% extends 'list.html' %}
 {% load static %}
+{% load public %}
+{% block headline %}
+    {{ object|verbose_name|default_if_none:'' }}
+{% endblock %}
 {% block content %}
     {#    <script src="{% static 'js/materialize-autocomplete/jquery.materialize-autocomplete.js' %}"></script>#}
     <form action="" method="post">
@@ -7,7 +11,7 @@
         {{ form.meida }}
         <div class="card-panel input-field">
             <ul>
-                {{ form.as_ul }}
+                {{ form.as_p }}
             </ul>
             {% csrf_token %}
 

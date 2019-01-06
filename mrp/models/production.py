@@ -44,8 +44,8 @@ class ProductionOrder(MrpOrderAbstract):
     order = OrderField(order_str='MO', blank=True, verbose_name='单号', default='New', max_length=20)
     production_type = models.ForeignKey(ProductionType, on_delete=models.CASCADE, verbose_name='业务类型',
                                         limit_choices_to={'activate': True})
-    partner = models.ForeignKey('partner.Partner', on_delete=models.SET_NULL, null=True, blank=True,
-                                verbose_name='业务伙伴', limit_choices_to={'type': 'supplier', 'is_production': True})
+    partner = models.ForeignKey('partner.Partner', on_delete=models.CASCADE,
+                                verbose_name='生产单位', limit_choices_to={'type': 'production'})
 
     class Meta:
         verbose_name = '生产订单'

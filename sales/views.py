@@ -4,9 +4,11 @@ import weasyprint
 from django.db import transaction
 from django.db.models import Q
 from django.forms import inlineformset_factory
+from django import forms
 from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render, get_object_or_404
 from django.template.loader import render_to_string
+from django.urls import reverse
 from django.views import View
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from cart.cart import Cart
@@ -14,10 +16,17 @@ from invoice.models import CreateInvoice
 from public.stock_operate import StockOperate
 from public.views import OrderFormInitialEntryMixin, OrderItemEditMixin, OrderItemDeleteMixin, StateChangeMixin, \
     ModalOptionsMixin, FilterListView
-from sales.forms import SalesOrderForm, SalesOrderItemForm, SalesOrderItemQuickForm
+from public.widgets import SwitchesWidget
+from sales.forms import SalesOrderForm, SalesOrderItemForm, SalesOrderItemQuickForm, CustomerForm
 from sales.models import SalesOrder, SalesOrderItem, Customer
 from stone import settings
 from .filters import SalesOrderFilter, CustomerFilter
+from wechatpy.enterprise import WeChatClient
+
+corp_id = 'wwb132fd0d32417e5d'
+SECRET = 'la8maluNMN_imtic0Jp0ECmE71ca2iQ80n3-a8HFFv4'
+
+client = WeChatClient(corp_id, SECRET)
 
 
 class SalesOrderListView(FilterListView):
@@ -36,6 +45,10 @@ class SalesOrderDetailView(StateChangeMixin, DetailView):
                 'done': {}}[state]
 
     def confirm(self):
+        url = "%s" % (self.request.build_absolute_uri())
+        client.message.send_text_card(agent_id='1000002', user_ids='@all', title='%s' % (self.object.order),
+                                      description='%s' % (self.object.amount),
+                                      url=url)
         return self.object.confirm()
 
     def draft(self):
@@ -164,3 +177,27 @@ class CustomerListView(FilterListView):
     model = Customer
     filter_class = CustomerFilter
     paginate_by = 10
+
+
+class CustomerDetailView(DetailView):
+    model = Customer
+    template_name = 'sales/customer_detail.html'
+
+
+class CustomerEditMixin:
+    model = Customer
+    form_class = CustomerForm
+    template_name = 'sales/form.html'
+
+    def get_initial(self):
+        initial = super().get_initial()
+        initial['entry'] = self.request.user.id
+        return initial
+
+
+class CustomerCreateView(CustomerEditMixin, CreateView):
+    pass
+
+
+class CustomerUpdateView(CustomerEditMixin, UpdateView):
+    pass

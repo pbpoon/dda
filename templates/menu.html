@@ -48,10 +48,10 @@
                     <li><a href="{% url 'move_location_order_list' %}">移库单</a></li>
                     <li><a href="{% url 'production_list' %}">生产订单</a></li>
                     <li><a href="{% url 'inventory_order_list' %}">库存盘点</a></li>
-                    <hr/>
                     <li>
+                        <div class="divider"></div>
                         <ul>
-                            <li><a href="{% url 'supplier_list' %}">供应商资料</a></li>
+                            <li><a href="{% url 'pro_ser_supplier_list' %}">生产/服务商资料</a></li>
                             <li><a href="{% url 'production_type_list' %}">生产业务类型设置</a></li>
                             <li><a href="{% url 'expenses_item_list' %}">费用相关设置</a></li>
                         </ul>
@@ -68,6 +68,7 @@
             <div class="collapsible-body">
                 <ul>
                     <li><a href="{% url 'purchase_order_list' %}">采购订单</a></li>
+                    <li><a href="{% url 'supplier_list' %}">供应商资料</a></li>
                 </ul>
             </div>
         </li>
@@ -114,9 +115,9 @@
             <div class="collapsible-body">
                 <ul>
                     {% if request.user.is_authenticated %}
-                    <li><a href="{% url 'dashboard' %}">{{ request.user }}</a></li>
+                        <li><a href="{% url 'dashboard' %}">{{ request.user }}</a></li>
                     {% else %}
-                    <li><a href="{% url 'login' %}">登录</a></li>
+                        <li><a href="{% url 'login' %}">登录</a></li>
                     {% endif %}
                     {#                    <li><a href="{% url 'warehouse_list' %}">仓库列表</a></li>#}
                 </ul>

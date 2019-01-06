@@ -123,3 +123,11 @@ def param_replace(context, **kwargs):
     for k in [k for k, v in d.items() if not v]:
         del d[k]
     return d.urlencode()
+
+
+@register.filter()
+def check_permission(user, permission):
+    if permission in user.get_all_permissions():
+        return True
+    return False
+

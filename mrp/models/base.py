@@ -19,7 +19,6 @@ class MrpOrderAbstract(OrderAbstract):
                                       related_name='%(class)s_location_dest',
                                       verbose_name='目标库位', null=True, blank=True)
     stock_trace = GenericRelation('stock.StockTrace')
-    operation_logs = GenericRelation('comment.OperationLogs')
     warehouse = models.ForeignKey('stock.Warehouse', on_delete=models.CASCADE, verbose_name='仓库')
     date = models.DateField('日期')
     created = models.DateField('创建日期', auto_now_add=True)

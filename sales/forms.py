@@ -7,8 +7,8 @@ from django.urls import reverse, reverse_lazy
 from partner.models import City
 from product.models import Product, PackageList
 from public.forms import FormUniqueTogetherMixin
-from public.widgets import SwitchesWidget, AutocompleteWidget
-from sales.models import SalesOrder, SalesOrderItem
+from public.widgets import SwitchesWidget, AutocompleteWidget, RadioWidget
+from sales.models import SalesOrder, SalesOrderItem, Customer
 from stock.models import Warehouse
 from dal import autocomplete as dal_autocomplete
 
@@ -138,3 +138,20 @@ class SalesOrderItemQuickForm(FormUniqueTogetherMixin, forms.ModelForm):
         if commit:
             instance.save()
         return instance
+
+
+class CustomerForm(forms.ModelForm):
+    class Meta:
+        model = Customer
+        fields = ('is_company', 'sex', 'name', 'phone', 'province', 'city', 'entry', 'is_activate')
+        widgets = {
+            'sex': RadioWidget(),
+            'is_company': SwitchesWidget,
+            'is_activate': SwitchesWidget,
+            'entry': forms.HiddenInput()
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['province'].widget.attrs = {'class': 'prov'}
+        self.fields['city'].widget.attrs = {'class': 'city'}

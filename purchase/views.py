@@ -6,7 +6,8 @@ from django.views.generic.edit import FormView, CreateView, UpdateView, DeleteVi
 from public.views import OrderItemEditMixin, StateChangeMixin, OrderItemDeleteMixin, OrderFormInitialEntryMixin, \
     FilterListView, ModalOptionsMixin
 from purchase.filters import PurchaseOrderFilter
-from .forms import PurchaseOrderItemForm, PurchaseOrderForm
+from purchase.models import Supplier
+from .forms import PurchaseOrderItemForm, PurchaseOrderForm, SupplierForm
 from .models import PurchaseOrder, PurchaseOrderItem
 from invoice.models import CreateInvoice
 
@@ -99,3 +100,31 @@ class PurchaseOrderInvoiceOptionsEditView(ModalOptionsMixin):
                 self.object.create_comment(**{'comment': comment})
                 return True, '已创建账单:{}'.format(invoice.order)
         return False, '错误'
+
+
+class SupplierListView(FilterListView):
+    model = Supplier
+    template_name = 'purchase/partner_list.html'
+
+
+class SupplierDetailView(DetailView):
+    model = Supplier
+
+
+class SupplierEditMixin:
+    model = Supplier
+    form_class = SupplierForm
+    template_name = 'sales/form.html'
+
+    def get_initial(self):
+        initial = super().get_initial()
+        initial['entry'] = self.request.user.id
+        return initial
+
+
+class SupplierCreateView(SupplierEditMixin, CreateView):
+    pass
+
+
+class SupplierUpdateView(SupplierEditMixin, UpdateView):
+    pass

@@ -219,7 +219,6 @@ class SalesInvoice(Invoice):
         verbose_name = '销售账单'
 
     def get_absolute_url(self):
-
         return reverse('sales_invoice_detail', args=[self.id])
 
 

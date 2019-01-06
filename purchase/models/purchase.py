@@ -21,7 +21,7 @@ UOM_CHOICES = (('t', '吨'), ('m3', '立方'))
 
 
 class PurchaseOrder(OrderAbstract):
-    partner = models.ForeignKey('purchase.Supplier', on_delete=models.SET_NULL, null=True, blank=True,
+    partner = models.ForeignKey('purchase.Supplier', on_delete=models.CASCADE, related_name='purchase_order',
                                 verbose_name='供应商')
     order = OrderField(order_str='PO', max_length=10, default='New', db_index=True, unique=True, verbose_name='订单号码', )
     currency = models.CharField('货币', choices=CURRENCY_CHOICE, max_length=10)

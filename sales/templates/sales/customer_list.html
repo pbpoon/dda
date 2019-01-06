@@ -24,7 +24,7 @@
     </ul>
     {% include 'paginatior.html' %}
     <div class="fixed-action-btn">
-        <a href="{% block add_url %}{% endblock %}" class="btn-floating btn-large red">
+        <a href="{% url 'customer_create' %}" class="btn-floating btn-large red">
             <i class="large material-icons">add</i>
         </a>
     </div>

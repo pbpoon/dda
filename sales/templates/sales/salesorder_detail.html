@@ -33,10 +33,10 @@
                     {% endif %}
                     {% if object.state in 'confirm, done' %}
                         <br><span>可提货数量:
-                    {% with item.get_can_in_out_order_qty as can_in_out_order_qty  %}
-                        {% if can_in_out_order_qty.part %}{{ can_in_out_order_qty.part }} 夹/ {% endif %}
-                        {{ can_in_out_order_qty.piece }} 件/ {{ can_in_out_order_qty.quantity }}{{ item.uom }}
-                    {% endwith %}
+                        {% with item.get_can_in_out_order_qty as can_in_out_order_qty %}
+                            {% if can_in_out_order_qty.part %}{{ can_in_out_order_qty.part }} 夹/ {% endif %}
+                            {{ can_in_out_order_qty.piece }} 件/ {{ can_in_out_order_qty.quantity }}{{ item.uom }}
+                        {% endwith %}
                 </span>
                     {% endif %}
                 </td>
@@ -99,20 +99,21 @@
     {% endif %}
 {% endblock %}
 {% block subheadline %}
-    客户名称：{{ object.partner.get_full_name }} / {{ object.partner.phone }}<br/>
+    客户名称：<a href="{{ object.partner.get_absolute_url }} ">{{ object.partner }} </a> / {{ object.partner.phone }}<br/>
     发往：{{ object.get_address }}<br/>
     <hr>
     经办人:{{ object.handler }}
-
 {% endblock %}
-{% block operate %}
+{% block state-right %}
     {% if object.state == 'confirm' %}
         {% if object.get_out_order_percentage < 1 %}
-            <a class="right" href="{% url 'sales_order_out_order' object.id %}">提货</a>
+            <a class="btn waves-effect orange" href="{% url 'sales_order_out_order' object.id %}">提货</a>
         {% endif %}
     {% endif %}
-    <a href="#" onclick="confirm_option('{% url 'sales_order_invoice_options' object.id %}')">创建账单</a>
-    <a href="{% url 'sales_order_pdf' object.id %}">打印pdf</a>
+{% endblock %}
+{% block operate %}
+    <a class="btn waves-effect green" href="#" onclick="confirm_option('{% url 'sales_order_invoice_options' object.id %}')">创建账单</a>
+    <a class="btn waves-effect default" href="{% url 'sales_order_pdf' object.id %}">打印pdf</a>
 {% endblock %}
 {% block sidebar %}
     {% if object.in_out_order.all %}

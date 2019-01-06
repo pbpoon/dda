@@ -4,6 +4,9 @@
 from django import forms
 
 from product.models import Block
+from public.widgets import SwitchesWidget, RadioWidget
+from purchase.models import Supplier
+from sales.models import Customer
 from .models import PurchaseOrderItem, PurchaseOrder
 
 STATE_CHOICES = (
@@ -58,3 +61,20 @@ class PurchaseOrderItemForm(forms.ModelForm):
                 n = name[:2]
             cd['batch'] = n
         return cd
+
+
+class SupplierForm(forms.ModelForm):
+    class Meta:
+        model = Supplier
+        fields = ('is_company', 'sex', 'name', 'phone', 'province', 'city', 'entry', 'is_activate')
+        widgets = {
+            'sex': RadioWidget(),
+            'is_company': SwitchesWidget,
+            'is_activate': SwitchesWidget,
+            'entry': forms.HiddenInput()
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['province'].widget.attrs = {'class': 'prov'}
+        self.fields['city'].widget.attrs = {'class': 'city'}
