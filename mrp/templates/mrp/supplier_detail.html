@@ -1,0 +1,21 @@
+{% extends 'partner/partner_detail.html' %}
+{% block headline %}
+    {{ object }}
+{% endblock %}
+{% block subheadline %}
+    最近发货地址：<b>{{ object.get_last_order_address }}</b>
+{% endblock %}
+
+{% block sidebar %}
+    {{ block.super }}
+    {% if object.get_orders %}
+        <span>最近销售订单 <a href="{% url 'sales_order_list' %}?partner={{ object.phone }}">全部订单</a></span>
+        <div class="divider"></div>
+        <div class="collection">
+            {% for order in object.get_orders %}
+                <a href="{{ order.get_absolute_url }}" class="collection-item">{{ order }}<span
+                        class="badge">{{ order.get_state_display }}</span></a>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endblock %}

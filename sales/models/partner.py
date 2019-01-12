@@ -21,6 +21,7 @@ class Customer(Partner):
 
     class Meta:
         proxy = True
+        verbose_name = '客户'
 
     def save(self, *args, **kwargs):
         self.type = 'customer'

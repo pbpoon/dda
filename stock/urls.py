@@ -26,6 +26,6 @@ urlpatterns = [
     path('warehouse/<pk>/', views.WarehouseDetailView.as_view(), name='warehouse_detail'),
     path('warehouse/', views.WarehouseListView.as_view(), name='warehouse_list'),
     path('slabs/<pk>/', views.StockSlabsView.as_view(), name='stock_slabs_detail'),
-    path('<pk>/', views.StockDetailView.as_view(), name='stock_detail'),
-    path('', views.StockListView.as_view(), name='stock_list'),
+    path('available/<pk>/', views.StockDetailView.as_view(), name='stock_detail'),
+    path('available/', views.StockListView.as_view(), name='stock_list'),
 ]

@@ -46,3 +46,50 @@
         </div>
     {% endif %}
 {% endblock %}
+{% block action_btn %}
+<!-- action btn -->
+{% load public %}
+<div class="fixed-action-btn click-to-toggle">
+    <a class="btn-floating btn-large red">
+        <i class="large material-icons">mode_edit</i>
+    </a>
+    <ul>
+        {% if user.state == 'draft' %}
+            {% if object.get_update_url %}
+                <li>
+                    <a href="{{ object.get_update_url }}" class="btn-floating red waves-effect waves-light btn"><i
+                            class="material-icons">edit</i></a>
+                </li>
+            {% endif %}
+
+            {% if object.get_create_item_url %}
+                <li>
+                    <a href="#" onclick="add_item('{{ object.get_create_item_url }}')"
+                       class="btn-floating red waves-effect waves-light btn"><i
+                            class="material-icons">add</i></a>
+                </li>
+            {% endif %}
+
+        {% endif %}
+        {% if object %}
+            {% if user|check_permission:'comment.add_comment' %}
+                <li>
+                    <button class="btn-floating yellow darken-1"
+                            onclick="add_item('{% url 'comment_create'  object|label_name object.id %}')"><i
+                            class="material-icons">format_quote</i></button>
+                </li>
+            {% endif %}
+            <li>
+                <button class="btn-floating green"><i class="material-icons">publish</i></button>
+            </li>
+            {% if user|check_permission:'files.add_files' %}
+                <li>
+                    <button class="btn-floating blue"
+                            onclick="add_item('{% url 'files_create'  object|label_name object.id %}')"><i
+                            class="material-icons">attach_file</i></button>
+                </li>
+            {% endif %}
+        {% endif %}
+    </ul>
+</div>
+{% endblock %}

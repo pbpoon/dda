@@ -1,20 +1,53 @@
 import operator
 from functools import reduce
-
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.db.models import Q
-from django.http import HttpResponse, JsonResponse
-from django.shortcuts import render
+from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
+from django.shortcuts import render, redirect
+from django.template.loader import render_to_string
+from django.urls import reverse
 from django.views import View
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, FormView
 
+from partner.forms import MainInfoForm
 from public.forms import AddExcelForm
+from public.permissions_mixin_views import DynamicPermissionRequiredMixin
 from public.utils import ImportData
 from .models import Partner, Province, City, MainInfo
 
 
-class MainInfoDetail(DetailView):
+class MainInfoEditMixin(DynamicPermissionRequiredMixin):
     model = MainInfo
+    form_class = MainInfoForm
+    template_name = 'form.html'
+
+    def handle_no_permission(self):
+        path = self.request.META.get('HTTP_REFERER')
+        return HttpResponse(render_to_string('no_permissions.html', {'return_path': path}))
+
+
+class MainInfoCreateView(MainInfoEditMixin, CreateView):
+    pass
+
+
+class MainInfoUpdateView(MainInfoEditMixin, UpdateView):
+    pass
+
+
+class MainInfoDetailView(DynamicPermissionRequiredMixin, DetailView):
+    model = MainInfo
+
+
+class MainInfoView(DynamicPermissionRequiredMixin, View):
+    model = MainInfo
+
+    def dispatch(self, request, *args, **kwargs):
+        try:
+            company = MainInfo.objects.get(pk=1)
+            return redirect(reverse('company_detail', kwargs={'pk': company.id}))
+        except ObjectDoesNotExist:
+            return redirect(reverse('company_create'))
 
 
 class PartnerListView(ListView):

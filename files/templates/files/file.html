@@ -1,4 +1,6 @@
-<p><a href="{{ item.content.url }}" class="button">点击打开</a><br>
+<p><span>{{ item }}</span><a href="{{ item.content.url }}" class="button">打开</a><br>
     {% if item.desc %}
         <span>{{ item.desc }}</span>
-    {% endif %}</p>
+    {% endif %}
+
+</p>

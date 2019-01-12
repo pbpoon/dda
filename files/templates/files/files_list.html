@@ -1,0 +1,27 @@
+{% extends 'list.html' %}
+{% load public %}
+{% block headline %}
+    {% if object %}
+    <a href="{{ object.get_absolute_url }}">{{ object|verbose_name }}:{{ object }}</a>
+    {% endif %}
+    文件列表
+{% endblock %}
+{% block content %}
+    <ul class="collection">
+        {% for object in object_list %}
+            <li class="collection-item avatar grey-text">
+                {% if object.entry.profile.avatar %}
+                    <img src="{{ object.entry.profile.avatar.url }}" alt="{{ object.entry }}" class="circle responsive-img">
+                {% else %}
+                    <i class="material-icons circle">{{ object.entry.user.name }}</i>
+                {% endif %}
+                {{ object.render|safe }}
+            </li>
+        {% endfor %}
+    </ul>
+    {% include 'paginatior.html' %}
+{% endblock %}
+{% block domready %}
+    {{ block.super }}
+    $('.materialboxed').materialbox();
+{% endblock %}

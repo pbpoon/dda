@@ -4,6 +4,8 @@ from django.shortcuts import get_object_or_404, HttpResponse, redirect
 from django.template.loader import render_to_string
 from django.views import View
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
+from django.views.generic.detail import BaseDetailView
+from wkhtmltopdf.views import PDFTemplateView
 
 from cart.cart import Cart
 from product.filters import BlockFilter
@@ -448,3 +450,18 @@ class PackageListItemLineUpdateView(DetailView):
                 item.save()
         path = self.request.META.get('HTTP_REFERER')
         return redirect(path)
+
+
+class PackageListPdfView(BaseDetailView, PDFTemplateView):
+    model = PackageList
+    # template_name = 'product/package_list_pdf.html'
+    header_template = 'product/pdf/header.html'
+    template_name = 'product/pdf/package_list_pdf.html'
+    footer_template = 'product/pdf/footer.html'
+    show_content_in_browser = True
+    # cmd_options = {
+    #     'margin-top': '0',
+    #     'margin-left': '0',
+    #     'margin-bottom': '0',
+    #     'margin-right': '0',
+    # }

@@ -1,11 +1,7 @@
 {% load public %}
 {#<div class="row">#}
 <div class="col s12">
-    {% if object %}
-        <a class="btn waves-effect right" href="{% url 'package_full_page' object.id %}?state={{ state }}">
-            <span>全屏编辑<i class="material-icons right">open_in_new</i></span>
-        </a>
-    {% endif %}
+    {% include 'product/tool_bar.html' %}
     <div>{% if object %}
         <span class="title">{{ object }}</span>
     {% endif %}

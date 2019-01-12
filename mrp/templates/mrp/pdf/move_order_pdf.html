@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+{% load public %}
+{% load static %}
+<html lang="zh-hans">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        body, html {
+            font-family: Arial;
+            height: 14cm;
+            position: relative;
+        }
+
+        header {
+            height: 22%;
+            margin-bottom: 30px;
+        }
+
+        main {
+            height: 66%;
+            page-break-inside: avoid;
+        !important;
+        }
+
+        footer {
+            height: 15%;
+            position: absolute;
+            bottom: 0;
+
+        }
+
+        .container {
+            padding: 12px;
+            width: 92%;
+            margin-left: auto;
+            margin-right: 25px;
+            margin-bottom: 30px;
+        }
+
+        .divider {
+            width: 90%;
+            border-bottom: #5a5a5a 1px solid;
+            margin: 5px auto;
+        }
+
+        .title {
+            font-weight: bold;
+            font-size: 130%;
+        }
+
+        .subtitle {
+            border-left: grey 6px solid;
+            padding-top: 10px;
+            padding-bottom: 10px;
+            padding-left: 26px;
+        }
+
+        .left {
+            float: left;
+        }
+
+        .right {
+            float: right;
+        }
+
+        .clear {
+            clear: both;
+        }
+
+        .logo {
+            top: 1.5cm;
+            height: 1.5cm;
+        }
+
+        table {
+            width: 100%;
+            min-height: 200px;
+            margin-left: auto;
+            margin-right: auto;
+            border-collapse: collapse;
+        }
+
+        th, tr, td {
+            border-top: gray 1px solid;
+            padding-top: 8px;
+            padding-bottom: 8px;
+            padding-left: 5px;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-bottom {
+            vertical-align: bottom;
+        }
+
+        .total th {
+            padding-top: 20px;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
+        .quote {
+            padding-top: 10px;
+            padding-left: 25px;
+            border-left: grey 6px solid;
+        }
+
+
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <div class="quote">
+            <div class="left">
+                <div>
+                    业务伙伴：{{ object.partner }}<br/>
+                    <div class="divider"></div>
+                </div>
+            </div>
+            <div class="right">
+                <span class="title text-right ">{{ object|verbose_name }}</span>
+                <div class="logo"></div>
+                <div class="text-right">
+                    <div>{{ object.order }}</div>
+                    <div>{{ object.handler }}</div>
+                </div>
+            </div>
+            <div class="clear"></div>
+        </div>
+    </header>
+
+    <main>
+
+        <div class="quote">
+
+            <table>
+                <thead>
+                <tr>
+                    <th>#</th>
+                    <th>产品</th>
+                    <th class="text-center">数量</th>
+                    <th>单价</th>
+                    <th>金额</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for item in object.items.all %}
+                    <tr>
+                        <td>{{ item.line }})</td>
+                        <td>{{ item.product }}</td>
+                        <td class="text-center">
+                            {% if item.package_list %}
+                                {{ item.package_list.get_part }}夹/ {{ item.piece }}件/
+                                {{ item.quantity }}{{ item.product.get_uom }}
+                            {% else %}
+                                {{ item.piece }}件/
+                                {{ item.quantity }}{{ item.product.get_uom }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% for expense in item.expenses.all %}
+                                <div class=text-right>
+                                    {{ expense }}={{ expense.amount }}<br></div>{% endfor %}
+                        </td>
+                        <td>{{ item.get_expenses_amount|format_money }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+                <tfoot>
+                <tr class="total">
+                    <th colspan="2">合计：</th>
+                    <th>
+                        {% for key, item in object.get_total.items %}
+                            {{ key }}:{% if item.part %}{{ item.part }}夹 / {% endif %}{{ item.piece }}件 /
+                            {{ item.quantity }}{{ item.uom }}<br>
+                        {% endfor %}
+                    </th>
+                    <th></th>
+                    <th class="text-right">{{ object.get_expenses_amount|format_money }}</th>
+                    <th></th>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+    </main>
+
+    <footer>
+        <div class="quote" style="min-height: 50px">
+            <div class="left" >
+                {% if show_account %}
+                    <span style="display: block">
+                        {{ user.get_company.account_detail|safe }}
+                    </span>
+                {% endif %}
+            </div>
+            <div class="right text-right" >
+                制单人:<br>{{ object.entry }}@{{ object.updated|date:"Y/m/d" }}
+            </div>
+        </div>
+    </footer>
+</div>
+</body>
+</html>

@@ -40,6 +40,7 @@ class TurnBackOrder(HasChangedMixin, models.Model):
     updated = models.DateTimeField('更新时间', auto_now=True)
     comments = GenericRelation('comment.Comment')
     invoices = GenericRelation('invoice.Invoice')
+    files = GenericRelation('files.Files')
 
     class Meta:
         verbose_name = '库存回退'
@@ -90,6 +91,12 @@ class TurnBackOrder(HasChangedMixin, models.Model):
             a['part'] += item.package_list.get_part() if item.package_list else 0
             a['uom'] = item.uom
         return total
+
+    def get_files(self):
+        files = self.files.all()
+        if files.count() > 10:
+            files = files[:10]
+        return files
 
 
 class TurnBackOrderItem(OrderItemBase):

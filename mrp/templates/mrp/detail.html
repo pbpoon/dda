@@ -5,6 +5,9 @@
     $('.dropdown-trigger').dropdown();
 {% endblock %}
 {% block operate %}
+    {% if btn_visible.turn_back %}
+            <a class="btn orange" href="{% url 'turn_back_order_create' object|model_name object.id %}">退回操作</a>
+        {% endif %}
     {% if object.state != 'cancel' %}
     <a class="btn default" href="{% url 'invoice_create' object|label_name object.id %}">创建账单</a>
     {% endif %}

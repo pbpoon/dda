@@ -1,22 +1,24 @@
 {% extends 'detail.html' %}
-
+{% load public %}
 {% block bnaner-title %}
     {{ object.name }}
 {% endblock %}
 {% block content %}
 
-    {% if object.get_stock_all %}
+    {% if object.stock.all %}
         <p class="h3">可用库存：</p>
         <hr>
         <form action="" method="post" id="stock_form">
             <ul>
-                {% for stock in object.get_stock_all %}
+                {% for stock in object.stock.all %}
                     {% if stock.product.type != 'semi_slab' %}
                         <li><a href="#"
                                onclick="open_package_list_by_stock('{% url 'stock_slabs_detail' stock.id %}')">{{ stock.product.get_type_display }}:{{ stock.piece }}件/{{ stock.quantity }}{{ stock.uom }}@{{ stock.location }}</a>
                         </li>
                     {% else %}
-                        <li><a href="{{ stock.get_absolute_url }}">{{ stock.product }}:{{ stock.piece }}件/{{ stock.quantity }}{{ stock.uom }}@{{ stock.location }}</a></li>
+                        <li>
+                            <a href="{{ stock.get_absolute_url }}">{{ stock.product }}:{{ stock.piece }}件/{{ stock.quantity }}{{ stock.uom }}@{{ stock.location }}</a>
+                        </li>
                     {% endif %}
                 {% endfor %}
                 <input type="hidden" value="{{ path }}" name="path">
@@ -25,7 +27,7 @@
         </form>
     {% endif %}
     <!--事务-->
-    {% if object.get_stock_all %}
+    {% if object.get_stock_trace_all %}
         <p class="h3">事务记录</p>
         <hr>
         <table>
@@ -68,4 +70,23 @@
         <li>规格：{{ object.long|default_if_none:"" }} / {{ object.width|default_if_none:"" }}
             / {{ object.height|default_if_none:"" }}</li>
     </ul>
+{% endblock %}
+{% block operate %}
+    {% if object.products.all %}
+        <ul>
+            {% for product in object.products.all %}
+                <li><a href="{{ product.get_absolute_url }}">{{ product }}</a></li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endblock %}
+{% block sidebar %}
+    {% if object.get_files %}
+        <div class="collection">
+            <a class="collection-item" href="{% url 'object_files_list' object|label_name object.id %}">
+                <span>文件档案({{ object.get_files.count }})</span>
+                <i class="material-icons right">folder</i>
+            </a>
+        </div>
+    {% endif %}
 {% endblock %}

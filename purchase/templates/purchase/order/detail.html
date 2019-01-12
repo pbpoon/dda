@@ -7,14 +7,14 @@
 
 {% endblock %}
 {% block state-right %}
- {% if object.state == 'confirm' %}
+    {% if object.state == 'confirm' %}
         <a href="{% url 'purchase_order_in_order' object.id %}" class="btn waves-effect">收货</a>
     {% endif %}
 {% endblock %}
 {% block operate %}
     <a class="btn waves-effect" href="#"
        onclick="confirm_option('{% url 'purchase_order_invoice_options' object.id %}')">创建账单</a>
-    <a class="btn waves-effect red" href="{%  url 'invoice_create' object|label_name object.id %}">手动创建账单</a>
+    <a class="btn waves-effect red" href="{% url 'invoice_create' object|label_name object.id %}">手动创建账单</a>
 {% endblock %}
 {% block btn %}
 {% endblock %}
@@ -95,8 +95,8 @@
         <hr>
         <div class="collection">
             {% for order in object.in_out_order.all %}
-                    <a href="{{ order.get_absolute_url }}" class="collection-item">{{ order }}<span
-                            class="badge">{{ order.get_state_display }}</span></a>
+                <a href="{{ order.get_absolute_url }}" class="collection-item">{{ order }}<span
+                        class="badge">{{ order.get_state_display }}</span></a>
             {% endfor %}
         </div>
     {% endif %}
@@ -110,6 +110,14 @@
                             class="badge">{{ invoice.get_state_display }}</span></a>
                 {% endif %}
             {% endfor %}
+        </div>
+    {% endif %}
+    {% if object.get_files %}
+        <div class="collection">
+            <a class="collection-item" href="{% url 'object_files_list' object|label_name object.id %}">
+                <span>文件档案({{ object.get_files.count }})</span>
+                <i class="material-icons right">folder</i>
+            </a>
         </div>
     {% endif %}
 {% endblock %}

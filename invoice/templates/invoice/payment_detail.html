@@ -52,3 +52,13 @@
         <p>本笔款项，没有分配到任何账单</p>
     {% endif %}
 {% endblock %}
+{% block sidebar %}
+{% if object.get_files %}
+        <div class="collection">
+            <a class="collection-item" href="{% url 'object_files_list' object|label_name object.id %}">
+                <span>文件档案({{ object.get_files.count }})</span>
+                <i class="material-icons right">folder</i>
+            </a>
+        </div>
+    {% endif %}
+{% endblock %}

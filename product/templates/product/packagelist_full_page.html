@@ -3,42 +3,49 @@
 {% block headline %}
     {{ object.product }}
 {% endblock %}
+{% block operate %}
+    <a class="btn waves-effect" href="{% url 'package_pdf' object.id %}">打印PDF</a>
+{% endblock %}
 {% block subheadline %}
+    <span>
+
     <input type="hidden" name="return_path" value="{{ return_path }}" form="select_slab_form">
     <a href="{{ object.return_path }}">返回</a>
     {{ object|call:'get_part' }} 夹/
     {{ object|call:'get_piece' }} 件/
     {{ object|call:'get_quantity' }}m2
+    </span><br>
+    <span id="select_display"></span>
 {% endblock %}
 {% block content %}
     {#{% include 'product/inventory_package_list.html' %}#}
     {#{% endblock %}#}
     <div class="left">
-            <button class="btn-small" id="all_select">全选</button>
-        </div>
-        <div class="right">
-            <button class="btn waves-effect" onclick='move_option("{% url 'package_list_item_move' object.id %}")'>
-                移动到其他夹
-            </button>
-            <script>
-                function move_option(url) {
-                    $.ajax({
-                        url: url,
-                        method: 'GET',
-                        data: $('#select_slab_form').serialize(),
-                        success: function (data) {
-                            $('#modal1 .container').html(data);
-                            $('#item_form').attr('action', url);
-                            md.modal('open')
-                        }
-                    })
-                }
-            </script>
-            <button form="update_line" type="submit" class="btn waves-effect">刷新序号</button>
-            <form id="update_line" action="{% url 'package_full_page_update_line' object.id %}" method="post">
-                {% csrf_token %}
-            </form>
-        </div>
+        <button class="btn-small" id="all_select">全选</button>
+    </div>
+    <div class="right">
+        <button class="btn waves-effect" onclick='move_option("{% url 'package_list_item_move' object.id %}")'>
+            移动到其他夹
+        </button>
+        <script>
+            function move_option(url) {
+                $.ajax({
+                    url: url,
+                    method: 'GET',
+                    data: $('#select_slab_form').serialize(),
+                    success: function (data) {
+                        $('#modal1 .container').html(data);
+                        $('#item_form').attr('action', url);
+                        md.modal('open')
+                    }
+                })
+            }
+        </script>
+        <button form="update_line" type="submit" class="btn waves-effect">刷新序号</button>
+        <form id="update_line" action="{% url 'package_full_page_update_line' object.id %}" method="post">
+            {% csrf_token %}
+        </form>
+    </div>
     <div class="row white">
 
         <ul class="tabs">

@@ -1,0 +1,74 @@
+body, html {
+    font-family: Arial;
+}
+
+.paper {
+    page-break-inside: avoid;
+    margin-top: 7cm;
+    padding-left: auto;
+    padding-right: auto;
+    padding-top: 1cm;
+}
+
+.container {
+    padding: 12px;
+    width: 92%;
+    margin-left: auto;
+    margin-right: 25px;
+    margin-bottom: 30px;
+}
+
+.part {
+    padding: 1cm auto;
+    position: relative;
+    width: 46%;
+    height: 12cm;
+    float: left;
+    display: block;
+    margin-left: 2%;
+    margin-right: 2%;
+}
+
+.part-foot {
+    position: absolute;
+    bottom: 0px;
+    height: 1.2cm;
+    font-weight: bold;
+}
+
+table {
+    width: 92%;
+    border-collapse: collapse;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+th {
+    border-bottom: black 1px solid;
+}
+
+.quote {
+    padding-top: 10px;
+    padding-left: 25px;
+    border-left: grey 6px solid;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.left {
+    float: left;
+}
+
+.right {
+    float: right;
+}
+
+.clear {
+    clear: both;
+}

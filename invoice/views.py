@@ -142,12 +142,13 @@ class AccountListView(ListView):
 
 class AccountCreateView(CreateView):
     model = Account
-    fields = ('activate', 'name', 'desc')
+    fields = '__all__'
     template_name = 'form.html'
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
         form.fields['activate'].widget = SwitchesWidget()
+        form.fields['is_visible'].widget = SwitchesWidget()
         return form
 
 

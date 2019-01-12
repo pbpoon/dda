@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+{% load static %}
+{% load public %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <style>
+        footer {
+            height: 2cm;
+            margin-bottom: 1cm;
+            width: 100%;
+        }
+
+        .logo-font {
+            background-image: url('{% static '/image/logo-font.png' %}');
+            background-size: 100%;
+            height: 3cm;
+            width: 5cm;
+            background-position: left top;
+            background-repeat: no-repeat;
+        }
+
+        .title {
+            position: relative;
+            font-size: 46pt;
+            font-weight: bold;
+            color: lightgrey;
+            height: 100%;
+        }
+
+        .float-right {
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            font-size: 36pt;
+        }
+         li {
+            padding: 3px;
+        }
+    </style>
+    <link rel="stylesheet" href="{% static '/css/package_list_pdf.css' %}">
+    <link rel="stylesheet" href="{% static '/css/materialize.css' %}">
+</head>
+<body>
+<footer>
+    <div class="row">
+        <div class="col s5">
+            <div class="quote" style="height: 3cm;">
+            <ul>
+                <li>本产品为天然矿物加工而成，略有色差，花差。</li>
+            </ul>
+            </div>
+        </div>
+        <div class="col s4 text-right right">
+{#            <div class="title right">浅啡网#}
+{#                <div class="black-text float-right">{{ object.product.block.name }}#</div>#}
+{#            </div>#}
+        </div>
+    </div>
+
+</footer>
+</body>
+</html>

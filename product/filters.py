@@ -6,7 +6,6 @@ import django_filters
 from .models import Category, Block
 
 
-
 class BlockFilter(django_filters.FilterSet):
     from product.models import Quarry, Batch
     QUARRY = [(q.id, q) for q in Quarry.objects.all()]

@@ -1,5 +1,4 @@
 {% extends "mrp/detail.html" %}
-{% load materializecss %}
 {% block headline %}<span class="h6">[{{ object.state }}]{{ object.name }}</span>
 {% endblock %}
 {% block subheadline %}
@@ -50,7 +49,8 @@
                         <i class="material-icons red-text">arrow_downward</i>
                     {% endif %}
                 </td>
-                <td>{% if item.report != 'not_equal' %}
+                <td>
+                    {% if item.report != 'not_equal' %}
                     {% if item.old_package_list %}
                         <a href="#"
                            onclick="open_package_list('{{ item.old_package_list.get_absolute_url }}')">
@@ -60,20 +60,21 @@
                     {{ item.old_piece }}件/{{ item.old_quantity }}{{ item.product.get_uom }}
                 {% endif %}
                     <br>
-                    {% if item.report == 'not_equal' %}
+{#                    {% if item.report == 'not_equal' %}#}
                         <span class="blue-text">
                                                     {% if item.now_package_list %}
 
                                                         <a href="#"
                                                            onclick="open_package_list('{% url 'inventory_order_package_detail' item.now_package_list.id %}','{{ object.state }}')">
                                                         {{ item.now_package_list.get_part }}
-                                                        夹/{% endif %} {{ item.now_package_list.get_piece }}件/
+                                                        夹/ {{ item.now_package_list.get_piece }}件/
                             {{ item.now_package_list.get_quantity }}{{ item.product.get_uom }}</a>
                             {% else %}
                         {{ item.now_piece }}件/
                         {{ item.now_quantity }}{{ item.product.get_uom }}
                         </span>
                     {% endif %}
+{#                    {% endif %}#}
                 </td>
                 <td>{{ item.old_location }}<br>
                     <span class="blue-text">{{ item.now_location }}</span></td>

@@ -2,6 +2,8 @@ import collections
 from decimal import Decimal
 
 import decimal
+
+from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from django.urls import reverse
 
@@ -100,6 +102,7 @@ class Block(models.Model):
 
     class Meta:
         verbose_name = '荒料资料'
+        ordering = ['category', 'batch', 'name']
 
     def get_batch(self):
         if not self.batch:
@@ -115,6 +118,20 @@ class Block(models.Model):
             m3 = self.long * self.width * self.height * 0.000001
             return Decimal('{0:.2f}'.format(m3))
         return Decimal('{0:.2f}'.format(0))
+
+    def get_files(self):
+        from files.models import Files
+        files = Files.objects.none()
+        for p in self.products.all():
+            if p.files.all():
+                files |= p.files.all()
+        if files.count() > 10:
+            files = files[:10]
+        return files
+
+    @property
+    def files(self):
+        return self.get_files()
 
     @staticmethod
     def create_product(type, defaults, name, thickness=None):
@@ -141,14 +158,19 @@ class Block(models.Model):
                                      })
         return sorted(stock_trace_list, key=lambda x: (x['日期'], x['created']))
 
-    def get_stock_all(self):
-        stocks = [s for p in self.products.select_related().all() for s in p.stock.all()]
+    @property
+    def stock(self):
+        from stock.models import Stock
+        stocks = Stock.objects.none()
+        for p in self.products.select_related().all():
+            if p.stock.all():
+                stocks |= p.stock.all()
         return stocks
 
     def get_stock_total(self):
         d = collections.defaultdict(lambda: 0)
         total = {}
-        for item in self.get_stock_all():
+        for item in self.stock.all():
             a = total.setdefault(item.product.get_type_display(), d)
             a['piece'] += item.piece
             a['quantity'] += item.quantity
@@ -176,6 +198,7 @@ class Product(models.Model):
     created = models.DateTimeField('创建日期', auto_now_add=True)
     activate = models.BooleanField('启用', default=False)
     semi_slab_single_qty = models.DecimalField('毛板单件平方', null=True, max_digits=5, decimal_places=2, blank=True)
+    files = GenericRelation('files.Files')
 
     class Meta:
         verbose_name = '产品资料'
@@ -227,6 +250,24 @@ class Product(models.Model):
     def get_available(self, location=None):
         return Stock.get_available(product=self, location=location)
 
+    def get_stock_trace_all(self):
+        stock_trace_list = []
+        for t in self.product_stock_trace.all():
+            obj = t.get_obj()
+            if obj.order.state in ('draft', 'cancel'):
+                continue
+            stock_trace_list.append({'事务': (obj.order._meta.verbose_name, obj.order),
+                                     '状态': obj.order.get_state_display(),
+                                     '形态': obj.product.get_type_display(),
+                                     '件': obj.piece,
+                                     '数量': str(obj.quantity) + obj.uom,
+                                     '原库位': obj.location,
+                                     '目标库位': obj.location_dest,
+                                     '日期': obj.order.date,
+                                     'created': obj.order.created,
+                                     })
+        return sorted(stock_trace_list, key=lambda x: (x['日期'], x['created']))
+
 
 class SlabAbstract(models.Model):
     # product = models.ForeignKey('Product', on_delete=models.CASCADE, limit_choices_to={'type': 'slab'},
@@ -271,6 +312,20 @@ class SlabAbstract(models.Model):
         m2 = (self.long * self.height) / 10000 - k1 - k2
         return Decimal('{0:.2f}'.format(m2))
 
+    def k_size(self):
+        k1 = ''
+        k2 = ''
+        if self.kl1 and self.kh1:
+            k1 = '({}*{})'.format(self.kl1, self.kh1)
+        if self.kl2 and self.kh2:
+            k2 = "({}*{})".format(self.kl2, self.kh2)
+        size = ''
+        if k1:
+            size += k1
+        if k2:
+            size += k2
+        return size
+
 
 class Slab(SlabAbstract):
     stock = models.ForeignKey('stock.Stock', on_delete=models.SET_NULL, blank=True, null=True,
@@ -305,7 +360,7 @@ class PackageList(models.Model):
     def get_quantity(self, number=None):
         qs = self.items.all()
         if number:
-            qs = self.items.filter(part_number=number)
+            qs = qs.filter(part_number=number)
         return sum(item.get_quantity() for item in qs)
 
     def get_part(self):
@@ -319,6 +374,12 @@ class PackageList(models.Model):
 
     def get_part_number(self):
         return {item.part_number for item in self.items.all()}
+
+    def get_weight(self, number=None):
+        qs = self.items.all()
+        if number:
+            qs = qs.filter(part_number=number)
+        return '约 {:.2f}t'.format(sum(item.get_weight() for item in qs))
 
     def get_absolute_url(self):
         return reverse('package_detail', args=[self.id])
@@ -349,9 +410,11 @@ class PackageList(models.Model):
         package_list.save()
         return package_list
 
-    def copy(self):
-        slab_ids = [item.get_slab_id() for item in self.items.all()]
-        return self.make_package_from_list(self.product_id, slab_ids, from_package_list=self)
+    def copy(self, has_items=True):
+        lst = None
+        if has_items:
+            lst = [item.get_slab_id() for item in self.items.all()]
+        return self.make_package_from_list(self.product_id, lst, from_package_list=self)
 
 
 class PackageListItem(models.Model):
@@ -380,6 +443,11 @@ class PackageListItem(models.Model):
 
     def get_location(self):
         return self.slab.get_location()
+
+    def get_weight(self):
+        if self.order.product.thickness == 1.5:
+            return float(self.get_quantity()) * 0.0145 * 2.8
+        return float(self.get_quantity()) * float(self.order.product.thickness) * 2.8
 
 
 class DraftPackageList(models.Model):

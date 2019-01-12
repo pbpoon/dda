@@ -1,94 +1,107 @@
-<ul id="slide-out" class="sidenav sidenav-fixed">
-
-    <ul class="collapsible">
-        <li {% if request.path|slice:'5' == '/stock/' %} class="active" {% endif %}>
-
-            <div class="collapsible-header">库存</div>
+<ul id="slide-out" class="sidenav sidenav-fixed" >
+    <li class="logo"><img class="responsive-img" src="{{ user.get_company.logo.url }}"
+                          alt="{{ user.get_company.company.name }}" style="width: 100%; height:auto"></li>
+    <ul class="collapsible collapsible-accordion">
+        <li class="bold {% if request.path|slice:'7' == '/stock/' %} active {% endif %}">
+            <div class="collapsible-header waves-effect waves-light">库存</div>
             <div class="collapsible-body">
                 <ul>
-                    <li><a href="{% url 'stock_list' %}">库存列表</a></li>
-                    <li><a href="{% url 'warehouse_list' %}">仓库列表</a></li>
+                    <li {% if request.path|slice:'7:' == 'available/' %} class="active" {% endif %} ><a
+                            href="{% url 'stock_list' %}">库存列表</a></li>
+                    <li{% if request.path|slice:'7:' == 'warehouse/' %} class="active" {% endif %}><a
+                            href="{% url 'warehouse_list' %}">仓库列表</a></li>
                 </ul>
             </div>
         </li>
     </ul>
     <ul class="collapsible">
-        <li {% if request.path|slice:'9' == '/product/' %} class="active" {% endif %}>
+        <li class="bold{% if request.path|slice:'9' == '/product/' %} active {% endif %}">
 
-            <div class="collapsible-header">产品</div>
+            <a class="collapsible-header waves-effect">产品</a>
             <div class="collapsible-body">
                 <ul>
-                    <li><a href="{% url 'category_list' %}">品种分类</a></li>
-                    <li><a href="{% url 'quarry_list' %}">矿口分类</a></li>
-                    <li><a href="{% url 'block_list' %}">编号</a></li>
-                    <li><a href="{% url 'product_list' %}">产品</a></li>
-                    <li><a href="{% url 'package_list_draft_create' %}">新建码单</a></li>
+                    <li {% if '/product/category/' in request.path %} class="active" {% endif %}><a
+                            href="{% url 'category_list' %}">品种分类</a></li>
+                    <li {% if '/product/quarry/' in request.path %} class="active" {% endif %}><a
+                            href="{% url 'quarry_list' %}">矿口分类</a></li>
+                    <li {% if '/product/block/' in request.path %} class="active" {% endif %}><a
+                            href="{% url 'block_list' %}">编号</a></li>
+                    <li{% if '/product/product/' in  request.path %} class="active" {% endif %}><a
+                            href="{% url 'product_list' %}">产品</a></li>
                 </ul>
             </div>
         </li>
     </ul>
     <ul class="collapsible">
-        <li {% if request.path|slice:'7' == '/sales/' %} class="active" {% endif %}>
+        <li class="bold {% if request.path|slice:'7' == '/sales/' %} active {% endif %}">
 
             <div class="collapsible-header">销售</div>
             <div class="collapsible-body">
                 <ul>
-                    <li><a href="{% url 'sales_order_list' %}">销售订单</a></li>
-                    <li><a href="{% url 'customer_list' %}">客户资料</a></li>
+                    <li{% if '/sales/order/' in request.path %} class="active" {% endif %}><a
+                            href="{% url 'sales_order_list' %}">销售订单</a></li>
+                    <li{% if '/sales/customer/' in request.path %} class="active" {% endif %}><a
+                            href="{% url 'customer_list' %}">客户资料</a></li>
                 </ul>
             </div>
         </li>
     </ul>
     <ul class="collapsible">
-        <li {% if request.path|slice:'5' == '/mrp/' %} class="active" {% endif %}>
+        <li class="bold{% if '/mrp/' in  request.path %} active {% endif %}">
             <div class="collapsible-header">出入库管理</div>
             <div class="collapsible-body">
                 <ul>
-                    <li><a href="{% url 'in_out_order_list' %}">出入库</a></li>
-                    <li><a href="{% url 'move_location_order_list' %}">移库单</a></li>
-                    <li><a href="{% url 'production_list' %}">生产订单</a></li>
-                    <li><a href="{% url 'inventory_order_list' %}">库存盘点</a></li>
+                    <li{% if 'in_out_order/' in request.path %} class="active" {% endif %}><a
+                            href="{% url 'in_out_order_list' %}">出入库</a></li>
+                    <li{% if 'move_order/' in request.path %} class="active" {% endif %}><a
+                            href="{% url 'move_location_order_list' %}">移库单</a></li>
+                    <li{% if 'production/' in request.path %} class="active" {% endif %}><a
+                            href="{% url 'production_list' %}">生产订单</a></li>
+                    <li{% if 'inventory_order/' in request.path %} class="active" {% endif %}><a
+                            href="{% url 'inventory_order_list' %}">库存盘点</a></li>
                     <li>
                         <div class="divider"></div>
-                        <ul>
-                            <li><a href="{% url 'pro_ser_supplier_list' %}">生产/服务商资料</a></li>
-                            <li><a href="{% url 'production_type_list' %}">生产业务类型设置</a></li>
-                            <li><a href="{% url 'expenses_item_list' %}">费用相关设置</a></li>
-                        </ul>
                     </li>
+                    <li{% if 'supplier/' in request.path  %} class="active" {% endif %}><a
+                            href="{% url 'pro_ser_supplier_list' %}">生产/服务商资料</a></li>
+                    <li{% if 'production_type/' in request.path  %} class="active" {% endif %}><a
+                            href="{% url 'production_type_list' %}">生产业务类型设置</a></li>
+                    <li{% if 'expenses_item/' in request.path %} class="active" {% endif %} ><a
+                            href="{% url 'expenses_item_list' %}">费用相关设置</a></li>
                 </ul>
             </div>
         </li>
     </ul>
     <ul class="collapsible">
 
-        <li {% if request.path|slice:'10' == '/purchase/' %} class="active" {% endif %}>
+        <li class="bold{% if request.path|slice:'10' == '/purchase/' %} active {% endif %}">
 
             <div class="collapsible-header">采购</div>
             <div class="collapsible-body">
                 <ul>
-                    <li><a href="{% url 'purchase_order_list' %}">采购订单</a></li>
-                    <li><a href="{% url 'supplier_list' %}">供应商资料</a></li>
+                    <li{% if '/purchase/order/' in request.path %} class="active" {% endif %} ><a
+                            href="{% url 'purchase_order_list' %}">采购订单</a></li>
+                    <li{% if '/purchase/supplier/' in request.path %} %} class="active" {% endif %}><a
+                            href="{% url 'supplier_list' %}">供应商资料</a></li>
                 </ul>
             </div>
         </li>
     </ul>
+    {#    <ul class="collapsible">#}
+    {##}
+    {#        <li class="bold{% if request.path|slice:'9' == '/partner/' %} active {% endif %}">#}
+    {#            <div class="collapsible-header">业务伙伴</div>#}
+    {#            <div class="collapsible-body">#}
+    {#                <ul>#}
+    {#                    <li><a href="{% url 'partner_list' %}">列表</a></li>#}
+    {#                </ul>#}
+    {#            </div>#}
+    {#        </li>#}
+    {#    </ul>#}
+
     <ul class="collapsible">
 
-        <li {% if request.path|slice:'9' == '/partner/' %} class="active" {% endif %}>
-
-            <div class="collapsible-header">业务伙伴</div>
-            <div class="collapsible-body">
-                <ul>
-                    <li><a href="{% url 'partner_list' %}">列表</a></li>
-                </ul>
-            </div>
-        </li>
-    </ul>
-
-    <ul class="collapsible">
-
-        <li {% if request.path|slice:'9' == '/invoice/' %} class="active" {% endif %}>
+        <li class="bold{% if request.path|slice:'9' == '/invoice/' %} active {% endif %}">
 
             <div class="collapsible-header">账单</div>
             <div class="collapsible-body">
@@ -109,7 +122,7 @@
     </ul>
     <!--采购app-->
     <ul class="collapsible">
-        <li {% if request.path|slice:'8' == '/account/' %} class="active" {% endif %}>
+        <li class="bold{% if request.path|slice:'8' == '/account/' %} active {% endif %}">
 
             <div class="collapsible-header">账号</div>
             <div class="collapsible-body">
@@ -125,7 +138,10 @@
         </li>
     </ul>
     <li><a href="#" onclick="show_car_detail('{% url 'cart_detail' %}')">选择了：{{ cart|length }}项</a></li>
+    <li><a href="{% url 'company' %}">公司资料</a></li>
+    <li><a href="{% url 'files_list' %}">Files</a></li>
 </ul>
+<a href="#" data-target="slide-out" class="sidenav-trigger"><i class="material-icons">menu</i></a>
 {#<ul class="right hide-on-med-and-down">#}
 {#    <li><a href="#!">First Sidebar Link</a></li>#}
 {#    <li><a href="#!">Second Sidebar Link</a></li>#}
@@ -139,4 +155,3 @@
 {#    </ul>#}
 {#</ul>#}
 
-<a href="#" data-target="slide-out" class="sidenav-trigger"><i class="material-icons">menu</i></a>

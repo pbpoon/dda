@@ -124,3 +124,7 @@ templates/widget/
 /stone/settings/__init__.py
 /stone/settings/production.py
 !/stone/wsgi.py
+mrp/migrations/0061_auto_20190108_0654.py
+purchase/migrations/0031_auto_20190108_0654.py
+purchase/migrations/0032_auto_20190108_0700.py
+sales/migrations/0014_auto_20190108_0654.py

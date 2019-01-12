@@ -7,14 +7,17 @@ from django.shortcuts import render, get_object_or_404
 from django.template.loader import render_to_string
 from django.views import View
 from django.views.generic import ListView, DetailView
+from django.views.generic.detail import BaseDetailView
 from django.views.generic.edit import ModelFormMixin, CreateView, UpdateView, BaseDeleteView
 from django.contrib import messages
+from wkhtmltopdf.views import PDFTemplateView
 
 from invoice.models import CreateInvoice
 from mrp.filters import InOutOrderFilter, MoveLocationOrderFilter, ProductionOrderFilter, InventoryOrderFilter
 from mrp.models import ProductionOrder, ProductionOrderRawItem, ProductionOrderProduceItem, ProductionType, InOutOrder, \
-    InOutOrderItem, Expenses, ExpensesItem, InventoryOrder, InventoryOrderItem, InventoryOrderNewItem, Supplier
+    InOutOrderItem, Expenses, ExpensesItem, InventoryOrder, InventoryOrderItem, InventoryOrderNewItem, MrpSupplier
 from mrp.models import TurnBackOrder, TurnBackOrderItem
+from partner.models import Partner
 from product.models import PackageList
 from public.utils import Package, StockOperateItem
 from public.views import OrderItemEditMixin, OrderItemDeleteMixin, OrderFormInitialEntryMixin, FilterListView
@@ -539,13 +542,13 @@ class InventoryOrderEditMixin(OrderFormInitialEntryMixin):
                 'old_quantity': stock.quantity,
                 'now_quantity': stock.quantity,
             }
-            # 如果是板材，就新建一张吉码单
+            # 如果是板材，就用在库的slab新建一张码单,并把now_package_list 及package_list建为一张吉码单
             if stock.product.type == 'slab':
                 slab_ids = stock.items.all().values_list('id', flat=True)
                 package = PackageList.make_package_from_list(stock.product.id, slab_ids)
                 old_item['old_package_list'] = package
-                old_item['now_package_list'] = package.copy()
-                old_item['package_list'] = package.copy()
+                old_item['now_package_list'] = package.copy(has_items=False)
+                old_item['package_list'] = package.copy(has_items=True)
             InventoryOrderItem.objects.create(**old_item)
 
     @transaction.atomic()
@@ -577,16 +580,21 @@ class InventoryOrderNewItemDeleteView(OrderItemDeleteMixin):
     model = InventoryOrderNewItem
 
 
-class SupplierListView(FilterListView):
+class MrpSupplierListView(FilterListView):
     from sales.filters import CustomerFilter
-    model = Supplier
+    model = MrpSupplier
     filter_class = CustomerFilter
     paginate_by = 10
     template_name = 'mrp/supplier_list.html'
 
 
+class MrpSupplierDetailView(DetailView):
+    model = MrpSupplier
+    template_name = 'mrp/supplier_detail.html'
+
+
 class SupplierEditMixin:
-    model = Supplier
+    model = MrpSupplier
     form_class = SupplierForm
     template_name = 'sales/form.html'
 
@@ -602,3 +610,19 @@ class SupplierCreateView(SupplierEditMixin, CreateView):
 
 class SupplierUpdateView(SupplierEditMixin, UpdateView):
     pass
+
+
+class MoveOrderToPdfView(BaseDetailView, PDFTemplateView):
+    # show_content_in_browser = True
+    model = MoveLocationOrder
+    # header_template = 'sales/header.html'
+    template_name = 'mrp/pdf/move_order_pdf.html'
+    # footer_template = 'sales/footer.html'
+    cmd_options = {
+        'page-height': '19cm',
+        'page-width': '13cm',
+        'margin-top': '0',
+        'margin-left': '0',
+        'margin-bottom': '0',
+        'margin-right': '0',
+    }

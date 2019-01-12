@@ -8,21 +8,18 @@ from django.urls import reverse
 from partner.models import Partner
 
 
-class SupplierManager(models.Manager):
+class MrpSupplierManager(models.Manager):
     def get_queryset(self):
-        return super().get_queryset().filter(Q(type='production')|Q(type='service'))
-
-    def create(self, **kwargs):
-        kwargs['type'] = 'supplier'
-        return super().create(**kwargs)
+        return super().get_queryset().filter(Q(type='production') | Q(type='service'))
 
 
-class Supplier(Partner):
-    objects = SupplierManager()
+class MrpSupplier(Partner):
+    objects = MrpSupplierManager()
 
     class Meta:
         proxy = True
+        verbose_name = '生产/服务商资料'
+        app_label = 'partner'
 
     def get_update_url(self):
         return reverse('pro_ser_supplier_update', args=[self.id])
-

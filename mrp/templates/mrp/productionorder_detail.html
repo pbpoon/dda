@@ -32,5 +32,14 @@
             {% endfor %}
         </div>
     {% endif %}
+    {% if object.get_files %}
+        <div class="collection">
+
+            <a class="collection-item" href="{% url 'object_files_list' object|label_name object.id %}">
+
+                <i class="material-icons">folder</i>文件档案({{ object.get_files.count }})
+            </a>
+        </div>
+    {% endif %}
 {% endblock %}
 

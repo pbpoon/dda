@@ -10,7 +10,7 @@
     {#    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">#}
     {#        <link href="http://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">#}
     <!--Import materialize.css-->
-{#            <link rel="stylesheet" href="{% static 'css/materialize.min.css' %}">#}
+    {#            <link rel="stylesheet" href="{% static 'css/materialize.min.css' %}">#}
     <link href="https://cdn.bootcss.com/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
     {#    <link rel="stylesheet" href="{% static 'select2-materialize/select2-materialize.css' %}">#}
     {#    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-rc.2/css/materialize.min.css">#}
@@ -28,7 +28,14 @@
             header, main, footer {
                 padding-left: 0;
             }
+
+            .modal {
+                width: 90%;
+                height: 85%;
+            }
         }
+
+
     </style>
 
 </head>
@@ -37,17 +44,7 @@
 
 <!--标题块相关-->
 <header>
-    <nav>
-        <div class="nav-wrapper">
-            <div class="col s12">
-                <a href="#!" class="breadcrumb">First</a>
-                <a href="#!" class="breadcrumb">Second</a>
-                <a href="#!" class="breadcrumb">Third</a>
-            </div>
-        </div>
-    </nav>
     {% block header %}
-
     {% endblock %}
 </header>
 

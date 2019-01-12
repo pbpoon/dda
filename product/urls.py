@@ -21,6 +21,8 @@ urlpatterns = [
     path('block_list', views.get_block_list, name='get_block_list'),
     path('product_list', views.get_product_list, name='get_product_list'),
     path('product_info', views.get_product_info, name='get_product_info'),
+    path('package_list/<pk>/pdf/', views.PackageListPdfView.as_view(), name='package_pdf'),
+
 ]
 urlpatterns += [
     path('package_list/draft/item/delete/<pk>/', views.DraftPackageListItemDeleteView.as_view(),
@@ -78,6 +80,6 @@ urlpatterns += [
     path('quarry/', views.QuarryListView.as_view(), name='quarry_list'),
     path('block/<pk>/', views.BlockDetailView.as_view(), name='block_detail'),
     path('block/', views.BlockListView.as_view(), name='block_list'),
-    path('<pk>/', views.ProductDetailView.as_view(), name='product_detail'),
-    path('', views.ProductListView.as_view(), name='product_list'),
+    path('product/<pk>/', views.ProductDetailView.as_view(), name='product_detail'),
+    path('product/', views.ProductListView.as_view(), name='product_list'),
 ]

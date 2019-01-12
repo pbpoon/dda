@@ -74,7 +74,7 @@
                     <form action="{% url 'assign_delete' payment.id %}" method="post">
 
                         <td colspan="4" class="right-align">
-                            <a href="{{ payment.payment.get_absolute_url }}">
+                            <a {% if payment.payment.state == 'draft' %}class="red-text" {% endif %}href="{{ payment.payment.get_absolute_url }}">
                                 <i>{{ payment.payment }}</i>
                                 {#                                <i>{{ payment.payment.amount }}({{ payment.payment.account }})-{{ payment.created }}</i>#}
                             </a>
@@ -120,6 +120,7 @@
 {% block sidebar %}
     {% if object.due_amount %}
         <p class="h3">该对方名下，可分配的付款项：</p>
+        <div class="divider"></div>
         <ul class="list-group">
             {% for payment in object.partner.payments.all %}
                 {% if payment.get_balance %}
@@ -131,6 +132,14 @@
                 {% endif %}
             {% endfor %}
         </ul>
+    {% endif %}
+    {% if object.get_files %}
+        <div class="collection">
+            <a class="collection-item" href="{% url 'object_files_list' object|label_name object.id %}">
+                <span>文件档案({{ object.get_files.count }})</span>
+                <i class="material-icons right">folder</i>
+            </a>
+        </div>
     {% endif %}
 {% endblock %}
 {% block domready %}

@@ -80,6 +80,9 @@ class OrderItemBase(OrderItemSaveCreateCommentMixin, models.Model):
         self.location_dest = self.get_location_dest()
         super(OrderItemBase, self).save(*args, **kwargs)
 
+    def get_expenses_amount(self):
+        return sum(e.amount for e in self.expenses.all())
+
 
 class Expenses(models.Model):
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)

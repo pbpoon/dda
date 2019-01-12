@@ -1,0 +1,70 @@
+{% extends 'detail.html' %}
+{% block headline %}
+    公司资料
+{% endblock %}
+{% block content %}
+    公司名称:{{ object.company.name }}
+    <div class="divider"></div>
+    公司地址:{{ object.address_detail|safe }}
+    <div class="divider"></div>
+    公司账户：{{ object.account_detail|safe }}
+{% endblock %}
+{% block sidebar %}
+    {% if object.get_invoices %}
+        <span>账单</span>
+        <div class="divider"></div>
+        <div class="collection">
+            {% for invoice in object.get_invoices %}
+                <a href="{{ invoice.get_absolute_url }}" class="collection-item">{{ invoice }}<span
+                        class="badge">{{ invoice.get_state_display }}</span></a>
+            {% endfor %}
+        </div>
+    {% endif %}
+    {% if object.get_balance %}
+        <span>可分配付款</span>
+        <div class="divider"></div>
+        <div class="collection">
+            {% for pay in object.get_can_assign_payments %}
+                <a href="{{ pay.get_absolute_url }}" class="collection-item">{{ pay }}</a>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endblock %}
+{% block action_btn %}
+    <!-- action btn -->
+    {% load public %}
+    <div class="fixed-action-btn click-to-toggle">
+        <a class="btn-floating btn-large red">
+            <i class="large material-icons">mode_edit</i>
+        </a>
+        <ul>
+
+            {% if object.get_update_url %}
+                <li>
+                    <a href="{{ object.get_update_url }}" class="btn-floating red waves-effect waves-light btn"><i
+                            class="material-icons">edit</i></a>
+                </li>
+            {% endif %}
+
+{#            {% if object %}#}
+{#                {% if user|check_permission:'comment.add_comment' %}#}
+{#                    <li>#}
+{#                        <button class="btn-floating yellow darken-1"#}
+{#                                onclick="add_item('{% url 'comment_create'  object|label_name object.id %}')"><i#}
+{#                                class="material-icons">format_quote</i></button>#}
+{#                    </li>#}
+{#                {% endif %}#}
+{#                <li>#}
+{#                    <button class="btn-floating green"><i class="material-icons">publish</i></button>#}
+{#                </li>#}
+{#                {% if user|check_permission:'files.add_files' %}#}
+{#                    <li>#}
+{#                        <button class="btn-floating blue"#}
+{#                                onclick="add_item('{% url 'files_create'  object|label_name object.id %}')"><i#}
+{#                                class="material-icons">attach_file</i></button>#}
+{#                    </li>#}
+{#                {% endif %}#}
+{#            {% endif %}#}
+        </ul>
+    </div>
+{% endblock %}

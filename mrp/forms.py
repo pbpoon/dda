@@ -5,7 +5,7 @@ from django import forms
 from django.urls import reverse, reverse_lazy
 
 from mrp.models import ProductionOrder, ProductionOrderRawItem, ProductionOrderProduceItem, InOutOrder, InOutOrderItem, \
-    Expenses, InventoryOrder, InventoryOrderItem, InventoryOrderNewItem, Supplier
+    Expenses, InventoryOrder, InventoryOrderItem, InventoryOrderNewItem, MrpSupplier
 from mrp.models import TurnBackOrder, TurnBackOrderItem
 from product.models import Product, PackageList
 from public.forms import FormUniqueTogetherMixin
@@ -395,7 +395,11 @@ class InventoryOrderNewItemForm(forms.ModelForm):
             self.fields['product_type'].initial = order.product_type
             self.fields['product_type'].widget.attrs = {'disabled': True}
             self.fields['product_type'].required = False
-            if order.product_type != 'block':
+            if order.product_type == 'block':
+                self.fields['thickness'].widget = forms.HiddenInput()
+                self.fields['piece'].initial = '1'
+                self.fields['piece'].widget = forms.HiddenInput()
+            else:
                 self.fields['uom'].initial = 'm2'
         else:
             self.fields['product_type'].required = True
@@ -420,18 +424,19 @@ class InventoryOrderNewItemForm(forms.ModelForm):
             cd['piece'] = 1
         else:
             cd['uom'] = 'm2'
-        cd['product'] = cd['block'].create_product(type=cd['product_type'], defaults={'name': cd['block'].name},
-                                                   thickness=cd.get('thickness'))
+        cd['product'] = cd['block'].create_product(type=cd['product_type'], defaults={}, name=cd['block'].name,
+                                                   thickness=cd.get('thickness', None))
         if cd['product_type'] == 'slab':
             cd['package_list'] = PackageList.objects.create(product=cd['product'])
         return cd
 
 
 class SupplierForm(forms.ModelForm):
-    type = forms.TypedChoiceField(label='伙伴类型',choices=(('production', '生产单位'), ('service', '运输/服务商')), widget=RadioWidget)
+    type = forms.TypedChoiceField(label='伙伴类型', choices=(('production', '生产单位'), ('service', '运输/服务商')),
+                                  widget=RadioWidget)
 
     class Meta:
-        model = Supplier
+        model = MrpSupplier
         fields = (
             'is_company', 'type', 'sex', 'name', 'phone', 'province', 'city', 'entry')
         widgets = {

@@ -42,23 +42,25 @@
 
 
                 </td>
-            <td>
-                {% for expense in item.expenses.all %}<div class=text-right>
-                                {{ expense }}={{ expense.amount }}<br></div>{% endfor %}
-            </td>
-{#                <td><!---费用显示-->#}
-{#                    {% if item.expenses.all %}#}
-{#                        <a href="#" class="tooltipped" data-position="bottom"#}
-{#                           data-tooltip="{% for expense in item.expenses.all %}<div class=text-right>#}
-{#                                {{ expense }}={{ expense.amount }}<br></div>{% endfor %}">#}
-{#                            <i class="material-icons">monetization_on</i>{{ item.get_expenses_amount }}#}
-{#                        </a>#}
-{#                    {% endif %}</td>#}
+                <td>
+                    {% for expense in item.expenses.all %}
+                        <div class=text-right>
+                            {{ expense }}={{ expense.amount }}<br></div>{% endfor %}
+                </td>
+                {#                <td><!---费用显示-->#}
+                {#                    {% if item.expenses.all %}#}
+                {#                        <a href="#" class="tooltipped" data-position="bottom"#}
+                {#                           data-tooltip="{% for expense in item.expenses.all %}<div class=text-right>#}
+                {#                                {{ expense }}={{ expense.amount }}<br></div>{% endfor %}">#}
+                {#                            <i class="material-icons">monetization_on</i>{{ item.get_expenses_amount }}#}
+                {#                        </a>#}
+                {#                    {% endif %}</td>#}
 
                 <td>{% if object.state == 'draft' %}
                     <!-- Dropdown Trigger -->
 
-                    <a class='dropdown-trigger btn-small btn-floating grey' href='#' data-target='dropdown{{ forloop.counter }}'> <i
+                    <a class='dropdown-trigger btn-small btn-floating grey' href='#'
+                       data-target='dropdown{{ forloop.counter }}'> <i
                             class="material-icons">more_vert</i></a>
 
                     <!-- Dropdown Structure -->
@@ -88,8 +90,8 @@
                     {{ item.quantity }}{{ item.uom }}<br>
                 {% endfor %}
             </th>
-        <th>{{ object.get_expenses_amount }}</th>
-        <th></th>
+            <th>{{ object.get_expenses_amount }}</th>
+            <th></th>
         </tr>
         </tfoot>
     </table>
@@ -97,13 +99,22 @@
 {% block sidebar %}
     {% if object.invoices.all %}
         <span>账单</span>
-        <hr>
+        <div class="divider"></div>
         <div class="collection">
             {% for invoice in object.invoices.all %}
-                 {% if invoice.state not in 'cancel' %}
-                <a href="{{ invoice.get_absolute_url }}" class="collection-item">{{ invoice }}<span class="badge">{{ invoice.get_state_display }}</span></a>
+                {% if invoice.state not in 'cancel' %}
+                    <a href="{{ invoice.get_absolute_url }}" class="collection-item">{{ invoice }}<span
+                            class="badge">{{ invoice.get_state_display }}</span></a>
                 {% endif %}
             {% endfor %}
+        </div>
+    {% endif %}
+    {% if object.get_files %}
+        <div class="collection">
+            <a class="collection-item" href="{% url 'object_files_list' object|label_name object.id %}">
+                <span>文件档案({{ object.get_files.count }})</span>
+                <i class="material-icons right">folder</i>
+            </a>
         </div>
     {% endif %}
 {% endblock %}

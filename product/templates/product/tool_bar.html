@@ -1,0 +1,10 @@
+{% if object %}
+    <div class="right">
+
+        <a class="btn waves-effect" href="{% url 'package_pdf' object.id %}">打印PDF</a>
+        <a class="btn waves-effect right" href="{% url 'package_full_page' object.id %}?state={{ state }}&add_new={{ add_new }}">
+            <span>全屏编辑<i class="material-icons right">open_in_new</i></span>
+        </a>
+    </div>
+
+{% endif %}

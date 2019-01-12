@@ -112,13 +112,14 @@
     {% endif %}
 {% endblock %}
 {% block operate %}
-    <a class="btn waves-effect green" href="#" onclick="confirm_option('{% url 'sales_order_invoice_options' object.id %}')">创建账单</a>
+    <a class="btn waves-effect green" href="#"
+       onclick="confirm_option('{% url 'sales_order_invoice_options' object.id %}')">创建账单</a>
     <a class="btn waves-effect default" href="{% url 'sales_order_pdf' object.id %}">打印pdf</a>
 {% endblock %}
 {% block sidebar %}
     {% if object.in_out_order.all %}
         <span>提货单记录</span>
-        <hr>
+        <div class="divider"></div>
         <div class="collection">
             {% for order in object.in_out_order.all %}
                 <a href="{{ order.get_absolute_url }}" class="collection-item">{{ order }}<span
@@ -128,7 +129,7 @@
     {% endif %}
     {% if object.get_invoices %}
         <span>账单</span>
-        <hr>
+        <div class="divider"></div>
         <div class="collection">
             {% for invoice in object.get_invoices %}
                 {% if invoice.state not in 'cancel' %}
@@ -136,6 +137,14 @@
                             class="badge">{{ invoice.get_state_display }}</span></a>
                 {% endif %}
             {% endfor %}
+        </div>
+    {% endif %}
+    {% if object.get_files %}
+        <div class="collection">
+            <a class="collection-item" href="{% url 'object_files_list' object|label_name object.id %}">
+                <span>文件档案({{ object.get_files.count }})</span>
+                <i class="material-icons right">folder</i>
+            </a>
         </div>
     {% endif %}
 {% endblock %}

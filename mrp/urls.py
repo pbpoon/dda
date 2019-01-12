@@ -51,6 +51,7 @@ urlpatterns = [
          name='move_location_order_item_edit'),
     path('move_order/update/<pk>/', views.MoveLocationOrderUpdateView.as_view(), name='move_location_order_update'),
     path('move_order/create/', views.MoveLocationOrderCreateView.as_view(), name='move_location_order_create'),
+    path('move_order/<pk>/pdf/', views.MoveOrderToPdfView.as_view(), name='move_order_pdf'),
     path('move_order/<pk>/', views.MoveLocationOrderDetailView.as_view(), name='move_location_order_detail'),
     path('move_order/', views.MoveLocationOrderListView.as_view(), name='move_location_order_list'),
 
@@ -91,5 +92,6 @@ urlpatterns = [
     path('in_out_order/', views.InOutOrderListView.as_view(), name='in_out_order_list'),
     path('supplier/update/<pk>/', views.SupplierUpdateView.as_view(), name='pro_ser_supplier_update'),
     path('supplier/create/', views.SupplierCreateView.as_view(), name='pro_ser_supplier_create'),
-    path('supplier/', views.SupplierListView.as_view(), name='pro_ser_supplier_list'),
+    path('supplier/<pk>', views.MrpSupplierDetailView.as_view(), name='pro_ser_supplier_detail'),
+    path('supplier/', views.MrpSupplierListView.as_view(), name='pro_ser_supplier_list'),
 ]

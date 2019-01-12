@@ -98,6 +98,15 @@
             {% endfor %}
         </div>
     {% endif %}
+    {% if object.get_files %}
+        <div class="collection">
+
+            <a class="collection-item" href="{% url 'object_files_list' object|label_name object.id %}">
+
+                <i class="material-icons">folder</i>文件档案({{ object.get_files.count }})
+            </a>
+        </div>
+    {% endif %}
 {% endblock %}
 
 {% block headline %}
@@ -105,4 +114,8 @@
 {% endblock %}
 {% block subheadline %}
     业务伙伴：{{ object.partner }} / 经办人:{{ object.handler }}
+{% endblock %}
+{% block operate %}
+    {{ block.super }}
+    <a class="btn default" href="{% url 'move_order_pdf' object.id %}">打印PDF</a>
 {% endblock %}

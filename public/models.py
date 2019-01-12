@@ -161,6 +161,7 @@ class OrderAbstract(HasChangedMixin, models.Model):
                               related_name='%(class)s_entry')
     comments = GenericRelation('comment.Comment')
     invoices = GenericRelation('invoice.Invoice')
+    files = GenericRelation('files.Files')
 
     # operation_logs = GenericRelation('comment.OperationLogs')
 
@@ -202,3 +203,8 @@ class OrderAbstract(HasChangedMixin, models.Model):
             a['uom'] = item.uom
         return total
 
+    def get_files(self):
+        files = self.files.all()
+        if files.count() > 10:
+            files = files[:10]
+        return files

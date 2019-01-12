@@ -1,5 +1,6 @@
 import calendar
 import datetime
+import re
 from decimal import Decimal
 from django.db import models
 from django.contrib.contenttypes.models import ContentType
@@ -87,6 +88,7 @@ class Invoice(HasChangedMixin, models.Model):
     usage = models.CharField('款项用途', max_length=50)
     type = models.CharField('付款/收款', choices=TYPE_CHOICES, null=False, max_length=2, default='-1')
     comments = GenericRelation('comment.Comment')
+    files = GenericRelation('files.Files')
 
     monitor_fields = ['state', 'partner', 'usage', 'type', 'date', 'due_date']
 
@@ -187,6 +189,12 @@ class Invoice(HasChangedMixin, models.Model):
                                          amount=self.due_amount,
                                          entry=self.entry)
         Assign.objects.create(invoice=self, payment=payment, amount=payment.amount, entry=entry)
+
+    def get_files(self):
+        files = self.files.all()
+        if files.count() > 10:
+            files = files[:10]
+        return files
 
 
 class ExpensesInvoice(Invoice):
@@ -310,6 +318,7 @@ class Payment(HasChangedMixin, models.Model):
                               related_name='%(class)s_entry')
     confirm = models.BooleanField('确认款项', default=False)
     comments = GenericRelation('comment.Comment')
+    files = GenericRelation('files.Files')
 
     class Meta:
         verbose_name = '收付款记录'
@@ -369,11 +378,27 @@ class Payment(HasChangedMixin, models.Model):
                 assign.invoice.confirm(**{'comment': commnet})
         return True, ''
 
+    def get_files(self):
+        files = self.files.all()
+        if files.count() > 10:
+            files = files[:10]
+        return files
+
+
+def format_number(seq, n):
+    num = ''
+    for i in range(n):
+        num += '.'
+    lst = re.findall(num, seq)
+    return '-'.join(lst)
+
 
 class Account(models.Model):
     activate = models.BooleanField('启用', default=True)
-    name = models.CharField('帐户名称', max_length=20)
-    desc = models.CharField('描述', max_length=200)
+    name = models.CharField('账户名称', max_length=20)
+    account_number = models.CharField('账号', max_length=30, blank=True, null=True)
+    owner = models.CharField('账户人', max_length=30, blank=True, null=True)
+    bank = models.CharField('银行名称', max_length=30, blank=True, null=True)
     created = models.DateTimeField('创建时间', auto_now_add=True)
     updated = models.DateTimeField('更新时间', auto_now=True)
     is_visible = models.BooleanField('显示', default=True)
@@ -382,8 +407,13 @@ class Account(models.Model):
         return reverse('account_detail', args=[self.id])
 
     def __str__(self):
-        desc = '(%s)' % (self.desc) if self.desc else ''
+        desc = '(%s)' % (self.account_number[:-4]) if self.account_number else ''
         return '{}'.format(self.name, desc)
+
+    def display(self):
+        if self.account_number:
+            number = format_number(self.account_number, 4)
+            return "%s: %s  %s" % (self.bank, self.owner, number)
 
     @classmethod
     def get_expense_account(cls):

@@ -1,27 +1,23 @@
 from _decimal import Decimal
-import itertools
 import weasyprint
 from django.db import transaction
 from django.db.models import Q
 from django.forms import inlineformset_factory
-from django import forms
 from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render, get_object_or_404
 from django.template.loader import render_to_string
 from django.urls import reverse
-from django.views import View
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.views.generic import DetailView, CreateView, UpdateView, DeleteView
+from django.views.generic.detail import BaseDetailView
 from cart.cart import Cart
-from invoice.models import CreateInvoice
-from public.stock_operate import StockOperate
 from public.views import OrderFormInitialEntryMixin, OrderItemEditMixin, OrderItemDeleteMixin, StateChangeMixin, \
     ModalOptionsMixin, FilterListView
-from public.widgets import SwitchesWidget
 from sales.forms import SalesOrderForm, SalesOrderItemForm, SalesOrderItemQuickForm, CustomerForm
 from sales.models import SalesOrder, SalesOrderItem, Customer
-from stone import settings
+from django.conf import settings
 from .filters import SalesOrderFilter, CustomerFilter
 from wechatpy.enterprise import WeChatClient
+from wkhtmltopdf.views import PDFTemplateView
 
 corp_id = 'wwb132fd0d32417e5d'
 SECRET = 'la8maluNMN_imtic0Jp0ECmE71ca2iQ80n3-a8HFFv4'
@@ -163,14 +159,34 @@ class SalesOrderQuickCreateView(SalesOrderEditMixin, CreateView):
         return HttpResponseRedirect(self.get_success_url())
 
 
-def admin_order_pdf(request, order_id):
-    order = get_object_or_404(SalesOrder, id=order_id)
+def admin_order_pdf(request, pk):
+    order = get_object_or_404(SalesOrder, id=pk)
     html = render_to_string('sales/salesorder_pdf.html', {'object': order})
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = 'filename="order_{}"'.format(order.id)
     weasyprint.HTML(string=html).write_pdf(response,
                                            stylesheets=[weasyprint.CSS(settings.STATIC_ROOT + '/css/materialize.css')])
     return response
+
+
+class OrderToPdfView(BaseDetailView, PDFTemplateView):
+    show_content_in_browser = True
+    model = SalesOrder
+    # header_template = 'sales/header.html'
+    template_name = 'sales/salesorder_pdf.html'
+    # footer_template = 'sales/footer.html'
+    cmd_options = {
+        'page-height': '19cm',
+        'page-width': '13cm',
+        'margin-top': '0',
+        'margin-left': '0',
+        'margin-bottom': '0',
+        'margin-right': '0',
+    }
+
+    def get_context_data(self, **kwargs):
+        kwargs['show_account'] = True
+        return super().get_context_data(**kwargs)
 
 
 class CustomerListView(FilterListView):

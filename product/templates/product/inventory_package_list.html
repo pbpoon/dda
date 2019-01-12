@@ -2,9 +2,8 @@
 {#<div class="row">#}
 <div class="col s12">
     {#{% if not full_view %}#}
-    <a href="{% url 'package_full_page' object.id %}?state={{ state }}&add_new={{ add_new }}">
-        全屏编辑<i class="material-icons right">open_in_new</i>
-    </a>
+       {% include 'product/tool_bar.html' %}
+
     {#{% endif %}#}
     <div><span class="title">{{ object }}</span>
         <p>{{ package.get_piece }}件 / {{ package.get_part_number|length }}夹 /

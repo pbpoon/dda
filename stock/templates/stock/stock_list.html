@@ -25,15 +25,17 @@
             <tbody>
             {% for object in object_list %}
                 <tr>
-                    <td>{{ object.product }}</td>
-                    <td>{% if object.product.type == 'slab' %}{{ object.get_part }} 夹/ {% endif %}
-                        {{ object.piece }} 件/ {{ object.quantity }}{{ object.uom }}</td>
+                    <td><a href="{{ object.product.block.get_absolute_url }}">{{ object.product }}</a></td>
+                    <td><a href="#" onclick="open_package_list_by_stock('{% url 'stock_slabs_detail' object.id %}')">
+                        {% if object.product.type == 'slab' %}{{ object.get_part }} 夹/ {% endif %}
+                        {{ object.piece }} 件/ {{ object.quantity }}{{ object.uom }}</a></td>
                     <td>{{ object.location }}</td>
                     <td></td>
                 </tr>
             {% endfor %}
             </tbody>
         </table>
+        {% include 'modal.html' %}
 
         {% include 'paginatior.html' %}
     </div>

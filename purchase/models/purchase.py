@@ -66,6 +66,7 @@ class PurchaseOrder(OrderAbstract):
             # total.setdefault(item.product.get_type_display(), {}).update(d)
         return total
 
+
     @property
     def amount(self):
         return self.get_amount()

@@ -16,7 +16,8 @@ Including another URLconf
 from django.urls import path
 from . import views
 
-
 urlpatterns = [
+    path('list/<app_label_name>/<object_id>/', views.FilesListView.as_view(), name='object_files_list'),
+    path('list/', views.FilesListView.as_view(), name='files_list'),
     path('create/<app_label_name>/<object_id>/', views.FilesCreateView.as_view(), name='files_create'),
 ]

@@ -28,6 +28,11 @@ class Files(models.Model):
     class Meta:
         verbose_name = '文件'
 
+    def __str__(self):
+        name = self.content.name.split('/')[-1]
+        name = '[%s]%s:%s' % (self.get_type_display(), self.desc if self.desc else '', name)
+        return name
+
     def get_obj(self):
         return self.content_type.model_class().objects.get(pk=self.object_id)
 

@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 # Created by pbpoon on 2019/1/4
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+# from braces.views import PermissionRequiredMixin
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 

@@ -1,31 +1,83 @@
 {% extends 'detail.html' %}
-
+{% load public %}
 {% block bnaner-title %}
     {{ object.name }}
 {% endblock %}
 {% block content %}
-    <ul>
-        <li>{{ object.category }}</li>
-        <li>{{ object.batch }}</li>
-        <li>{{ object.weight }}</li>
-        <li>{{ object.m3 }}</li>
-        <li>{{ object.uom }}</li>
-    </ul>
-    <hr>
     {% if object.stock.all %}
-        <p class="h4">可以库存：</p>
-        <form action="{% url 'cart_add' object.id %}" method="post" id="stock_form">
+        <p class="h3">可用库存：</p>
+        <hr>
+        <form action="" method="post" id="stock_form">
             <ul>
                 {% for stock in object.stock.all %}
-                    <li><input type="checkbox" value="{{ stock.product.id }}" name="select_product_list"><a
-                            href="">{{ stock.piece }}件/{{ stock.quantity }}{{ stock.uom }}@{{ stock.location }}</a></li>
+                    {% if stock.product.type != 'semi_slab' %}
+                        <li><a href="#"
+                               onclick="open_package_list_by_stock('{% url 'stock_slabs_detail' stock.id %}')">{{ stock.product.get_type_display }}:{{ stock.piece }}件/{{ stock.quantity }}{{ stock.uom }}@{{ stock.location }}</a>
+                        </li>
+                    {% else %}
+                        <li>
+                            <a href="{{ stock.get_absolute_url }}">{{ stock.product }}:{{ stock.piece }}件/{{ stock.quantity }}{{ stock.uom }}@{{ stock.location }}</a>
+                        </li>
+                    {% endif %}
                 {% endfor %}
                 <input type="hidden" value="{{ path }}" name="path">
-            {% csrf_token %}
+                {% csrf_token %}
             </ul>
         </form>
     {% endif %}
+    <!--事务-->
+    {% if object.get_stock_trace_all %}
+        <p class="h3">事务记录</p>
+        <hr>
+        <table>
+            {% for track in object.get_stock_trace_all %}
+                {% if forloop.first %}
+                    <thead>
+                    <tr>
+                        {% for key in track.keys %}
+                            <th>{{ key }}</th>
+                        {% endfor %}
+                    </tr>
+                    </thead>
+                {% endif %}
+                <tbody>
+                <tr>
+                    {% for key,value in track.items %}
+                        {% if forloop.first %}
+                            <td><a href="{{ value.1.get_absolute_url }}">{{ value.0 }}</a></td>
+                        {% else %}
+                            <td>{{ value }}</td>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+                </tbody>
+            {% endfor %}
+        </table>
+    {% endif %}
 {% endblock %}
-{% block siderbar %}
-    <input class="btn btn-block btn-outline-primary" type="submit" value="添加到选择列表" form="stock_form">
+{% block headline %}
+    {{ object }}
+{% endblock %}
+{% block subheadline %}
+    <ul style="display: inline">
+    <li>编号:<a href="{{ object.block.get_absolute_url }}">{{ object.block.name }}</a></li>
+        <li>品种：{{ object.block.category|default_if_none:"" }}</li>
+        <li>矿口：{{ object.block.quarry|default_if_none:"" }}</li>
+        <li>批次：{{ object.block.get_batch }}</li>
+        <li>重量：{{ object.block.weight }}</li>
+        <li>立方：{{ object.block.m3 }}</li>
+        <li>计量单位:{{ object.uom }}</li>
+{#        <li>规格：{{ object.long|default_if_none:"" }} / {{ object.width|default_if_none:"" }}#}
+{#            / {{ object.height|default_if_none:"" }}</li>#}
+    </ul>
+{% endblock %}
+{% block sidebar %}
+    {% if object.get_files %}
+        <div class="collection">
+            <a class="collection-item" href="{% url 'object_files_list' object|label_name object.id %}">
+                <span>文件档案({{ object.get_files.count }})</span>
+                <i class="material-icons right">folder</i>
+            </a>
+        </div>
+    {% endif %}
 {% endblock %}

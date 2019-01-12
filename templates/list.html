@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-
+{% load static %}
 <!--标题块相关-->
 {% block header %}
     <div  class="section s12 m12 l12">
@@ -17,7 +17,7 @@
         <div class="col s12 m8 l8">
             {% block content %}
             {% endblock %}
-            {% include 'comment.html' %}
+{#            {% include 'comment.html' %}#}
         </div>
         <div class="col s12 m4 l4">
             {% block sidebar %}

@@ -115,6 +115,8 @@ class Partner(models.Model):
             return reverse('customer_detail', args=[self.id])
         elif self.type == 'supplier':
             reverse('supplier_detail', args=[self.id])
+        elif self.type in ('production', 'service'):
+            return reverse('pro_ser_supplier_detail', args=[self.id])
         return reverse('partner_detail', args=[self.id])
 
     def get_location(self):
@@ -127,14 +129,12 @@ class Partner(models.Model):
 
     @classmethod
     def get_expenses_partner(cls):
-        partner, _ = cls.objects.get_or_create(name='杂费支出', is_company=True, type='invoice', phone='88888888888',
-                                               is_invoice=True)
+        partner, _ = cls.objects.get_or_create(name='杂费支出', is_company=True, type='invoice', phone='88888888888')
         return partner
 
     @classmethod
     def get_undercharge_partner(cls):
-        partner, _ = cls.objects.get_or_create(name='货款少收/坏账', is_company=True, type='invoice', phone='88888888881',
-                                               is_invoice=True)
+        partner, _ = cls.objects.get_or_create(name='货款少收/坏账', is_company=True, type='invoice', phone='88888888881')
         return partner
 
     def get_invoices(self):
@@ -154,10 +154,30 @@ class InvoicePartner(Partner):
 
 
 class MainInfo(models.Model):
-    company = models.OneToOneField('partner.Partner', on_delete=models.CASCADE, verbose_name='公司资料')
+    company = models.OneToOneField('partner.Partner', on_delete=models.CASCADE, verbose_name='公司资料', blank=True,
+                                   null=True)
+    logo = models.ImageField('logo', upload_to='logo', blank=True, null=True)
+    address_detail = models.TextField('详细地址')
 
     class Meta:
         verbose_name = '公司资料'
 
     def __str__(self):
         return self.company.name
+
+    @property
+    def account_detail(self):
+        from invoice.models import Account
+        accounts = Account.objects.filter(activate=True, account_number__isnull=False)
+        html = ""
+        for account in accounts:
+            if html:
+                html += '<br>'
+            html += '<span>%s</span>' % (account.display())
+        return html
+
+    def get_update_url(self):
+        return reverse('company_update', args=[self.id])
+
+    def get_absolute_url(self):
+        return reverse('company_detail', args=[self.id])

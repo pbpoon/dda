@@ -1,8 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Created by pbpoon on 2018/12/29
+import operator
+from functools import reduce
 
 import django_filters
+from django.db.models import Q
+
 from .models import Stock, Warehouse
 
 
@@ -18,6 +22,10 @@ class StockFilter(django_filters.FilterSet):
 
     quarry = django_filters.ChoiceFilter(label='矿口', choices=QUARRY, method='filter_by_quarry')
     batch = django_filters.ChoiceFilter(label='批次', choices=BATCH, method='filter_by_batch')
+    long_gt = django_filters.CharFilter(label='长度大于', method='filter_by_long_gt')
+    long_lt = django_filters.CharFilter(label='长度小于', method='filter_by_long_lt')
+    height_gt = django_filters.CharFilter(label='高度大于', method='filter_by_height_gt')
+    height_lt = django_filters.CharFilter(label='高度小于', method='filter_by_height_lt')
 
     class Meta:
         model = Stock
@@ -42,3 +50,31 @@ class StockFilter(django_filters.FilterSet):
     def filter_by_batch(self, queryset, name, value):
         expression = {'product__block__batch_id': value}
         return queryset.filter(**expression)
+
+    def filter_by_long_gt(self, queryset, name, value):
+        lst = []
+        for key in ['items__long__gt']:
+            q_obj = Q(**{key: value})
+            lst.append(q_obj)
+        return queryset.filter(reduce(operator.or_, lst)).distinct()
+
+    def filter_by_long_lt(self, queryset, name, value):
+        lst = []
+        for key in ['items__long__lt']:
+            q_obj = Q(**{key: value})
+            lst.append(q_obj)
+        return queryset.filter(reduce(operator.or_, lst)).distinct()
+
+    def filter_by_height_gt(self, queryset, name, value):
+        lst = []
+        for key in ['items__height__gt']:
+            q_obj = Q(**{key: value})
+            lst.append(q_obj)
+        return queryset.filter(reduce(operator.or_, lst)).distinct()
+
+    def filter_by_height_lt(self, queryset, name, value):
+        lst = []
+        for key in ['items__height__lt']:
+            q_obj = Q(**{key: value})
+            lst.append(q_obj)
+        return queryset.filter(reduce(operator.or_, lst)).distinct()

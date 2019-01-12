@@ -123,14 +123,15 @@ class SalesOrder(OrderAbstract):
                 return False, '已有提货单为出库状态'
             is_done, msg = StockOperate(self, self.items.all()).reserve_stock(unlock=True)
         if is_done:
-            self.state = 'draft'
-            self.save()
-            self.create_comment(**kwargs)
-            comment = '更新<a href="%s">%s</a>状态:%s, 修改本账单' % (self.get_absolute_url(), self, self.state)
-            for invoice in self.get_invoices():
-                invoice.state = 'draft'
-                invoice.save()
-                invoice.create_comment(**{'comment': comment})
+            return False, '不能把完成的订单设置为 草稿'
+        #     self.state = 'draft'
+        #     self.save()
+        #     self.create_comment(**kwargs)
+        #     comment = '更新<a href="%s">%s</a>状态:%s, 修改本账单' % (self.get_absolute_url(), self, self.state)
+        #     for invoice in self.get_invoices():
+        #         invoice.state = 'draft'
+        #         invoice.save()
+        #         invoice.create_comment(**{'comment': comment})
         return is_done, msg
 
     def cancel(self, **kwargs):
@@ -140,14 +141,15 @@ class SalesOrder(OrderAbstract):
                 return False, '已有提货单为出库状态'
             is_done, msg = StockOperate(self, self.items.all()).reserve_stock(unlock=True)
         if is_done:
-            self.state = 'cancel'
-            self.save()
-            self.create_comment(**kwargs)
-            comment = '更新<a href="%s">%s</a>状态:%s, 修改本账单' % (self.get_absolute_url(), self, self.state)
-            for invoice in self.get_invoices():
-                invoice.state = 'cancel'
-                invoice.save()
-                invoice.create_comment(**{'comment': comment})
+            return False, '不能把完成的订单设置为 草稿'
+            # self.state = 'cancel'
+            # self.save()
+            # self.create_comment(**kwargs)
+            # comment = '更新<a href="%s">%s</a>状态:%s, 修改本账单' % (self.get_absolute_url(), self, self.state)
+            # for invoice in self.get_invoices():
+            #     invoice.state = 'cancel'
+            #     invoice.save()
+            #     invoice.create_comment(**{'comment': comment})
         return is_done, msg
 
     def _get_invoice_usage(self):

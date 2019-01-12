@@ -16,9 +16,6 @@
         {% if btn_visible.cancel %}
             <button class="btn grey" onclick="state_confirm('cancel')">取消</button>
         {% endif %}
-        {% if btn_visible.turn_back %}
-            <a class="btn orange" href="{% url 'turn_back_order_create' object|model_name object.id %}">退回操作</a>
-        {% endif %}
         {% if btn_visible.delete %}
             <button class="btn grey" onclick="item_remove('{{ object.get_delete_url }}')">删除</button>
         {% endif %}
