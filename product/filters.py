@@ -3,7 +3,7 @@
 # Created by pbpoon on 2018/12/29
 
 import django_filters
-from .models import Category, Block
+from .models import Category, Block, Product
 
 
 class BlockFilter(django_filters.FilterSet):
@@ -36,3 +36,25 @@ class BlockFilter(django_filters.FilterSet):
     def filter_by_category(self, queryset, name, value):
         catgory_ids = Category.objects.get(pk=value).get_child_list()
         return queryset.filter(**{'category_id__in': catgory_ids})
+
+
+class ProductFilter(BlockFilter):
+    class Meta:
+        model = Product
+        fields = ('name', 'quarry', 'batch')
+
+    def filter_by_block(self, queryset, name, value):
+        expression = {'block_name__icontains': value}
+        return queryset.filter(**expression)
+
+    def filter_by_quarry(self, queryset, name, value):
+        expression = {'block_quarry_id': value}
+        return queryset.filter(**expression)
+
+    def filter_by_batch(self, queryset, name, value):
+        expression = {'block_batch_id': value}
+        return queryset.filter(**expression)
+
+    def filter_by_category(self, queryset, name, value):
+        catgory_ids = Category.objects.get(pk=value).get_child_list()
+        return queryset.filter(**{'block_category_id__in': catgory_ids})

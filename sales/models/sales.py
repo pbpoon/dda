@@ -69,9 +69,10 @@ class SalesOrder(OrderAbstract):
         {{ key }}:{% if item.part %}{{ item.part }}夹 / {% endif %}{{ item.piece }}件 / {{ item.quantity }}{{ item.uom }}<br>
         {% endfor %}
         """
-        d = collections.defaultdict(lambda: 0)
+
         total = {}
         for item in self.items.all():
+            d = collections.defaultdict(lambda: 0)
             a = total.setdefault(item.product.get_type_display(), d)
             a['piece'] += item.piece
             a['quantity'] += item.quantity
@@ -122,16 +123,17 @@ class SalesOrder(OrderAbstract):
             if self.in_out_order.filter(Q(state='confirm') | Q(state='done')).exists():
                 return False, '已有提货单为出库状态'
             is_done, msg = StockOperate(self, self.items.all()).reserve_stock(unlock=True)
+        if self.state == 'done':
+            is_done, msg = False, '不能把已完成的订单设置为：取消'
         if is_done:
-            return False, '不能把完成的订单设置为 草稿'
-        #     self.state = 'draft'
-        #     self.save()
-        #     self.create_comment(**kwargs)
-        #     comment = '更新<a href="%s">%s</a>状态:%s, 修改本账单' % (self.get_absolute_url(), self, self.state)
-        #     for invoice in self.get_invoices():
-        #         invoice.state = 'draft'
-        #         invoice.save()
-        #         invoice.create_comment(**{'comment': comment})
+            self.state = 'draft'
+            self.save()
+            self.create_comment(**kwargs)
+            comment = '更新<a href="%s">%s</a>状态:%s, 修改本账单' % (self.get_absolute_url(), self, self.state)
+            for invoice in self.get_invoices():
+                invoice.state = 'draft'
+                invoice.save()
+                invoice.create_comment(**{'comment': comment})
         return is_done, msg
 
     def cancel(self, **kwargs):
@@ -140,16 +142,17 @@ class SalesOrder(OrderAbstract):
             if self.in_out_order.filter(Q(state='confirm') | Q(state='done')).exists():
                 return False, '已有提货单为出库状态'
             is_done, msg = StockOperate(self, self.items.all()).reserve_stock(unlock=True)
+        if self.state == 'done':
+            is_done, msg = False, '不能把已完成的订单设置为：取消'
         if is_done:
-            return False, '不能把完成的订单设置为 草稿'
-            # self.state = 'cancel'
-            # self.save()
-            # self.create_comment(**kwargs)
-            # comment = '更新<a href="%s">%s</a>状态:%s, 修改本账单' % (self.get_absolute_url(), self, self.state)
-            # for invoice in self.get_invoices():
-            #     invoice.state = 'cancel'
-            #     invoice.save()
-            #     invoice.create_comment(**{'comment': comment})
+            self.state = 'cancel'
+            self.save()
+            self.create_comment(**kwargs)
+            comment = '更新<a href="%s">%s</a>状态:%s, 修改本账单' % (self.get_absolute_url(), self, self.state)
+            for invoice in self.get_invoices():
+                invoice.state = 'cancel'
+                invoice.save()
+                invoice.create_comment(**{'comment': comment})
         return is_done, msg
 
     def _get_invoice_usage(self):
@@ -180,14 +183,13 @@ class SalesOrderItem(OrderItemSaveCreateCommentMixin, models.Model):
     order = models.ForeignKey('SalesOrder', on_delete=models.CASCADE, related_name='items', verbose_name='销售订单')
     line = LineField(for_fields=['order'], blank=True, verbose_name='行')
     product = models.ForeignKey('product.Product', on_delete=models.CASCADE, verbose_name='产品',
-                                limit_choices_to={'type__in': ('block', 'slab')})
+                                limit_choices_to={'type__in': ('block', 'slab')}, related_name='sales_order_item')
     piece = models.IntegerField('件', blank=True, null=True)
     quantity = models.DecimalField('数量', decimal_places=2, max_digits=10, blank=True, null=True)
     uom = models.CharField('计量单位', null=False, choices=UOM_CHOICES, max_length=10, default='t')
     price = models.DecimalField('单价', max_digits=8, decimal_places=2)
     package_list = models.ForeignKey('product.PackageList', on_delete=models.SET_NULL, blank=True, null=True,
                                      verbose_name='码单')
-
     invoice_items = GenericRelation('invoice.InvoiceItem')
 
     monitor_fields = ['line', 'product', 'price', 'quantity', 'uom', 'piece']
@@ -233,11 +235,18 @@ class SalesOrderItem(OrderItemSaveCreateCommentMixin, models.Model):
     def get_can_make_invoice_amount(self):
         return self.get_can_make_invoice_qty() * self.price
 
-    def get_can_in_out_order_qty(self):
+    def get_in_out_order_qty(self):
         quantity, piece, part = 0, 0, 0
         for item in self.in_out_order_items.all():
             if item.state in ('confirm', 'done'):
                 quantity += item.quantity
                 piece += item.piece
                 part += item.package_list.get_part() if item.package_list else 0
+        return {'quantity': quantity, 'piece': piece, 'part': part}
+
+    def get_can_in_out_order_qty(self):
+        in_out_order_qty = self.get_in_out_order_qty()
+        quantity = self.quantity - in_out_order_qty['quantity']
+        piece = self.piece - in_out_order_qty['piece']
+        part = self.package_list.get_part() - in_out_order_qty['part'] if self.package_list else 0
         return {'quantity': quantity, 'piece': piece, 'part': part}

@@ -20,7 +20,7 @@
                     {% endfor %}
                 </div>
                 <i class="material-icons circle">{{ object.name|slice:'1' }}</i>
-                <span class="title black-text">{{ object.name }}</span>
+                <span class="title black-text">{{ object }}</span>
                 <p><br>
                     <i>{{ object.category }}</i>
                 </p><span>{{ object.created|date:"Y/m/d" }}</span>
@@ -46,4 +46,5 @@
             <button class="btn waves-effect" type="submit">确定</button>
         </form>
     </div>
+
 {% endblock %}

@@ -17,7 +17,7 @@
         {% for item in object.items.all %}
             <tr>
                 <td>{{ item.line }}</td>
-                <td>{{ item.product }}</td>
+                <td><a href="{{ item.product.block.get_absolute_url }}">{{ item.product }}</a></td>
                 <td>
                     {% if item.package_list %}
                         <a href="#"

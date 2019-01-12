@@ -38,6 +38,10 @@ class SalesOrderForm(forms.ModelForm):
             self.fields['city'].widget.attrs = {'class': 'city s6'}
             self.fields['province'].widget.attrs = {'class': 'prov s6'}
 
+    def clean(self):
+        cd = self.cleaned_data
+        return cd
+
     def save(self, commit=True):
         is_default_address = self.cleaned_data.get('is_default_address')
         instance = super().save(commit=False)

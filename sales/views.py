@@ -1,5 +1,6 @@
 from _decimal import Decimal
 import weasyprint
+from datetime import datetime
 from django.db import transaction
 from django.db.models import Q
 from django.forms import inlineformset_factory
@@ -19,11 +20,6 @@ from .filters import SalesOrderFilter, CustomerFilter
 from wechatpy.enterprise import WeChatClient
 from wkhtmltopdf.views import PDFTemplateView
 
-corp_id = 'wwb132fd0d32417e5d'
-SECRET = 'la8maluNMN_imtic0Jp0ECmE71ca2iQ80n3-a8HFFv4'
-
-client = WeChatClient(corp_id, SECRET)
-
 
 class SalesOrderListView(FilterListView):
     model = SalesOrder
@@ -31,27 +27,63 @@ class SalesOrderListView(FilterListView):
     paginate_by = 10
 
 
-class SalesOrderDetailView(StateChangeMixin, DetailView):
+class SentWxMsg:
+    agent_id = None
+    user_ids = '@all'
+    # SECRET = 'la8maluNMN_imtic0Jp0ECmE71ca2iQ80n3-a8HFFv4'
+
+    def get_url(self):
+        return "%s" % (self.request.build_absolute_uri())
+
+    def get_title(self):
+        title = "%s:%s=>%s" % (self.model._meta.verbose_name, self.object.order, self.object.get_state_display())
+        return title
+
+    def get_description(self):
+        html = "日期:%s" % (datetime.strftime(self.object.date, "%Y/%m/%d"))
+        html += '<br>客户:%s' % (self.object.partner)
+        html += '<br>销往:%s' % (self.object.get_address())
+        html += '<br>金额:¥ %s' % (self.object.amount)
+        html += '<br>操作:¥ %s' % (self.request.user)
+
+        return html
+
+    def sent_msg(self):
+        from action.models import WxConf
+        wx_conf = WxConf(agent_id=self.agent_id)
+        client = WeChatClient(wx_conf.corp_id, wx_conf.Secret)
+        client.message.send_text_card(agent_id=self.agent_id, user_ids=self.user_ids, title=self.get_title(),
+                                      description=self.get_description(),
+                                      url=self.get_url())
+
+
+class SalesOrderDetailView(StateChangeMixin, DetailView, SentWxMsg):
     model = SalesOrder
+    agent_id = '1000002'
 
     def get_btn_visible(self, state):
         return {'draft': {'cancel': True, 'confirm': True},
                 'confirm': {'draft': True},
-                'cancel': {'draft': True},
+                'cancel': {'draft': True, },
                 'done': {}}[state]
 
     def confirm(self):
-        url = "%s" % (self.request.build_absolute_uri())
-        client.message.send_text_card(agent_id='1000002', user_ids='@all', title='%s' % (self.object.order),
-                                      description='%s' % (self.object.amount),
-                                      url=url)
-        return self.object.confirm()
+        is_done, msg = self.object.confirm()
+        if is_done:
+            self.sent_msg()
+        return is_done, msg
 
     def draft(self):
-        return self.object.draft()
+        is_done, msg = self.object.draft()
+        if is_done:
+            self.sent_msg()
+        return is_done, msg
 
     def cancel(self):
-        return self.object.cancel()
+        is_done, msg = self.object.cancel()
+        if is_done:
+            self.sent_msg()
+        return is_done, msg
 
 
 class SalesOrderInvoiceOptionsEditView(ModalOptionsMixin):
@@ -170,7 +202,7 @@ def admin_order_pdf(request, pk):
 
 
 class OrderToPdfView(BaseDetailView, PDFTemplateView):
-    show_content_in_browser = True
+    # show_content_in_browser = True
     model = SalesOrder
     # header_template = 'sales/header.html'
     template_name = 'sales/salesorder_pdf.html'

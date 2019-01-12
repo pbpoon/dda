@@ -60,22 +60,31 @@
 {% endblock %}
 {% block subheadline %}
     <ul style="display: inline">
-    <li>编号:<a href="{{ object.block.get_absolute_url }}">{{ object.block.name }}</a></li>
+        <li>编号:<a href="{{ object.block.get_absolute_url }}">{{ object.block.name }}</a></li>
         <li>品种：{{ object.block.category|default_if_none:"" }}</li>
         <li>矿口：{{ object.block.quarry|default_if_none:"" }}</li>
         <li>批次：{{ object.block.get_batch }}</li>
         <li>重量：{{ object.block.weight }}</li>
         <li>立方：{{ object.block.m3 }}</li>
         <li>计量单位:{{ object.uom }}</li>
-{#        <li>规格：{{ object.long|default_if_none:"" }} / {{ object.width|default_if_none:"" }}#}
-{#            / {{ object.height|default_if_none:"" }}</li>#}
+        {#        <li>规格：{{ object.long|default_if_none:"" }} / {{ object.width|default_if_none:"" }}#}
+        {#            / {{ object.height|default_if_none:"" }}</li>#}
     </ul>
 {% endblock %}
 {% block sidebar %}
+    {{ block.super }}
     {% if object.get_files %}
         <div class="collection">
             <a class="collection-item" href="{% url 'object_files_list' object|label_name object.id %}">
                 <span>文件档案({{ object.get_files.count }})</span>
+                <i class="material-icons right">folder</i>
+            </a>
+        </div>
+    {% endif %}
+    {% if object.sales_order_item.all %}
+        <div class="collection">
+            <a class="collection-item" href="{% url 'product_sales_order_list' object.id %}">
+                <span>相关销售订单({{ object.sales_order_item.count }})</span>
                 <i class="material-icons right">folder</i>
             </a>
         </div>

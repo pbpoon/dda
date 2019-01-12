@@ -1,0 +1,39 @@
+{% extends 'list.html' %}
+{% load public %}
+{% block headline %}
+    {% if object %}
+        <a href="{{ object.get_absolute_url }}">{{ object|verbose_name }}:{{ object }}</a>
+    {% endif %}
+    相关销售订单列表
+{% endblock %}
+{% block content %}
+    <table>
+        <thead>
+        <tr>
+            <th>状态</th>
+            <th>订单号</th>
+            <th>客户</th>
+            <th>数量</th>
+            <th>经办人</th>
+            <th>日期</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for item in object_list %}
+            <tr>
+            <td>{{ item.order.get_state_display }}</td>
+            <td><a href="{{ item.order.get_absolute_url }}">{{ item.order.order }}</a></td>
+            <td>{{ item.order.partner }}</td>
+            <td>{{ item.piece }}件 / {{ item.quantity }}{{ item.product.get_uom }}</td>
+            <td>{{ item.order.handler }}</td>
+            <td>{{ item.order.date|date:'Y/m/d' }}</td>
+        {% endfor %}
+        </tr>
+        </tbody>
+    </table>
+    {% include 'paginatior.html' %}
+{% endblock %}
+{% block domready %}
+    {{ block.super }}
+    $('.materialboxed').materialbox();
+{% endblock %}

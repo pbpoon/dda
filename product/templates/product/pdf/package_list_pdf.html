@@ -128,7 +128,7 @@
                     <tbody>
                     {% for item in part_number.list %}
                         <tr>
-                            <td class="text-center" style="padding-right: 2px">{{ item.slab.line }}</td>
+                            <td class="text-center" style="padding-right: 2px">{{ item.line }}</td>
                             <td class="text-center">{{ item.slab.long }}</td>
                             <td class="text-center">{{ item.slab.height }}</td>
                             <td class="text-center" colspan="2">{{ item.slab.k_size|default_if_none:"" }}</td>

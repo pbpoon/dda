@@ -1,14 +1,16 @@
 from django.apps import apps
+from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, HttpResponse, redirect
 from django.template.loader import render_to_string
 from django.views import View
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
 from django.views.generic.detail import BaseDetailView
+from django.views.generic.list import MultipleObjectMixin
 from wkhtmltopdf.views import PDFTemplateView
 
 from cart.cart import Cart
-from product.filters import BlockFilter
+from product.filters import BlockFilter, ProductFilter
 from product.forms import DraftPackageListItemForm, PackageListItemForm, PackageListItemEditForm, \
     PackageListItemMoveForm
 from public.views import OrderItemEditMixin, OrderItemDeleteMixin, ModalOptionsMixin, FilterListView
@@ -126,11 +128,30 @@ class BlockDetailView(DetailView):
     model = Block
 
 
-class ProductListView(ListView):
+class ProductListView(FilterListView):
     model = Product
+    filter_class = ProductFilter
 
 
 class ProductDetailView(DetailView):
+    model = Product
+
+
+class SaleOrderListView(DetailView, MultipleObjectMixin):
+    model = None
+    template_name = 'product/product_sales_order.html'
+    paginate_by = 10
+
+    def get_context_data(self, **kwargs):
+        qs = self.object.sales_order_item.all()
+        return super().get_context_data(object_list=qs, **kwargs)
+
+
+class BlockSaleOrderListView(SaleOrderListView):
+    model = Block
+
+
+class ProductSaleOrderListView(SaleOrderListView):
     model = Product
 
 
@@ -394,11 +415,52 @@ class PackageListItemCreateView(OrderItemEditMixin):
     form_class = PackageListItemForm
 
 
+# 码单item编辑
 class PackageListItemEditView(OrderItemEditMixin):
     model = PackageListItem
     form_class = PackageListItemEditForm
 
 
+# 删除码单所选item
+class PackageListItemDeleteView(ModalOptionsMixin):
+    model = PackageList
+    form_class = PackageListItemMoveForm
+
+    def get_success_url(self):
+        path = self.request.META.get('HTTP_REFERER')
+        return path
+
+    def get_options(self):
+        select_slab_ids = self.request.GET.getlist('select')
+        if select_slab_ids:
+            return (('do_yes', '是'), ('do_no', '否'))
+        return (('nothing', '没有选择到板材'),)
+
+    def do_option(self, option):
+        if option == 'do_yes':
+            items_ids = self.request.POST.get('select_slab_ids')
+            if items_ids:
+                ids = items_ids.split(',')
+                PackageListItem.objects.filter(id__in=ids).delete()
+                self.object.save()
+        return True, ''
+
+    def get_form(self):
+        select_slab_ids = self.request.GET.getlist('select')
+        items_ids = self.object.items.filter(slab_id__in=select_slab_ids).values_list(
+            'id', flat=True)
+        form = super().get_form()
+        form.fields['select_slab_ids'].initial = ','.join([str(id) for id in items_ids])
+        return form
+
+    def get_content(self):
+        select_slab_ids = self.request.GET.getlist('select')
+        if not select_slab_ids:
+            return '没有选择到板材'
+        return '确定删除所选  %s  项？'%(len(select_slab_ids))
+
+
+# 移动到其他夹
 class PackageListItemMoveView(ModalOptionsMixin):
     model = PackageList
     form_class = PackageListItemMoveForm
@@ -435,6 +497,7 @@ class PackageListItemMoveView(ModalOptionsMixin):
         return '请选择需要移动到那个夹#'
 
 
+# 刷新序号
 class PackageListItemLineUpdateView(DetailView):
     model = PackageList
 
@@ -452,13 +515,14 @@ class PackageListItemLineUpdateView(DetailView):
         return redirect(path)
 
 
+# 打印pdf
 class PackageListPdfView(BaseDetailView, PDFTemplateView):
     model = PackageList
     # template_name = 'product/package_list_pdf.html'
     header_template = 'product/pdf/header.html'
     template_name = 'product/pdf/package_list_pdf.html'
     footer_template = 'product/pdf/footer.html'
-    show_content_in_browser = True
+    # show_content_in_browser = True
     # cmd_options = {
     #     'margin-top': '0',
     #     'margin-left': '0',

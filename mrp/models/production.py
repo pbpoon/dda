@@ -84,9 +84,8 @@ class ProductionOrder(MrpOrderAbstract):
             a = total.setdefault(item.product.get_type_display(), d)
             a['piece'] += item.piece
             a['quantity'] += item.quantity
-            d['part'] += item.package_list.get_part() if item.package_list else 0
+            a['part'] += item.package_list.get_part() if item.package_list else 0
             a['uom'] = item.uom
-            # total.setdefault(item.product.get_type_display(), {}).update(d)
         return total
 
     def get_stock(self):

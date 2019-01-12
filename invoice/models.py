@@ -417,12 +417,12 @@ class Account(models.Model):
 
     @classmethod
     def get_expense_account(cls):
-        account, _ = cls.objects.get_or_create(name='杂费支出', desc='杂费支出', is_visible=False)
+        account, _ = cls.objects.get_or_create(name='杂费支出', is_visible=False)
         return account
 
     @classmethod
     def get_undercharge_account(cls):
-        account, _ = cls.objects.get_or_create(name='货款少收', desc='货款少收', is_visible=False)
+        account, _ = cls.objects.get_or_create(name='货款少收', is_visible=False)
         return account
 
 

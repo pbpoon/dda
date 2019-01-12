@@ -99,6 +99,7 @@ class Block(models.Model):
     uom = models.CharField('荒料计量单位', null=False, choices=UOM_CHOICES, max_length=10, default='t')
     updated = models.DateTimeField('更新日期', auto_now=True)
     created = models.DateTimeField('创建日期', auto_now_add=True)
+    _files = GenericRelation('files.Files')
 
     class Meta:
         verbose_name = '荒料资料'
@@ -122,6 +123,7 @@ class Block(models.Model):
     def get_files(self):
         from files.models import Files
         files = Files.objects.none()
+        files |= self._files.all()
         for p in self.products.all():
             if p.files.all():
                 files |= p.files.all()
@@ -177,6 +179,15 @@ class Block(models.Model):
             a['part'] += item.get_part() if item.product == 'slab' else 0
             a['uom'] = item.uom
         return total
+
+    @property
+    def sales_order_item(self):
+        from sales.models import SalesOrderItem
+        items = SalesOrderItem.objects.none()
+        for item in self.products.all():
+            items |= item.sales_order_item.all()
+        return items.order_by('-order__date')
+        # return sorted(items, key=lambda x: x.order.date)
 
     def __str__(self):
         return self.name
@@ -267,6 +278,12 @@ class Product(models.Model):
                                      'created': obj.order.created,
                                      })
         return sorted(stock_trace_list, key=lambda x: (x['日期'], x['created']))
+
+    def get_files(self):
+        files = self.files.all()
+        if files.count() > 10:
+            files = files[:10]
+        return files
 
 
 class SlabAbstract(models.Model):

@@ -16,7 +16,8 @@
     {% for item in object.items.all %}
         <tr id="block_list_tr">
             <td>原料</td>
-            <td>{{ item.product }}</td>
+            <td><a href="{{ item.product.block.get_absolute_url }}">{{ item.product }}</a>
+            </td>
             <td>
                 {% with available=item.product|add_arg:object.location|call:"get_available" %}
                     {{ available.0 }}件 / {{ available.1 }}{{ item.product.get_uom }}(可用)
@@ -53,7 +54,8 @@
             {% for produce in item.produces.all %}
                 <tr>
                     <td></td>
-                    <td>{{ produce.product }}</td>
+                    <td><a href="{{ produce.product.block.get_absolute_url }}">{{ produce.product }}</a>
+                    </td>
                     <td>{% if produce.package_list %}
                         <a href="#"
                            onclick="open_package_list('{% url 'inventory_order_new_package_detail' produce.package_list.id %}?add_new=True','{{ object.state }}')">
@@ -67,7 +69,8 @@
                     <td>{{ produce.price }}</td>
                     <td>{{ produce.get_amount }}</td>
                     <td>{% if object.state == 'draft' %}
-                        <a class='dropdown-trigger btn-floating grey' href='#' data-target='dropdown{{ forloop.parentloop.counter }}produce'> <i
+                        <a class='dropdown-trigger btn-floating grey' href='#'
+                           data-target='dropdown{{ forloop.parentloop.counter }}produce'> <i
                                 class="material-icons">more_vert</i></a>
                         <!-- Dropdown Structure -->
                         <ul id='dropdown{{ forloop.parentloop.counter }}produce' class='dropdown-content'>

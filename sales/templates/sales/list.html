@@ -19,7 +19,7 @@
                             {{ key }}:{% if item.part %}{{ item.part }}夹 / {% endif %}{{ item.piece }}件 /
                             {{ item.quantity }}{{ item.uom }}</span><br>
                         {% endfor %}
-                        <h5>{{ object.amount|format_money }}</h5></div>
+                        <h6>{{ object.amount|format_money }}</h6></div>
                 </div>
                 <i class="material-icons circle">{{ object.partner.name|slice:'1' }}</i>
                 <span class="title black-text">{{ object.partner }}</span>

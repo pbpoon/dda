@@ -1,3 +1,7 @@
 from django.contrib import admin
+from .models import WxConfig
 
-# Register your models here.
+
+@admin.register(WxConfig)
+class WxConfigAdmin(admin.ModelAdmin):
+    pass

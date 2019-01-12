@@ -14,7 +14,8 @@
     {% for item in object.items.all %}
         <tr id="block_list_tr">
             <td>原料</td>
-            <td>{{ item.product }}</td>
+            <td><a href="{{ item.product.block.get_absolute_url }}">{{ item.product }}</a>
+            </td>
             <td>
                 {{ item.piece }}件 |
                 {{ item.quantity }}{{ item.uom }}</td>
@@ -55,7 +56,8 @@
                     <td></td>
                     <td>{% if object.state == 'draft' %}
 
-                        <a class='dropdown-trigger btn-floating grey' href='#' data-target='dropdown{{ forloop.parentloop.counter }}produce'> <i
+                        <a class='dropdown-trigger btn-floating grey' href='#'
+                           data-target='dropdown{{ forloop.parentloop.counter }}produce'> <i
                                 class="material-icons">more_vert</i></a>
 
                         <!-- Dropdown Structure -->

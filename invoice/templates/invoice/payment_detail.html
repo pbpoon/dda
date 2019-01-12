@@ -1,4 +1,5 @@
 {% extends 'detail.html' %}
+{% load public %}
 {% block headline %}
     金额:{{ object.amount }}<br>
     {{ object.get_type_display }} / 对方：{{ object.partner }}

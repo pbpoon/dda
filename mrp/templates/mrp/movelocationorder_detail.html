@@ -17,7 +17,8 @@
         {% for item in object_list %}
             <tr id="block_list_tr">
                 <td>{{ item.line }}</td>
-                <td>{{ item.product }}</td>
+                <td><a href="{{ item.product.block.get_absolute_url }}">{{ item.product }}</a>
+                </td>
                 <td>
                     {% if item.package_list %}
                         <a href="#"
@@ -55,7 +56,7 @@
                                 删除
                             </a>
                         </li>
-                            <hr>
+                        <hr>
                         <li>
                             <a onclick="add_item('{% url 'mrp_item_expenses_create' item|model_name item.id %}')">
                                 添加费用
@@ -87,22 +88,21 @@
 
 {% endblock %}
 {% block sidebar %}
-  {% if object.invoices.all %}
+    {% if object.invoices.all %}
         <span>账单</span>
         <hr>
         <div class="collection">
             {% for invoice in object.invoices.all %}
                 {% if invoice.state not in 'cancel' %}
-                <a href="{{ invoice.get_absolute_url }}" class="collection-item">{{ invoice }}<span class="badge">{{ invoice.get_state_display }}</span></a>
+                    <a href="{{ invoice.get_absolute_url }}" class="collection-item">{{ invoice }}<span
+                            class="badge">{{ invoice.get_state_display }}</span></a>
                 {% endif %}
             {% endfor %}
         </div>
     {% endif %}
     {% if object.get_files %}
         <div class="collection">
-
             <a class="collection-item" href="{% url 'object_files_list' object|label_name object.id %}">
-
                 <i class="material-icons">folder</i>文件档案({{ object.get_files.count }})
             </a>
         </div>

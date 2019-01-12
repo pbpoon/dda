@@ -81,10 +81,19 @@
     {% endif %}
 {% endblock %}
 {% block sidebar %}
-    {% if object.get_files %}
+    {{ block.super }}
+    {% if object.files.all %}
         <div class="collection">
             <a class="collection-item" href="{% url 'object_files_list' object|label_name object.id %}">
                 <span>文件档案({{ object.get_files.count }})</span>
+                <i class="material-icons right">folder</i>
+            </a>
+        </div>
+    {% endif %}
+    {% if object.sales_order_item.all %}
+        <div class="collection">
+            <a class="collection-item" href="{% url 'block_sales_order_list' object.id %}">
+                <span>相关销售订单({{ object.sales_order_item.count }})</span>
                 <i class="material-icons right">folder</i>
             </a>
         </div>
