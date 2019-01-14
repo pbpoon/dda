@@ -128,6 +128,7 @@ class Location(models.Model):
     def tree_view(self):
         return tree_view(self)
 
+
 class StockTrace(models.Model):
     """
     只在记录什么单的product操作了什么，用作链式记账
@@ -150,6 +151,22 @@ class StockTrace(models.Model):
 
     def get_obj(self):
         return self.content_type.model_class().objects.get(pk=self.object_id)
+
+
+class OriginalStockTrace(models.Model):
+    block = models.ForeignKey('product.Block', on_delete=models.SET_NULL, blank=True, null=True, verbose_name='编号',
+                              related_name='original_stock_trace')
+    address = models.CharField('仓库', max_length=20)
+    date = models.DateField('日期')
+    part = models.SmallIntegerField('夹', blank=True, null=True)
+    piece = models.SmallIntegerField('件', blank=True, null=True)
+    quantity = models.DecimalField('数量', decimal_places=2, max_digits=10)
+    uom = models.CharField('单位', max_length=10)
+    stock_trace = models.CharField('事务', max_length=10)
+
+    class Meta:
+        verbose_name = '旧数据库存事务'
+        ordering = ('-date',)
 
 
 class Stock(models.Model):

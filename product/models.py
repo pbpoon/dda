@@ -99,7 +99,9 @@ class Block(models.Model):
     uom = models.CharField('荒料计量单位', null=False, choices=UOM_CHOICES, max_length=10, default='t')
     updated = models.DateTimeField('更新日期', auto_now=True)
     created = models.DateTimeField('创建日期', auto_now_add=True)
+
     _files = GenericRelation('files.Files')
+    comments = GenericRelation('comment.Comment')
 
     class Meta:
         verbose_name = '荒料资料'
@@ -208,6 +210,7 @@ class Product(models.Model):
     updated = models.DateTimeField('更新日期', auto_now=True)
     created = models.DateTimeField('创建日期', auto_now_add=True)
     activate = models.BooleanField('启用', default=False)
+
     semi_slab_single_qty = models.DecimalField('毛板单件平方', null=True, max_digits=5, decimal_places=2, blank=True)
     files = GenericRelation('files.Files')
 
@@ -523,3 +526,5 @@ class DraftPackageListItem(SlabAbstract):
 
     class Meta:
         verbose_name = "草稿码单行"
+
+

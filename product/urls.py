@@ -72,17 +72,22 @@ urlpatterns += [
          name='package_full_page_update_line'),
     path('package_list_full_page/<pk>/', views.PackageListFullPageView.as_view(), name='package_full_page'),
     path('package_list/<pk>/', views.PackageListDetail.as_view(), name='package_detail'),
+    # --------------------------分类
     path('category/<pk>/update/', views.CategoryUpdateView.as_view(), name='category_update'),
     path('category/create/', views.CategoryCreateView.as_view(), name='category_create'),
     path('category/<pk>', views.CategoryDetailView.as_view(), name='category_detail'),
     path('category/', views.CategoryListView.as_view(), name='category_list'),
+    # --------------------------矿口
     path('quarry/<pk>/update/', views.QuarryUpdateView.as_view(), name='quarry_update'),
     path('quarry/create/', views.QuarryCreateView.as_view(), name='quarry_create'),
     path('quarry/<pk>', views.QuarryDetailView.as_view(), name='quarry_detail'),
     path('quarry/', views.QuarryListView.as_view(), name='quarry_list'),
+    # --------------------------荒料
+    path('block/<pk>/original_stock_trace/', views.OriginalStockTraceView.as_view(), name='block_original_stock_trace'),
     path('block/<pk>/sales_order/', views.BlockSaleOrderListView.as_view(), name='block_sales_order_list'),
     path('block/<pk>/', views.BlockDetailView.as_view(), name='block_detail'),
     path('block/', views.BlockListView.as_view(), name='block_list'),
+    # --------------------------产品
     path('product/<pk>/sales_order/', views.ProductSaleOrderListView.as_view(), name='product_sales_order_list'),
     path('product/<pk>/', views.ProductDetailView.as_view(), name='product_detail'),
     path('product/', views.ProductListView.as_view(), name='product_list'),

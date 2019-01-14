@@ -46,19 +46,20 @@ class City(models.Model):
     #     return Area.objects.filter(city=self.id)
 
 
-#
-# class Area(models.Model):
-#     id = models.IntegerField('id', primary_key=True)
-#     name = models.CharField('名称', max_length=20)
-#     city = models.IntegerField('对应市id')
-#
-#     class Meta:
-#         verbose_name = '地区'
-#         verbose_name_plural = verbose_name
-#         ordering = ('city', 'id')
-#
-#     def __str__(self):
-#         return self.name
+class Area(models.Model):
+    id = models.IntegerField('id', primary_key=True)
+    name = models.CharField('名称', max_length=20)
+    city = models.IntegerField('对应市id')
+
+    class Meta:
+        verbose_name = '地区'
+        verbose_name_plural = verbose_name
+        ordering = ('city', 'id')
+
+    def __str__(self):
+        return self.name
+
+
 class InvoicePartnerManager(models.Manager):
     def get_queryset(self):
         return super().get_queryset().filter(type='invoice')

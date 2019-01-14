@@ -28,9 +28,12 @@
             移动到其他夹
         </button>
         <button form="update_line" type="submit" class="btn waves-effect">刷新序号</button>
-        <button class="btn waves-effect red" onclick='move_option("{% url 'package_list_item_delete' object.id %}")'>
-            删除所选
-        </button>
+        {% if add_new %}
+            <button class="btn waves-effect red"
+                    onclick='move_option("{% url 'package_list_item_delete' object.id %}")'>
+                删除所选
+            </button>
+        {% endif %}
         <script>
 
             function move_option(url) {

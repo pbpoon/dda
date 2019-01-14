@@ -19,6 +19,7 @@ class BlockFilter(django_filters.FilterSet):
 
     class Meta:
         model = Block
+        # fields = ('name',)
         fields = ('name', 'quarry', 'batch')
 
     def filter_by_block(self, queryset, name, value):

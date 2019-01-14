@@ -1,7 +1,6 @@
 import operator
 from functools import reduce
 from django.core.exceptions import ObjectDoesNotExist
-from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.shortcuts import render, redirect
@@ -11,9 +10,7 @@ from django.views import View
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, FormView
 
 from partner.forms import MainInfoForm
-from public.forms import AddExcelForm
 from public.permissions_mixin_views import DynamicPermissionRequiredMixin
-from public.utils import ImportData
 from .models import Partner, Province, City, MainInfo
 
 
@@ -70,65 +67,7 @@ class PartnerUpdateView(UpdateView):
     template_name = 'form.html'
 
 
-class ImportView(FormView):
-    """
-    导入省份，城市数据
-    """
-    data_type = 'city'
-    template_name = 'form.html'
-    form_class = AddExcelForm
 
-    @transaction.atomic()
-    def form_valid(self, form):
-        f = form.files.get('file')
-
-        model = Province if self.data_type == 'sheng' else City
-        import_data = ImportData(f, data_type='city').data
-        companys = self.format_to_company(import_data)
-        for i in companys:
-            data = {'name': i['company'],
-                    'is_company': True,
-                    'province': self.get_province(i),
-                    'city': self.get_city(i),
-                    'phone': i['phone'],
-                    'type': 'customer',
-                    'entry': self.request.user
-                    }
-            Partner.objects.create(**data)
-        for i in import_data:
-            data = {'name': i['name'],
-                    'company': self.get_company(i),
-                    'province': self.get_province(i),
-                    'city': self.get_city(i),
-                    'phone': i['phone'],
-                    'type': 'customer',
-                    'entry': self.request.user
-                    }
-            # data = {'id': i['id'],
-            #         'code': i['provinceID'],
-            #         'name': i['province']}
-            Partner.objects.get_or_create(**data)
-
-        return HttpResponse('0k')
-
-    def get_province(self, i):
-        if i['province']:
-            return Province.objects.get(pk=i['province'])
-        return None
-
-    def get_city(self, i):
-        if i['city']:
-            return City.objects.get(pk=i['city'])
-        return None
-
-    def get_company(self, c):
-        cc = None
-        if c['company']:
-            cc = Partner.objects.filter(is_company=True, name=c['company'])[0]
-        return cc
-
-    def format_to_company(self, data):
-        return [i for i in data if i['company']]
 
 
 def get_address(request):

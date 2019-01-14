@@ -40,3 +40,9 @@
         {% include 'paginatior.html' %}
     </div>
 {% endblock %}
+
+{% block subheadline %}
+    {% for key, value in total.items %}
+        <span>{{ key }}:{{ value }}</span><br>
+    {% endfor %}
+{% endblock %}

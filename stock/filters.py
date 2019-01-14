@@ -29,6 +29,7 @@ class StockFilter(django_filters.FilterSet):
 
     class Meta:
         model = Stock
+        # fields = ('block', 'type',)
         fields = ('block', 'warehouse', 'type', 'quarry', 'batch')
 
     def filter_by_warehouse(self, queryset, name, value):

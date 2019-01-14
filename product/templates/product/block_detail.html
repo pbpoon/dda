@@ -81,6 +81,14 @@
     {% endif %}
 {% endblock %}
 {% block sidebar %}
+    {% if object.original_stock_trace.all %}
+        <div class="collection">
+            <a class="collection-item" href="{% url 'block_original_stock_trace' object.id %}">
+                <span>旧系统事务记录({{ object.original_stock_trace.count }})</span>
+                <i class="material-icons right">folder</i>
+            </a>
+        </div>
+    {% endif %}
     {{ block.super }}
     {% if object.files.all %}
         <div class="collection">

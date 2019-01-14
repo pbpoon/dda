@@ -128,12 +128,8 @@ class ProductionOrderDetailView(StateChangeMixin, DetailView):
     model = ProductionOrder
 
     def get_btn_visible(self, state):
-        btn_visible = {}
-        if state == 'draft':
-            btn_visible.update({'done': True, 'cancel': True})
-        elif state == 'done':
-            btn_visible.update({'turn_back': True})
-        return btn_visible
+        return {'draft': {'done': True, 'cancel': True},
+                'done': {'turn_back': True}}[state]
 
     def done(self):
         return self.object.done()

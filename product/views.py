@@ -1,5 +1,6 @@
 from django.apps import apps
 from django.core.paginator import Paginator
+from django.db.models import Count, Sum
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, HttpResponse, redirect
 from django.template.loader import render_to_string
@@ -122,6 +123,14 @@ class QuarryUpdateView(QuarryEditMixin, UpdateView):
 class BlockListView(FilterListView):
     model = Block
     filter_class = BlockFilter
+    #
+    # def get_context_data(self, *args, **kwargs):
+    #     context = super().get_context_data(*args, **kwargs)
+    #     qs = super().get_queryset()
+    #     total = {
+    #         '编号':qs.annotate(block_count=Count('id')),
+    #     }
+    #     return context
 
 
 class BlockDetailView(DetailView):
@@ -144,6 +153,16 @@ class SaleOrderListView(DetailView, MultipleObjectMixin):
 
     def get_context_data(self, **kwargs):
         qs = self.object.sales_order_item.all()
+        return super().get_context_data(object_list=qs, **kwargs)
+
+
+class OriginalStockTraceView(DetailView, MultipleObjectMixin):
+    model = Block
+    template_name = 'product/block_original_stock_trace.html'
+    paginate_by = 10
+
+    def get_context_data(self, **kwargs):
+        qs = self.object.original_stock_trace.all()
         return super().get_context_data(object_list=qs, **kwargs)
 
 
@@ -457,7 +476,7 @@ class PackageListItemDeleteView(ModalOptionsMixin):
         select_slab_ids = self.request.GET.getlist('select')
         if not select_slab_ids:
             return '没有选择到板材'
-        return '确定删除所选  %s  项？'%(len(select_slab_ids))
+        return '确定删除所选  %s  项？' % (len(select_slab_ids))
 
 
 # 移动到其他夹

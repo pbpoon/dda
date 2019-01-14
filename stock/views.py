@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib import messages
 from django.core.paginator import Paginator
+from django.db.models import Count, Sum
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, get_object_or_404
 from django.template.loader import render_to_string
@@ -100,6 +101,17 @@ class StockListView(FilterListView):
     paginate_by = 10
     filter_class = StockFilter
     ordering = ('-created',)
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        qs = super().get_queryset()
+        total = {
+            '产品': qs.aggregate(block_count=Count('product')),
+            '件': qs.aggregate(piece_total=Sum('piece')),
+            '数量': qs.aggregate(quantity_total=Sum('quantity'))
+        }
+        context['total'] = total
+        return context
 
 
 class StockDetailView(DetailView):

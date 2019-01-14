@@ -1,0 +1,39 @@
+{% extends 'list.html' %}
+{% load public %}
+{% block headline %}
+    {% if object %}
+        <a href="{{ object.get_absolute_url }}">{{ object|verbose_name }}:{{ object }}</a>
+    {% endif %}
+    旧系统事务记录
+{% endblock %}
+{% block content %}
+    <div class="card-panel">
+    <table>
+        <thead>
+        <tr>
+            <th>事务</th>
+            <th>地址</th>
+            <th>数量</th>
+            <th>日期</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for item in object_list %}
+            <tr>
+            <td>{{ item.stock_trace }}</td>
+            <td>{{ item.address }}</td>
+            <td class="text-right">{% if item.part %}{{ item.part }}夹 /{% endif %}
+                {% if item.piece %}{{ item.piece }}件 /{% endif %}
+                {{ item.quantity }}{{ item.uom }}</td>
+            <td>{{ item.date|date:'Y/m/d' }}</td>
+        {% endfor %}
+        </tr>
+        </tbody>
+    </table>
+    {% include 'paginatior.html' %}
+    </div>
+{% endblock %}
+{% block domready %}
+    {{ block.super }}
+    $('.materialboxed').materialbox();
+{% endblock %}

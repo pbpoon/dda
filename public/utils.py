@@ -1,4 +1,6 @@
 # _*_ coding:utf-8 _*_
+import datetime
+
 from product.models import PackageListItem
 
 __author__ = 'pb'
@@ -79,92 +81,185 @@ class AddExcelForm(forms.Form):
 
 
 class ImportData:
-    def __init__(self, f, data_type=None):
+    def __init__(self, f, data_type=None, data_format=None):
         self.import_data = xlrd.open_workbook(file_contents=f.read())
         self.data_type = data_type
         self.data = self.process()
+        self.data_format = data_format
 
     def process(self):
         table = self.import_data.sheets()[0]
         nrows = table.nrows  # 总行数
         colnames = table.row_values(0)  # 表头列名称数据
+        return getattr(self, self.data_type)(table, nrows, colnames)
+
+    def package_list(self, table, nrows, colnames):
         lst = []
-        if self.data_type is None:
-            for rownum in range(1, nrows):
-                rows = table.row_values(rownum)
-                item = {}
-                for key, row in zip(colnames, rows):
+        for rownum in range(1, nrows):
+            rows = table.row_values(rownum)
+            item = {}
+            for key, row in zip(colnames, rows):
+                if not row:
+                    if key == 'long' and key == 'high':
+                        raise ValueError('长或宽没有数值!')
+                if key == 'part_num':
                     if not row:
-                        if key == 'long' and key == 'high':
-                            raise ValueError('长或宽没有数值!')
-                    if key == 'part_num':
-                        if not row:
-                            raise ValueError('有夹号没有数值！')
-                        item[key] = str(row).split('.')[0]
-                    elif key == 'block_num':
-                        if not row:
-                            raise ValueError('有荒料编号没有数值！')
-                        item[key] = str(row).split('.')[0]
-                    elif key == 'line_num':
-                        if not row:
-                            raise ValueError('有序号号没有数值！')
-                        item[key] = int(row)
+                        raise ValueError('有夹号没有数值！')
+                    item[key] = str(row).split('.')[0]
+                elif key == 'block_num':
+                    if not row:
+                        raise ValueError('有荒料编号没有数值！')
+                    item[key] = str(row).split('.')[0]
+                elif key == 'line_num':
+                    if not row:
+                        raise ValueError('有序号号没有数值！')
+                    item[key] = int(row)
+                else:
+                    if row:
+                        item[key] = '{0:.2f}'.format(row)
                     else:
-                        if row:
-                            item[key] = '{0:.2f}'.format(row)
-                        else:
-                            item[key] = 0
-                k1 = 0
-                k2 = 0
-                if item.get('kl1') and item.get('kh1'):
-                    k1 = Decimal(item['kl1']) * Decimal(item['kh1']) / 100000
-                if item.get('kl2') and item.get('kh2'):
-                    k2 = Decimal(item['kl2']) * Decimal(item['kh2']) / 100000
-                item['m2'] = '{0:.2f}'.format(
-                    Decimal(item['long']) * Decimal(item['high']) / 10000 + k1 + k2)
-                lst.append(item)
+                        item[key] = 0
+            k1 = 0
+            k2 = 0
+            if item.get('kl1') and item.get('kh1'):
+                k1 = Decimal(item['kl1']) * Decimal(item['kh1']) / 100000
+            if item.get('kl2') and item.get('kh2'):
+                k2 = Decimal(item['kl2']) * Decimal(item['kh2']) / 100000
+            item['m2'] = '{0:.2f}'.format(
+                Decimal(item['long']) * Decimal(item['high']) / 10000 + k1 + k2)
+            lst.append(item)
+        return lst
 
-        elif self.data_type == 'block_list':
-            for rownum in range(1, nrows):  # 遍历全部数据行
-                item = {}  # 刷新装本行数据的字典
-                price = {}
-                rows = table.row_values(rownum)  # 取出一行数据
-                # 遍历这行数据
-                for name, row in zip(colnames, rows):
+    def block_list(self, table, nrows, colnames):
+        lst = []
+        # if not self.data_type:
+        #     self.data_type = {'updated': 'datetime'}
+        for rownum in range(1, nrows):  # 遍历全部数据行
+            item = {}  # 刷新装本行数据的字典
+            price = {}
+            rows = table.row_values(rownum)  # 取出一行数据
+            # 遍历这行数据
+            for name, row in zip(colnames, rows):
 
-                    # 遍历每个单元格数据
-                    if name == 'weight' or name == 'price':
-                        item[name] = '{0:.2f}'.format(row)
-                    elif name == 'm3':
-                        if row:
-                            item[name] = '{0:.2f}'.format(row)
-                        else:
-                            item[name] = '{0:.2f}'.format(
-                                float(item['long']) * float(item['width']) * float(
-                                    item['high']) * 0.000001)
+                # 遍历每个单元格数据
+                if name in ('long', 'width', 'height'):
+                    item[name] = int(row)
+                elif name in ('weight', 'thick'):
+                    try:
+                        item[name] = Decimal('{0:.2f}'.format(row))
+                    except Exception as e:
+                        print(name, row, e)
+                        item[name] = None
+                elif name == 'updated':
+                    updated = datetime.datetime.strptime(row, '%Y/%m/%d').date()
+                    item[name] = updated
+                else:
+                    item[name] = str(row)
+            print(name, row)
+            lst.append(item)
+        return lst
+
+    def stock_list(self, table, nrows, colnames):
+        lst = []
+        # 导入的excel的pic_no和par_no用分列转换一下文本
+        for rownum in range(1, nrows):  # 遍历全部数据行
+            item = {}  # 刷新装本行数据的字典
+            price = {}
+            rows = table.row_values(rownum)  # 取出一行数据
+            # 遍历这行数据
+            for name, row in zip(colnames, rows):
+
+                # 遍历每个单元格数据
+                if name == 'pic':
+                    if not row:
+                        row = 1
+                    item[name] = int(row)
+                elif name in ('quantity', 'thick'):
+                    try:
+                        item[name] = Decimal('{0:.2f}'.format(row))
+                    except Exception as e:
+                        print(name, row, e)
+                        item[name] = None
+                elif name == 'updated':
+                    updated = datetime.datetime.strptime(row, '%Y/%m/%d').date()
+                    item[name] = updated
+                else:
+                    if row:
+                        item[name] = str(row)
                     else:
-                        item[name] = str(row).split('.')[0]
-                lst.append(item)
+                        item[name] = None
+            print(name, row)
+            lst.append(item)
+        return lst
 
-        elif self.data_type == 'sheng':
-            for rownum in range(1, nrows):  # 遍历全部数据行
-                rows = table.row_values(rownum)  # 取出一行数据
-                item = {}
-                # 遍历这行数据
-                for name, row in zip(colnames, rows):
-                    # 遍历每个单元格数据
-                    item[name] = str(row).split('.')[0]
-                lst.append(item)
+    def slab_list(self, table, nrows, colnames):
+        lst = []
+        # if not self.data_type:
+        #     self.data_type = {'updated': 'datetime'}
+        for rownum in range(1, nrows):  # 遍历全部数据行
+            item = {}  # 刷新装本行数据的字典
+            price = {}
+            rows = table.row_values(rownum)  # 取出一行数据
+            # 遍历这行数据
+            for name, row in zip(colnames, rows):
 
-        elif self.data_type == 'city':
-            for rownum in range(1, nrows):  # 遍历全部数据行
-                rows = table.row_values(rownum)  # 取出一行数据
-                item = {}
-                # 遍历这行数据
-                for name, row in zip(colnames, rows):
-                    # 遍历每个单元格数据
+                # 遍历每个单元格数据
+
+                if name in ('m2', 'thick'):
+                    try:
+                        item[name] = Decimal('{0:.2f}'.format(row))
+                    except Exception as e:
+                        print(name, row, e)
+                        item[name] = None
+                elif name == 'entry_date':
+                    # 一定要在excel文件用分列转换一下
+                    updated = datetime.datetime.strptime(row, '%Y/%m/%d').date()
+                    item[name] = updated
+                else:
+                    if row:
+                        try:
+                            item[name] = int(row)
+                        except Exception as e:
+                            item[name] = str(row)
+                    else:
+                        item[name] = None
+            print(name, row)
+            lst.append(item)
+        return lst
+
+    def address(self, table, nrows, colnames):
+        lst = []
+        for rownum in range(1, nrows):  # 遍历全部数据行
+            rows = table.row_values(rownum)  # 取出一行数据
+            item = {}
+            # 遍历这行数据
+            for name, row in zip(colnames, rows):
+                # 遍历每个单元格数据
+                item[name] = str(row).split('.')[0]
+            lst.append(item)
+        return lst
+
+    def stock_trace(self, table, nrows, colnames):
+        lst = []
+        for rownum in range(1, nrows):  # 遍历全部数据行
+            rows = table.row_values(rownum)  # 取出一行数据
+            item = {}
+            # 遍历这行数据
+            for name, row in zip(colnames, rows):
+                # 遍历每个单元格数据
+                if name in ('part', 'pic'):
+                    if row:
+                        item[name] = int(row)
+                    else:
+                        item[name] = None
+                elif name == 'quantity':
+                    item[name] = Decimal('{0:.2f}'.format(row))
+                elif name == 'date':
+                    updated = datetime.datetime.strptime(row, '%Y/%m/%d').date()
+                    item[name] = updated
+                else:
                     item[name] = str(row).split('.')[0]
-                lst.append(item)
+            lst.append(item)
         return lst
 
 
