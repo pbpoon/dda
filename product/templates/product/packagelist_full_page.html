@@ -1,7 +1,7 @@
 {% extends "detail.html" %}
 {% load public %}
 {% block headline %}
-    {{ object.product }}
+    <a href="{{ object.product.get_absolute_url }}">{{ object.product }}</a>
 {% endblock %}
 {% block operate %}
     <a class="btn waves-effect" href="{% url 'package_pdf' object.id %}">打印PDF</a>
@@ -153,14 +153,38 @@
 
 {% endblock %}
 {% block action_btn %}
-    {% if add_new == 'True' %}
-        <div class="fixed-action-btn">
-            <a onclick="add_item('{{ object.get_create_item_url }}')"
-               class="btn-floating btn-large red">
-                <i class="large material-icons">add</i>
-            </a>
-        </div>
-    {% endif %}
+    <div class="fixed-action-btn click-to-toggle">
+        <a class="btn-floating btn-large red">
+            <i class="large material-icons">mode_edit</i>
+        </a>
+        <ul>
+
+            {% if add_new == 'True' %}
+                <li>
+                    <a onclick="add_item('{{ object.get_create_item_url }}')"
+                       class="btn-floating btn-large red">
+                        <i class="large material-icons">add</i>
+                    </a>
+                </li>
+            {% endif %}
+            {% if object %}
+                {% if user|check_permission:'comment.add_comment' %}
+                    <li>
+                        <button class="btn-floating yellow darken-1"
+                                onclick="add_item('{% url 'comment_create'  object.product|label_name object.product.id %}')"><i
+                                class="material-icons">format_quote</i></button>
+                    </li>
+                {% endif %}
+                {% if user|check_permission:'files.add_files' %}
+                    <li>
+                        <button class="btn-floating blue"
+                                onclick="add_item('{% url 'files_create'  object.product|label_name object.product.id %}')"><i
+                                class="material-icons">attach_file</i></button>
+                    </li>
+                {% endif %}
+            {% endif %}
+        </ul>
+    </div>
 {% endblock %}
 <script>
 
@@ -212,9 +236,5 @@
                 }
             })
         });
-
-
-
-
     {% endblock %}
 </script>

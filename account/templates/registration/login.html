@@ -1,5 +1,10 @@
 {% extends 'list.html' %}
 {% block content %}
+    {% if request.user.is_authenticated %}
+            <h4>欢迎 {{ request.user }}</h4>
+            <div class="divider"></div>
+            <a href="{% url 'logout' %}">登出</a>
+    {% else %}
         <p>请输入账号密码登录</p>
         <form action="" method="post">
             {{ form.as_p }}
@@ -7,4 +12,5 @@
             {% csrf_token %}
             <button class="btn waves-effect" type="submit">登录</button>
         </form>
+    {% endif %}
 {% endblock %}

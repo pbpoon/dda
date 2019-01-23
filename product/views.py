@@ -21,6 +21,28 @@ from public.utils import qs_to_dict, Package
 from .models import Product, PackageList, DraftPackageList, DraftPackageListItem, Slab, Block, PackageListItem, \
     Category, Quarry
 
+from dal import autocomplete
+
+
+class SalesOrderProductAutocomplete(autocomplete.Select2QuerySetView):
+    model = Product
+    model_field_name = 'block__name'
+
+    def get_queryset(self):
+        # qs = Product.objects.exclude(type='semi_slab')
+        qs = super().get_queryset()
+        wh_id = self.forwarded.get('warehouse')
+        if wh_id:
+            loc_childs = Warehouse.objects.get(pk=wh_id).get_main_location().get_child_list()
+            qs = qs.filter(stock__location_id__in=loc_childs).distinct()
+        if self.q:
+            qs = qs.filter(block__name__contains=self.q)
+        return qs
+
+
+class BlockAutocompleteView(autocomplete.Select2QuerySetView):
+    model = Block
+
 
 def get_block_list(request):
     name = request.POST.get('name_autocomplete')
@@ -35,8 +57,37 @@ def get_product_info(request):
     product = get_object_or_404(Product, pk=product_id)
     location = get_object_or_404(Location, pk=location_id) if location_id else None
     piece, quantity = product.get_available(location=location)
-    data = {'piece': piece, 'quantity': quantity}
+    data = {'piece': piece, 'quantity': quantity, 'uom': product.get_uom(), 'm3': product.block.get_m3()}
     return JsonResponse(data)
+
+
+class ProductAutocomplete(autocomplete.Select2QuerySetView):
+    model = Product
+    model_field_name = 'block__name'
+
+    def get_queryset(self):
+        # qs = Product.objects.exclude(type='semi_slab')
+        loc_id = self.forwarded.get('location')  # production form 传来
+        wh_id = self.forwarded.get('warehouse')  # sale_order form 传来
+        type = self.forwarded.get('type', None)  # production form 传来
+        qs = super().get_queryset()
+        product_text = self.q
+        if product_text:
+            qs = qs.filter(block__name__icontains=product_text)
+        if wh_id:
+            loc_childs = Warehouse.objects.get(pk=wh_id).get_main_location().get_child_list()
+            qs = qs.filter(stock__location_id__in=loc_childs)
+        elif loc_id:
+            loc_childs = Location.objects.get(pk=loc_id).get_main_location().get_child_list()
+            qs = qs.filter(stock__location_id__in=loc_childs)
+            # loc_childs = Location.objects.get(pk=loc_id).get_child_list()
+        if type:
+            qs = qs.filter(type=type)
+        # else:
+        #     qs = qs.exclude(type='semi_slab')
+        qs.distinct()
+        # data = {str(p): {"id": p.id} for p in qs}
+        return qs
 
 
 def get_product_list(request):
@@ -76,7 +127,7 @@ def get_draft_package_list_info(request):
     return JsonResponse(data)
 
 
-class CategoryListView(ListView):
+class CategoryListView(FilterListView):
     model = Category
 
 
@@ -98,7 +149,7 @@ class CategoryDetailView(DetailView):
     model = Category
 
 
-class QuarryListView(ListView):
+class QuarryListView(FilterListView):
     model = Quarry
 
 
@@ -305,27 +356,30 @@ class ProductionOrderPackageListDetailView(PackageListDetail):
 class InventoryOrderPackageListDetailView(PackageListDetail):
     template_name = 'product/inventory_package_list.html'
 
-    def get(self, *args, **kwargs):
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
         state = self.request.GET.get('state')
         self.object = self.get_object()
         # 先把旧（库存）的码单slab取出
-        old_slabs_ids = [s.get_slab_id() for s in self.object.from_package_list.items.all()]
-        now_slabs_ids = [item.get_slab_id() for item in self.object.items.all()]
+        old_slabs_ids = self.object.from_package_list.items.all().values_list('slab__id', flat=True)
+        now_slabs_ids = self.object.items.values_list('slab__id', flat=True)
 
         slabs = Slab.objects.filter(id__in=set(now_slabs_ids) | set(old_slabs_ids))
         package = Package(self.object.product, slabs)
-
+        add_new = True if state == 'draft' else False
         data = {'object': self.object, 'package': package, 'old_slabs_ids': old_slabs_ids,
-                'now_slabs_ids': now_slabs_ids,
+                'now_slabs_ids': now_slabs_ids, 'add_new': add_new,
                 'state': state}
-        return HttpResponse(render_to_string(self.template_name, data))
+        context.update(data)
+        return context
 
 
 # 库存盘点码单（新建）显示
 class InventoryOrderNewItemPackageListDetailView(PackageListDetail):
     template_name = 'product/inventory_package_list.html'
 
-    def get(self, *args, **kwargs):
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
         state = self.request.GET.get('state')
         add_new = True if state == 'draft' else False
         self.object = self.get_object()
@@ -337,10 +391,10 @@ class InventoryOrderNewItemPackageListDetailView(PackageListDetail):
             slabs = Slab.objects.filter(id__in=slabs_ids)
             package = Package(self.object.product, slabs)
             now_slabs_ids = slabs_ids
-
         data = {'object': self.object, 'package': package, 'state': state, 'now_slabs_ids': now_slabs_ids,
                 'add_new': add_new}
-        return HttpResponse(render_to_string(self.template_name, data))
+        context.update(data)
+        return context
 
 
 # 提货单的码单显示

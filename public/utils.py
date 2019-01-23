@@ -27,6 +27,11 @@ class Package:
         self.items = sorted(slabs, key=lambda x: (x.part_number, x.line))
         self.product = product
 
+    def __iter__(self):
+        for item in self.items:
+            print(item)
+            yield item
+
     def get_piece(self, number=None):
         items = self.items
         if number:

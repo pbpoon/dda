@@ -349,7 +349,7 @@ class SlabAbstract(models.Model):
 
 class Slab(SlabAbstract):
     stock = models.ForeignKey('stock.Stock', on_delete=models.SET_NULL, blank=True, null=True,
-                              limit_choices_to={'location__is_virtual': False}, related_name='items')
+                              limit_choices_to={'location__is_virtual': False}, related_name='items', db_index=True)
     is_reserve = models.BooleanField('锁库', default=False)
 
     class Meta:
@@ -364,6 +364,11 @@ class Slab(SlabAbstract):
             return str(self.stock.location)
         else:
             return '没有库存'
+
+    def get_weight(self):
+        if self.stock.product.thickness == 1.5:
+            return float(self.get_quantity()) * 0.0145 * 2.8
+        return float(self.get_quantity()) * float(self.stock.product.thickness) * 0.01 * 2.8
 
 
 class PackageList(models.Model):
@@ -411,36 +416,43 @@ class PackageList(models.Model):
     def make_package_from_list(product_id, lst=None, from_package_list=None):
         # with transaction.atomic():
         order = PackageList.objects.create(product_id=product_id, from_package_list=from_package_list)
+        items_lst = []
         if lst:
             for id in lst:
-                slab = Slab.objects.get(pk=id)
-                PackageListItem.objects.create(slab=slab, part_number=slab.part_number, order=order)
+                # slab = Slab.objects.get(pk=id)
+                slab_values = Slab.objects.filter(pk=id).values('id', 'part_number').first()
+                # PackageListItem.objects.create(order=order, slab_id=slab.id, part_number=slab.part_number)
+                items_lst.append(
+                    PackageListItem(order=order, slab_id=slab_values['id'], part_number=slab_values['part_number']))
+            PackageListItem.objects.bulk_create(items_lst)
+
+            # PackageListItem.objects.create(slab=slab, part_number=slab.part_number, order=order)
         return order
 
     @staticmethod
     def update(package_list, slab_id_lst):
         new_items = []
-        slabs = Slab.objects.filter(id__in=slab_id_lst)
+        slabs_values = Slab.objects.filter(id__in=slab_id_lst).values('id', 'part_number')
         # with transaction.atomic():
         package_list.items.all().delete()
-        for slab in slabs:
+        for slab in slabs_values:
             new_items.append(
-                PackageListItem.objects.create(slab=slab, part_number=slab.part_number, order=package_list))
-        package_list.items.set(new_items)
+                PackageListItem(slab_id=slab['id'], part_number=slab['part_number'], order=package_list))
+        PackageListItem.objects.bulk_create(new_items)
         package_list.save()
         return package_list
 
     def copy(self, has_items=True):
         lst = None
         if has_items:
-            lst = [item.get_slab_id() for item in self.items.all()]
+            lst = self.items.all().values_list('slab__id', flat=True)
         return self.make_package_from_list(self.product_id, lst, from_package_list=self)
 
 
 class PackageListItem(models.Model):
     order = models.ForeignKey('PackageList', on_delete=models.CASCADE, related_name='items', verbose_name='码单',
                               blank=True, null=True)
-    slab = models.ForeignKey('Slab', on_delete=models.CASCADE, related_name='package_list', verbose_name='板材')
+    slab = models.ForeignKey('Slab', on_delete=models.CASCADE, related_name='package_list', verbose_name='板材', db_index=True)
     part_number = models.SmallIntegerField('夹号')
     line = LineField(verbose_name='序号', for_fields=['order', 'part_number'], blank=True)
 
@@ -467,7 +479,7 @@ class PackageListItem(models.Model):
     def get_weight(self):
         if self.order.product.thickness == 1.5:
             return float(self.get_quantity()) * 0.0145 * 2.8
-        return float(self.get_quantity()) * float(self.order.product.thickness) * 2.8
+        return float(self.get_quantity()) * float(self.order.product.thickness) * 0.01 * 2.8
 
 
 class DraftPackageList(models.Model):
@@ -526,5 +538,3 @@ class DraftPackageListItem(SlabAbstract):
 
     class Meta:
         verbose_name = "草稿码单行"
-
-

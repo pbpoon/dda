@@ -17,7 +17,7 @@ UOM_CHOICES = (('t', '吨'), ('m2', '平方'))
 
 class SalesOrder(OrderAbstract):
     order = OrderField(order_str='SO', max_length=26, default='New', db_index=True, unique=True, verbose_name='订单号码', )
-    partner = models.ForeignKey('sales.Customer', on_delete=models.CASCADE, verbose_name='客户名称',
+    partner = models.ForeignKey('partner.Customer', on_delete=models.CASCADE, verbose_name='客户名称',
                                 related_name='sales_order')
     province = models.ForeignKey('partner.Province', verbose_name='省份', null=True, blank=True,
                                  on_delete=models.SET_NULL)
@@ -26,6 +26,8 @@ class SalesOrder(OrderAbstract):
 
     class Meta:
         verbose_name = '销售订单'
+        permissions = (('can_audit', '审核'),)
+        ordering = ['-date', '-created']
 
     def __str__(self):
         return self.order
@@ -45,6 +47,9 @@ class SalesOrder(OrderAbstract):
 
     def get_update_url(self):
         return reverse('sales_order_update', args=[self.id])
+
+    def get_delete_url(self):
+        return reverse('sales_order_delete', args=[self.id])
 
     @property
     def amount(self):
@@ -74,8 +79,8 @@ class SalesOrder(OrderAbstract):
         for item in self.items.all():
             d = collections.defaultdict(lambda: 0)
             a = total.setdefault(item.product.get_type_display(), d)
-            a['piece'] += item.piece
-            a['quantity'] += item.quantity
+            a['piece'] += item.piece if item.piece else 0
+            a['quantity'] += item.quantity if item.quantity else 0
             a['part'] += item.package_list.get_part() if item.package_list else 0
             a['uom'] = item.uom
         return total
@@ -92,6 +97,16 @@ class SalesOrder(OrderAbstract):
         else:
             number = 0
         return number
+
+    def get_can_in_out_order_qty(self):
+        quantity, piece, part = 0, 0, 0
+        for item in self.items.all():
+            qty = item.get_can_in_out_order_qty()
+            if qty['piece'] > 0:
+                quantity += qty['quantity']
+                piece += qty['piece']
+                part += qty['part']
+        return {'quantity': quantity, 'piece': piece, 'part': part}
 
     def confirm(self, **kwargs):
         is_done, msg = StockOperate(self, self.items.all()).reserve_stock()
@@ -110,7 +125,7 @@ class SalesOrder(OrderAbstract):
         return False, msg
 
     def done(self, **kwargs):
-        if self.get_out_order_percentage() == 1 and (self.amount - self.due_amount) == 0:
+        if self.get_can_in_out_order_qty()['piece'] == 0 and (self.amount - self.due_amount) <= 0:
             self.state = 'done'
             self.save()
             if kwargs.get('comment'):

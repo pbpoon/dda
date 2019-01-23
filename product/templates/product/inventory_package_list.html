@@ -8,13 +8,13 @@
     <div><span class="title">{{ object }}</span>
         <p>{{ package.get_piece }}件 / {{ package.get_part_number|length }}夹 /
             {{ package.get_quantity }}{{ package.product.get_uom }}</p>
-        <div class="right">
+        <div class="left">
             <button class="btn-small" id="all_select">全选</button>
         </div>
     </div>
     <div class="row white">
         <ul class="tabs">
-            {% if object.state == 'draft' %}
+            {% if state == 'draft' %}
 
                 {% for part_number in package.get_part_number %}
                     <li class="tab col s3 "><a class="{% if forloop.first %}active{% endif %}"
@@ -29,7 +29,7 @@
             {% endif %}
         </ul>
 
-        {% if object.state == 'draft' %}
+        {% if state == 'draft' %}
             {% regroup  package.items by part_number as package_list %}
         {% else %}
             {% regroup  object.items.all by part_number as package_list %}

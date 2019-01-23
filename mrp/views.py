@@ -1,3 +1,4 @@
+import time
 from django.apps import apps
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
@@ -5,6 +6,7 @@ from django.db.models import Q
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, get_object_or_404
 from django.template.loader import render_to_string
+from django.urls import reverse_lazy
 from django.views import View
 from django.views.generic import ListView, DetailView
 from django.views.generic.detail import BaseDetailView
@@ -19,6 +21,7 @@ from mrp.models import ProductionOrder, ProductionOrderRawItem, ProductionOrderP
 from mrp.models import TurnBackOrder, TurnBackOrderItem
 from partner.models import Partner
 from product.models import PackageList
+from public.permissions_mixin_views import ViewPermissionRequiredMixin, DynamicPermissionRequiredMixin
 from public.utils import Package, StockOperateItem
 from public.views import OrderItemEditMixin, OrderItemDeleteMixin, OrderFormInitialEntryMixin, FilterListView
 from public.widgets import SwitchesWidget
@@ -258,63 +261,63 @@ class InOutOrderEditView(OrderFormInitialEntryMixin):
             initial['partner'] = self.purchase_order.partner
             initial['type'] = 'in'
         return initial
+    #
+    # def get_purchase_order_items(self):
+    #     # 如果是新建状态
+    #     # 该采购单已收货的items取出
+    #     already_check_in_items = self.purchase_order.items.filter(
+    #         order__in_out_order__state__in=('confirm', 'done'))
+    #     purchase_order_items = self.purchase_order.items.all()
+    #     if already_check_in_items:
+    #         purchase_order_items.exclude(product_id__in=[item.product.id for item in already_check_in_items])
+    #     for item in purchase_order_items:
+    #         InOutOrderItem.objects.create(product=item.product, piece=item.piece,
+    #                                       quantity=item.quantity,
+    #                                       uom=item.uom, order=self.object, purchase_order_item=item)
+    #     return self.object.items.all()
+    #
+    # def get_sales_order_items(self):
+    #     # 选出产品类型为荒料的已出货项的
+    #     already_check_out_items = self.sales_order.items.filter(
+    #         order__in_out_order__state__in=('confirm', 'done'), product__type='block')
+    #     sales_order_items = self.sales_order.items.all()
+    #     if already_check_out_items:
+    #         sales_order_items.exclude(product_id__in=[item.product.id for item in already_check_out_items])
+    #     if sales_order_items:
+    #         # 生成新item的项目
+    #         for item in sales_order_items:
+    #             package = None
+    #             if item.product.type == 'slab':
+    #                 # slabs_id_lst = [item.get_slab_id() for item in
+    #                 #                 item.package_list.items.filter(slab__stock__isnull=False,
+    #                 #                                                slab__stock__location=self.object.warehouse.get_main_location())]
+    #                 # 如果有码单，就生成一张新码单，并把码单的from_package_list链接到旧的码单，
+    #                 # 为了在提货单draft状态下可以选择到旧码单的slab
+    #                 # ps：后来更改为建一张空码单， 提货时候再选择
+    #                 package = item.package_list.make_package_from_list(item.product_id,
+    #                                                                    from_package_list=item.package_list)
+    #             defaults = {'piece': item.piece if not package else package.get_piece(),
+    #                         'quantity': item.quantity if not package else package.get_quantity(),
+    #                         'package_list': package, 'product': item.product, 'order': self.object,
+    #                         'uom': item.uom, 'sales_order_item': item}
+    #             InOutOrderItem.objects.create(**defaults)
+    #     return self.object.items.all()
+    #
+    # def get_items(self):
+    #     # 如果是update状态，有object就返回items
+    #     if self.object:
+    #         items = self.object.items.all()
+    #         if items:
+    #             return items
+    #     if self.purchase_order:
+    #         return self.get_purchase_order_items()
+    #     return self.get_sales_order_items()
 
-    def get_purchase_order_items(self):
-        # 如果是新建状态
-        # 该采购单已收货的items取出
-        already_check_in_items = self.purchase_order.items.filter(
-            order__in_out_order__state__in=('confirm', 'done'))
-        purchase_order_items = self.purchase_order.items.all()
-        if already_check_in_items:
-            purchase_order_items.exclude(product_id__in=[item.product.id for item in already_check_in_items])
-        for item in purchase_order_items:
-            InOutOrderItem.objects.create(product=item.product, piece=item.piece,
-                                          quantity=item.quantity,
-                                          uom=item.uom, order=self.object, purchase_order_item=item)
-        return self.object.items.all()
-
-    def get_sales_order_items(self):
-        # 选出产品类型为荒料的已出货项的
-        already_check_out_items = self.sales_order.items.filter(
-            order__in_out_order__state__in=('confirm', 'done'), product__type='block')
-        sales_order_items = self.sales_order.items.all()
-        if already_check_out_items:
-            sales_order_items.exclude(product_id__in=[item.product.id for item in already_check_out_items])
-        if sales_order_items:
-            # 生成新item的项目
-            for item in sales_order_items:
-                package = None
-                if item.product.type == 'slab':
-                    # slabs_id_lst = [item.get_slab_id() for item in
-                    #                 item.package_list.items.filter(slab__stock__isnull=False,
-                    #                                                slab__stock__location=self.object.warehouse.get_main_location())]
-                    # 如果有码单，就生成一张新码单，并把码单的from_package_list链接到旧的码单，
-                    # 为了在提货单draft状态下可以选择到旧码单的slab
-                    # ps：后来更改为建一张空码单， 提货时候再选择
-                    package = item.package_list.make_package_from_list(item.product_id,
-                                                                       from_package_list=item.package_list)
-                defaults = {'piece': item.piece if not package else package.get_piece(),
-                            'quantity': item.quantity if not package else package.get_quantity(),
-                            'package_list': package, 'product': item.product, 'order': self.object,
-                            'uom': item.uom, 'sales_order_item': item}
-                InOutOrderItem.objects.create(**defaults)
-        return self.object.items.all()
-
-    def get_items(self):
-        # 如果是update状态，有object就返回items
-        if self.object:
-            items = self.object.items.all()
-            if items:
-                return items
-        if self.purchase_order:
-            return self.get_purchase_order_items()
-        return self.get_sales_order_items()
-
-    def form_valid(self, form):
-        with transaction.atomic():
-            self.object = form.save()
-            self.get_items()
-            return super().form_valid(form)
+    # def form_valid(self, form):
+    #     with transaction.atomic():
+    #         self.object = form.save()
+    #         self.get_items()
+    #         return super().form_valid(form)
 
 
 class PurchaseOrderInOrderCreateView(InOutOrderEditView, CreateView):
@@ -362,13 +365,17 @@ class MrpItemExpenseEditView(ModelFormMixin, View):
     def post(self, *args, **kwargs):
         context = self.get_context_data(**kwargs)
         form = context['form']
-        if form.is_valid:
+        if form.is_valid():
             self.object = form.save()
             return JsonResponse({'state': 'ok'})
         return HttpResponse(render_to_string(self.template_name, context))
 
 
-class MrpExpensesItemListView(ListView):
+class MrpExpenseDeleteView(OrderItemDeleteMixin):
+    model = Expenses
+
+
+class MrpExpensesItemListView(FilterListView):
     model = ExpensesItem
     template_name = 'mrp/expenses/expenses_item_list.html'
 
@@ -495,7 +502,7 @@ class InventoryOrderDetailView(StateChangeMixin, DetailView):
     def get_btn_visible(self, state):
         btn_visible = {}
         if state == 'draft':
-            btn_visible.update({'done': True, 'confirm': True, 'cancel': True})
+            btn_visible.update({'confirm': True, 'cancel': True, 'delete': True})
         elif state == 'confirm':
             btn_visible.update({'done': True, 'draft': True})
         return btn_visible
@@ -508,6 +515,13 @@ class InventoryOrderDetailView(StateChangeMixin, DetailView):
 
     def draft(self):
         return self.object.draft()
+
+
+class InventoryOrderDeleteView(ViewPermissionRequiredMixin, BaseDeleteView):
+    model = InventoryOrder
+
+    def get_success_url(self):
+        return reverse_lazy('inventory_order_list')
 
 
 class InventoryOrderEditMixin(OrderFormInitialEntryMixin):
@@ -524,8 +538,14 @@ class InventoryOrderEditMixin(OrderFormInitialEntryMixin):
         kwargs = {'location_id__in': location_ids_list}
         if self.object.product_type:
             kwargs['product__type'] = self.object.product_type
-        stocks = Stock.objects.filter(**kwargs).distinct()
+        start = time.clock()
+        stocks = Stock.objects.prefetch_related('items').filter(**kwargs)
+        # long running
+        # do something other
+
+        # print(Stock.objects.filter(**kwargs).distinct().explain())
         # 把需要盘点的所有先有库存创建items
+        i = 0
         for stock in stocks:
             old_item = {
                 'order': self.object,
@@ -540,14 +560,23 @@ class InventoryOrderEditMixin(OrderFormInitialEntryMixin):
             }
             # 如果是板材，就用在库的slab新建一张码单,并把now_package_list 及package_list建为一张吉码单
             if stock.product.type == 'slab':
-                slab_ids = stock.items.all().values_list('id', flat=True)
+                slab_ids = stock.items.values_list('id', flat=True)
                 package = PackageList.make_package_from_list(stock.product.id, slab_ids)
+                print('old_pg')
                 old_item['old_package_list'] = package
                 old_item['now_package_list'] = package.copy(has_items=False)
-                old_item['package_list'] = package.copy(has_items=True)
+                print('now_pg')
+                # old_item['package_list'] = package.copy(has_items=True)
+                old_item['package_list'] = package.copy(has_items=False)
+                print('pg')
             InventoryOrderItem.objects.create(**old_item)
+            print(i)
+            i += 1
+        # InventoryOrderItem.objects.bulk_create(items_lst)
+        end = time.clock()
+        print(end - start)
 
-    @transaction.atomic()
+    # @transaction.atomic()
     def form_valid(self, form):
         self.object = form.save()
         self.get_items()
@@ -560,6 +589,7 @@ class InventoryOrderCreateView(InventoryOrderEditMixin, CreateView):
 
 class InventoryOrderUpdateView(InventoryOrderEditMixin, UpdateView):
     pass
+
 
 
 class InventoryOrderItemEditView(OrderItemEditMixin):
@@ -584,12 +614,12 @@ class MrpSupplierListView(FilterListView):
     template_name = 'mrp/supplier_list.html'
 
 
-class MrpSupplierDetailView(DetailView):
+class MrpSupplierDetailView(DynamicPermissionRequiredMixin,DetailView):
     model = MrpSupplier
     template_name = 'mrp/supplier_detail.html'
 
 
-class SupplierEditMixin:
+class SupplierEditMixin(DynamicPermissionRequiredMixin):
     model = MrpSupplier
     form_class = SupplierForm
     template_name = 'sales/form.html'

@@ -7,13 +7,18 @@ from django.forms import inlineformset_factory
 from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render, get_object_or_404
 from django.template.loader import render_to_string
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.views.generic import DetailView, CreateView, UpdateView, DeleteView
 from django.views.generic.detail import BaseDetailView
+from django.views.generic.edit import BaseDeleteView
+from django.contrib import messages
+
 from cart.cart import Cart
+from public.permissions_mixin_views import ViewPermissionRequiredMixin
 from public.views import OrderFormInitialEntryMixin, OrderItemEditMixin, OrderItemDeleteMixin, StateChangeMixin, \
     ModalOptionsMixin, FilterListView
-from sales.forms import SalesOrderForm, SalesOrderItemForm, SalesOrderItemQuickForm, CustomerForm
+from sales.forms import SalesOrderForm, SalesOrderItemForm, SalesOrderItemQuickForm, CustomerForm, \
+    SalesOrderCreateByCustomerForm
 from sales.models import SalesOrder, SalesOrderItem, Customer
 from django.conf import settings
 from .filters import SalesOrderFilter, CustomerFilter
@@ -28,8 +33,9 @@ class SalesOrderListView(FilterListView):
 
 
 class SentWxMsg:
-    agent_id = None
+    app_name = None
     user_ids = '@all'
+
     # SECRET = 'la8maluNMN_imtic0Jp0ECmE71ca2iQ80n3-a8HFFv4'
 
     def get_url(self):
@@ -50,16 +56,16 @@ class SentWxMsg:
 
     def sent_msg(self):
         from action.models import WxConf
-        wx_conf = WxConf(agent_id=self.agent_id)
+        wx_conf = WxConf(agent_id=self.app_name)
         client = WeChatClient(wx_conf.corp_id, wx_conf.Secret)
-        client.message.send_text_card(agent_id=self.agent_id, user_ids=self.user_ids, title=self.get_title(),
+        client.message.send_text_card(agent_id=wx_conf.AgentId, user_ids=self.user_ids, title=self.get_title(),
                                       description=self.get_description(),
                                       url=self.get_url())
 
 
-class SalesOrderDetailView(StateChangeMixin, DetailView, SentWxMsg):
+class SalesOrderDetailView(StateChangeMixin, DetailView):
     model = SalesOrder
-    agent_id = '1000002'
+    app_name = 'zdzq_main'
 
     def get_btn_visible(self, state):
         return {'draft': {'cancel': True, 'confirm': True},
@@ -69,20 +75,20 @@ class SalesOrderDetailView(StateChangeMixin, DetailView, SentWxMsg):
 
     def confirm(self):
         is_done, msg = self.object.confirm()
-        if is_done:
-            self.sent_msg()
+        # if is_done:
+        # self.sent_msg()
         return is_done, msg
 
     def draft(self):
         is_done, msg = self.object.draft()
-        if is_done:
-            self.sent_msg()
+        # if is_done:
+        #     self.sent_msg()
         return is_done, msg
 
     def cancel(self):
         is_done, msg = self.object.cancel()
-        if is_done:
-            self.sent_msg()
+        # if is_done:
+        #     self.sent_msg()
         return is_done, msg
 
 
@@ -123,6 +129,13 @@ class SalesOrderInvoiceOptionsEditView(ModalOptionsMixin):
             self.object.create_comment(**{'comment': comment})
             return True, '已创建账单:{}'.format(invoice.order)
         return False, '错误'
+
+
+class SalesOrderDeleteView(ViewPermissionRequiredMixin, BaseDeleteView):
+    model = SalesOrder
+
+    def get_success_url(self):
+        return reverse_lazy('sales_order_list')
 
 
 class SalesOrderEditMixin(OrderFormInitialEntryMixin):
@@ -225,11 +238,27 @@ class CustomerListView(FilterListView):
     model = Customer
     filter_class = CustomerFilter
     paginate_by = 10
+    template_name = 'sales/customer_list.html'
 
 
 class CustomerDetailView(DetailView):
     model = Customer
     template_name = 'sales/customer_detail.html'
+
+
+class CustomerDeleteView(ViewPermissionRequiredMixin, BaseDeleteView):
+    model = Customer
+
+    def get_success_url(self):
+        return reverse_lazy('customer_list')
+
+    def delete(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        if self.object.sales_order.all():
+            messages.error(request, '该客户名下有订单记录，不能删去')
+            return HttpResponseRedirect(self.object.get_absolute_url())
+            # return self.get(request, *args, **kwargs)
+        return super().delete(request, *args, **kwargs)
 
 
 class CustomerEditMixin:
@@ -249,3 +278,12 @@ class CustomerCreateView(CustomerEditMixin, CreateView):
 
 class CustomerUpdateView(CustomerEditMixin, UpdateView):
     pass
+
+
+class SalesOrderCreateByCustomerView(SalesOrderCreateView):
+    form_class = SalesOrderCreateByCustomerForm
+
+    def get_initial(self):
+        initial = super().get_initial()
+        initial['partner'] = self.kwargs['customer_id']
+        return initial

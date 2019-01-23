@@ -70,10 +70,10 @@
                     <td>{{ produce.get_amount }}</td>
                     <td>{% if object.state == 'draft' %}
                         <a class='dropdown-trigger btn-floating grey' href='#'
-                           data-target='dropdown{{ forloop.parentloop.counter }}produce'> <i
+                           data-target='dropdown-{{ forloop.parentloop.counter }}-{{ produce.id }}-produce'> <i
                                 class="material-icons">more_vert</i></a>
                         <!-- Dropdown Structure -->
-                        <ul id='dropdown{{ forloop.parentloop.counter }}produce' class='dropdown-content'>
+                        <ul id='dropdown-{{ forloop.parentloop.counter }}-{{ produce.id }}-produce' class='dropdown-content'>
                             <li>
                                 <a onclick="edit_item( '{% url 'production_produce_item_edit' produce.id %}')">
                                     修改</a></li>

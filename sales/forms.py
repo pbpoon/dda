@@ -10,33 +10,38 @@ from public.forms import FormUniqueTogetherMixin
 from public.widgets import SwitchesWidget, AutocompleteWidget, RadioWidget
 from sales.models import SalesOrder, SalesOrderItem, Customer
 from stock.models import Warehouse
-from dal import autocomplete as dal_autocomplete
+from dal import autocomplete
 
 
 class SalesOrderForm(forms.ModelForm):
     is_default_address = forms.BooleanField(label='默认地址', required=False, widget=SwitchesWidget,
                                             help_text='此项开启后，下面地址所选无效。发货地址将会用客户默认地址')
-    partner_autocomplete = forms.CharField(widget=AutocompleteWidget(url='get_partner_list'), label='客户')
 
     class Meta:
         model = SalesOrder
         fields = (
-            'date', 'partner', 'partner_autocomplete', 'is_default_address', 'province', 'city', 'handler', 'entry')
-        # exclude = ('state', 'order')
+            'date', 'partner', 'is_default_address', 'province', 'city', 'handler', 'entry')
         widgets = {
             'date': forms.DateInput(attrs={'class': 'datepicker'}),
             'entry': forms.HiddenInput,
-            'partner': forms.HiddenInput,
+            'partner': autocomplete.ModelSelect2(url='customer_autocomplete',
+                                                 attrs={'class': ' browser-default', 'data-minimum-input-length': 1,
+                                                        'data-html': True, 'data-create-url':''}),
+            'province': autocomplete.ModelSelect2(url='get_province',
+                                                  attrs={'class': 'browser-default'}),
+            'city': autocomplete.ModelSelect2(url='get_city',
+                                              forward=['province'],
+                                              attrs={'class': ' browser-default'})
+
+            # 非常重要'class': 'browser-default'
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if not kwargs.get('instance'):
-            self.fields['city'].queryset = City.objects.none()
+            # self.fields['city'].queryset = City.objects.none()
             self.fields['handler'].initial = kwargs['initial'].get('entry')
             self.fields['is_default_address'].initial = True
-            self.fields['city'].widget.attrs = {'class': 'city s6'}
-            self.fields['province'].widget.attrs = {'class': 'prov s6'}
 
     def clean(self):
         cd = self.cleaned_data
@@ -54,7 +59,6 @@ class SalesOrderForm(forms.ModelForm):
 
 
 class SalesOrderItemForm(FormUniqueTogetherMixin, forms.ModelForm):
-    product_autocomplete = forms.CharField(label='产品编号', widget=AutocompleteWidget(url='get_product_list'))
     warehouse = forms.ModelChoiceField(label='出货仓库', queryset=Warehouse.objects.filter(is_activate=True, ),
                                        required=True)
 
@@ -62,7 +66,7 @@ class SalesOrderItemForm(FormUniqueTogetherMixin, forms.ModelForm):
         model = SalesOrderItem
         # exclude = ('line',)
         fields = (
-            'order', 'warehouse', 'product_autocomplete', 'product', 'piece', 'quantity', 'uom', 'price',
+            'order', 'warehouse', 'product', 'piece', 'quantity', 'uom', 'price',
             'package_list',
             'location')
 
@@ -70,25 +74,18 @@ class SalesOrderItemForm(FormUniqueTogetherMixin, forms.ModelForm):
             'order': forms.HiddenInput,
             'package_list': forms.HiddenInput,
             'location': forms.HiddenInput,
-            'product': forms.HiddenInput,
+            'product': autocomplete.ModelSelect2(url='get_product_list',
+                                                 attrs={'class': 'browser-default'},
+                                                 forward=['warehouse']),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        get_product_list = reverse_lazy('get_product_list')
-        # self.fields['product_autocomplete'].widget.attrs = {'class': 'autocomplete',
-        #                                                     'onkeyup': 'get_autocomplete("{}")'.format(
-        #                                                         get_product_list)}
-        self.fields['warehouse'].widget.attrs = {'onchange': 'get_autocomplete("{}")'.format(get_product_list)}
-        # qs = Product.objects.filter(stock__isnull=False).exclude(type='semi_slab')
-        # self.fields['product'].queryset = qs
         self.fields['price'].widget.attrs = {'min': 0.0}
         instance = kwargs.get('instance')
         if instance:
+            # self.fields['product'].widget.attrs = {'disabled': True}
             self.fields['uom'].required = False
-            self.fields[
-                'product_autocomplete'].initial = instance.product.name + instance.product.get_type_display()
-            # self.fields['product_autocomplete'].widget = forms.TextInput(attrs={'disable': True})
             self.fields['warehouse'].required = False
             self.fields['warehouse'].widget = forms.HiddenInput()
             if instance.product.type == 'slab':
@@ -147,15 +144,38 @@ class SalesOrderItemQuickForm(FormUniqueTogetherMixin, forms.ModelForm):
 class CustomerForm(forms.ModelForm):
     class Meta:
         model = Customer
-        fields = ('is_company', 'sex', 'name', 'phone', 'province', 'city', 'entry', 'is_activate')
+        fields = ('is_company', 'sex', 'name', 'phone', 'province', 'city', 'entry', 'is_activate', 'company')
         widgets = {
             'sex': RadioWidget(),
             'is_company': SwitchesWidget,
             'is_activate': SwitchesWidget,
-            'entry': forms.HiddenInput()
+            'entry': forms.HiddenInput(),
+            'province': autocomplete.ModelSelect2(url='get_province',
+                                                  attrs={'class': 'browser-default'}),
+            'city': autocomplete.ModelSelect2(url='get_city',
+                                              forward=['province'],
+                                              attrs={'class': ' browser-default'}),
+            'company': autocomplete.ModelSelect2(url='customer_company_autocomplete',
+                                                 attrs={'class': 'browser-default'})
         }
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['province'].widget.attrs = {'class': 'prov'}
-        self.fields['city'].widget.attrs = {'class': 'city'}
+
+class SalesOrderCreateByCustomerForm(SalesOrderForm):
+    class Meta:
+        model = SalesOrder
+        fields = (
+            'date', 'partner', 'is_default_address', 'province', 'city', 'handler', 'entry')
+        widgets = {
+            'date': forms.DateInput(attrs={'class': 'datepicker'}),
+            'entry': forms.HiddenInput,
+            # 'partner': autocomplete.ModelSelect2(url='customer_autocomplete',
+            #                                      attrs={'class': ' browser-default', 'data-minimum-input-length': 1,
+            #                                             'data-html': True, }),
+            'province': autocomplete.ModelSelect2(url='get_province',
+                                                  attrs={'class': 'browser-default'}),
+            'city': autocomplete.ModelSelect2(url='get_city',
+                                              forward=['province'],
+                                              attrs={'class': ' browser-default'})
+
+            # 非常重要'class': 'browser-default'
+        }

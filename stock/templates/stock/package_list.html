@@ -1,6 +1,14 @@
 {% load public %}
 {#<div class="row">#}
 <div class="col s12">
+    <div class="right">
+        <a class="btn waves-effect" href="{% url 'stock_slabs_pdf' object.id %}"><i
+                class="material-icons">picture_as_pdf</i>打印</a>
+        <a class="btn waves-effect right"
+           href="{% url 'stock_slabs_detail_full' object.id %}?state={{ state }}&add_new={{ add_new }}">
+            <span>全屏编辑<i class="material-icons right">crop_free</i></span>
+        </a>
+    </div>
     <div><span class="title">{{ object }}</span>
         {% if package.product.type == 'block' %}
             <p>
@@ -14,7 +22,7 @@
         {% elif object.product.type == 'slab' %}
             <p>{{ object.piece }}件 / {{ package.get_part_number|length }}夹 /
                 {{ object.quantity }}{{ object.product.get_uom }}</p>
-            <div class="right">
+            <div class="left">
                 <button class="btn-small" id="all_select">全选</button>
             </div>
             </div>
@@ -67,7 +75,7 @@
                                             修改
                                         </a>
                                     </td>
-                                    <td>{{ item.get_quantity }}</td>
+                                    <td style="text-align: right">{{ item.get_quantity }}</td>
                                     <td>
                                     </td>
                                 </tr>
@@ -127,8 +135,12 @@
             data: $form.serialize(),
             method: 'POST',
             success: function (data) {
-                md_package_list.modal('close')
-                window.location.reload()
+                if (data['state'] == 'ok') {
+                    md_package_list.modal('close')
+                    window.location.reload()
+                } else {
+                    return false
+                }
             },
             error: function (e) {
                 alert('网络遇到错误')

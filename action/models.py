@@ -21,6 +21,7 @@ class Action(models.Model):
 
 class WxConfig(models.Model):
     name = models.CharField('应用名称', max_length=20)
+    app_name = models.CharField(max_length=80)
     corp_id = models.CharField(max_length=80)
     agent_id = models.CharField(max_length=80)
     values = JSONField()
@@ -33,17 +34,18 @@ class WxConfig(models.Model):
 
 
 class WxConf:
-    def __init__(self, corp_id=None, agent_id=None):
-        self._corp_id = corp_id
-        self._agent_id = agent_id
+    def __init__(self, app_name, corp_id=None, agent_id=None):
+        self.app_name = app_name
         self.value = self.get_value()
 
     def get_value(self):
         try:
-            return WxConfig.objects.get(agent_id=self._agent_id).values
+            print(self.app_name + '11111')
+            values = WxConfig.objects.get(app_name=self.app_name).values
+            print(values)
+            return values
         except ObjectDoesNotExist:
             return {}
 
     def __getattr__(self, item):
         return self.value.get(item, None)
-

@@ -7,17 +7,50 @@ from functools import reduce
 import django_filters
 from django.db.models import Q
 
+from dal import autocomplete
+from django.utils.html import format_html
+
+from .models import Customer
+
+
+class CustomerAutocomplete(autocomplete.Select2QuerySetView):
+    create_field = 'name'
+
+    def create_object(self, text):
+        phone = ''
+        try:
+            phone = int(text)
+        except Exception as e:
+            pass
+        data = {self.create_field: text}
+        if phone:
+            data.update({'phone': phone})
+        """Create an object given a text."""
+        return self.get_queryset().get_or_create(**data)[0]
+
+    def get_result_label(self, item):
+        return format_html('%s:%s:%s' % (item, item.get_address(), item.phone))
+
+    def get_queryset(self):
+        if not self.request.user.is_authenticated:
+            return Customer.objects.none()
+
+        qs = Customer.objects.all()
+        if self.q:
+            lst = []
+            for key in ['name__contains', 'phone__contains', 'company__name__contains',
+                        'company__phone__contains', ]:
+                q_obj = Q(**{key: self.q})
+                lst.append(q_obj)
+            qs = qs.filter(reduce(operator.or_, lst))
+
+        return qs
+
 
 class SalesOrderFilter(django_filters.FilterSet):
-    # WH_CHOICES = [(w.id, w) for w in Warehouse.objects.all()]
-    # partner = django_filters.ChoiceFilter(label='仓库',  method='filter_by_warehouse')
     partner = django_filters.CharFilter(label='客户资料', method='filter_by_partner', help_text='可输入姓名，电话，公司名称等信息来筛选')
 
     address = django_filters.CharFilter(label='发货地址', method='filter_by_address')
-
-    #
-    # quarry = django_filters.ChoiceFilter(label='矿口', choices=QUARRY, method='filter_by_quarry')
-    # batch = django_filters.ChoiceFilter(label='批次', choices=BATCH, method='filter_by_batch')
 
     class Meta:
         from .models import SalesOrder

@@ -1,0 +1,241 @@
+{% extends "detail.html" %}
+{% load public %}
+{% block headline %}
+    <a href="{{ object.product.get_absolute_url }}">{{ object.product }}</a>
+{% endblock %}
+{% block operate %}
+    <a class="btn waves-effect" href="{% url 'package_pdf' object.id %}">打印PDF</a>
+{% endblock %}
+{% block subheadline %}
+    <span>
+    <input type="hidden" name="return_path" value="{{ return_path }}" form="select_slab_form">
+    <a href="{{ object.get_absolute_url }}">@{{ object.location }}</a><br>
+    {{ object|call:'get_part' }} 夹/
+    {{ object|call:'get_piece' }} 件/
+    {{ object|call:'get_quantity' }}m2
+    </span><br>
+    <span id="select_display"></span>
+{% endblock %}
+{% block content %}
+    {#{% include 'product/inventory_package_list.html' %}#}
+    {#{% endblock %}#}
+    <div class="left">
+        <button class="btn-small" id="all_select">全选</button>
+    </div>
+    <div class="right">
+        <button class="btn waves-effect" onclick='move_option("{% url 'stock_slabs_move' object.id %}")'>
+            移动到其他夹
+        </button>
+        <button form="update_line" type="submit" class="btn waves-effect">刷新序号</button>
+        {% if add_new %}
+            <button class="btn waves-effect red"
+                    onclick='move_option("{% url 'package_list_item_delete' object.id %}")'>
+                删除所选
+            </button>
+        {% endif %}
+        <script>
+
+            function move_option(url) {
+                $.ajax({
+                    url: url,
+                    method: 'GET',
+                    data: $('#select_slab_form').serialize(),
+                    success: function (data) {
+                        $('#modal1 .container').html(data);
+                        $('#item_form').attr('action', url);
+                        md.modal('open')
+                    }
+                })
+            }
+        </script>
+
+        <form id="update_line" action="{% url 'stock_slabs_update_line' object.id %}" method="post">
+            {% csrf_token %}
+        </form>
+    </div>
+    <div class="row white">
+
+        <ul class="tabs">
+            {% for part_number in object.get_part_number %}
+                <li class="tab col s3 "><a class="{% if forloop.first %}active{% endif %}"
+                                           href="#{{ part_number }}">{{ part_number }}#</a></li>
+            {% endfor %}
+        </ul>
+        {% regroup package.items by part_number as package_list %}
+        {% with select_slabs=cart.get_select_slabs %}
+            {% for part_number in package_list %}
+                <div id="{{ part_number.grouper }}" class="col s12">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th><p>
+                                <label>
+                                    <input type="checkbox" name="select_part"
+                                           data-part="{{ part_number.grouper }}"/>
+                                    <span>选择</span>
+                                </label>
+                            </p>
+                            </th>
+                            <th>规格</th>
+                            <th>面积</th>
+                            <th></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for item in part_number.list %}
+
+                            <tr {% if item.get_slab_id not in package_slabs_ids %}class="green-text"{% endif %}>
+                                <td>
+                                    <p>
+                                        <label>
+                                            <input form="select_slab_form" data-quantity="{{ item.get_quantity }}"
+                                                   type="checkbox" name="select"
+                                                    {% if state not in 'draft, confirm,done' %}
+                                                   disabled
+                                                    {% endif %}
+                                                    {% if item.get_slab_id in now_slabs_ids %}
+                                                   checked="checked"
+                                                    {% endif %}
+                                                   value="{{ item.get_slab_id }}"/>
+                                            <span>{{ item.line }}</span>
+                                        </label>
+                                    </p>
+                                </td>
+                                <td>
+                                    {% if item.get_slab_id not in now_slabs_ids %}
+                                        <s>{% endif %}
+                                    {{ item }}
+                                    <a href="#!"
+                                       onclick="edit_item('{% url 'stock_slab_edit' item.id %}')">
+                                        修改
+                                    </a>
+                                    {% if item.get_slab_id not in now_slabs_ids %}
+                                        </s>
+                                    {% endif %}
+                                </td>
+                                <td>{{ item.get_quantity }}</td>
+                                <td>
+                                    {{ item.get_location }}
+                                    {% if item.get_slab_id not in old_slabs_ids %}
+                                        <span class="red-text">新增</span>
+                                    {% elif item.get_slab_id not in now_slabs_ids %}
+                                        <span class="red-text">丢失</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+
+                        {% endfor %}
+                        </tbody>
+                        <tfoot>
+                        <tr>
+                            <td>第 {{ part_number.grouper }} 夹</td>
+                            <td>{{ object|add_arg:part_number.grouper|call:'get_piece' }}件</td>
+                            <td>{{ object|add_arg:part_number.grouper|call:'get_quantity' }}m2</td>
+                            <td></td>
+                        </tr>
+                        </tfoot>
+                    </table>
+
+                </div>
+
+            {% endfor %}
+        {% endwith %}
+        <form id="select_slab_form" action="{{ edit_url }}" method="post">
+            <input type="hidden" name="product"
+                   value="{{ object.product.id }}">
+            <input type="hidden" name="package_list_id"
+                   value="{{ object.id }}">
+        </form>
+    </div>
+{% endblock %}
+{% block sidebar %}
+
+{% endblock %}
+{% block action_btn %}
+    <div class="fixed-action-btn click-to-toggle">
+        <a class="btn-floating btn-large red">
+            <i class="large material-icons">mode_edit</i>
+        </a>
+        <ul>
+
+            {% if add_new == 'True' %}
+                <li>
+                    <a onclick="add_item('{{ object.get_create_item_url }}')"
+                       class="btn-floating btn-large red">
+                        <i class="large material-icons">add</i>
+                    </a>
+                </li>
+            {% endif %}
+            {% if object %}
+                {% if user|check_permission:'comment.add_comment' %}
+                    <li>
+                        <button class="btn-floating yellow darken-1"
+                                onclick="add_item('{% url 'comment_create'  object.product|label_name object.product.id %}')">
+                            <i
+                                    class="material-icons">format_quote</i></button>
+                    </li>
+                {% endif %}
+                {% if user|check_permission:'files.add_files' %}
+                    <li>
+                        <button class="btn-floating blue"
+                                onclick="add_item('{% url 'files_create'  object.product|label_name object.product.id %}')">
+                            <i
+                                    class="material-icons">attach_file</i></button>
+                    </li>
+                {% endif %}
+            {% endif %}
+        </ul>
+    </div>
+{% endblock %}
+<script>
+
+    {% block domready %}
+        {{ block.super }}
+        $('.tabs').tabs();
+        $('.dropdown-trigger').dropdown();
+        {#    $('.tabs').on('click', function (){#}
+        {#        $('.dropdown-trigger').dropdown();#}
+        {#    } )#}
+        $('.tabs').on('click', function (e) {
+            $('.dropdown-trigger').dropdown()
+        })
+        //码单的checkbox选择相关
+        $('input[name=select]').on('click', function (e) {
+            sum()
+        });
+
+        $('input[name=select_part]').on('click', function (e) {
+            var tb = $(this).parents('#' + $(this).data('part') + "");
+            tb.find(':checkbox').attr("checked", this.checked);
+            sum()
+        });
+        $('#all_select').on('click', function () {
+            var $btn = $(this);
+            if ($btn.text() == '全选') {
+                $btn.text('全不选');
+                $(':checkbox').attr("checked", true);
+
+            } else {
+                $btn.text('全选');
+                $(':checkbox').attr("checked", false);
+            }
+            sum()
+        });
+        $('#select_slab_form_submit').on('click', function () {
+            var $form = $('#select_slab_form');
+            var url = $form.attr('action');
+            $.ajax({
+                url: url,
+                data: $form.serialize(),
+                method: 'POST',
+                success: function (data) {
+                    md_package_list.modal('close')
+                    window.location.reload()
+                },
+                error: function (e) {
+                    alert('网络遇到错误')
+                }
+            })
+        });
+    {% endblock %}
+</script>

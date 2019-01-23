@@ -1,7 +1,8 @@
 {% load public %}
 {#<div class="row">#}
-    <div class="col s12">
+<div class="col s12">
     {% if package.product == 'slab' %}
+
         <div>
             <p>{{ package.get_piece }}件 / {{ package.get_part_number|length }}夹 /
                 {{ package.get_quantity }}{{ package.product.get_uom }}</p>
@@ -54,7 +55,7 @@
             </div>
         {% endfor %}
     {% endif %}
-    </div>
+</div>
 {#</div>#}
 <script>
     $('.tabs').tabs();

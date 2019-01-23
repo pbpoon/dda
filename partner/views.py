@@ -1,5 +1,7 @@
 import operator
 from functools import reduce
+
+from dal import autocomplete
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
@@ -12,6 +14,36 @@ from django.views.generic import ListView, DetailView, CreateView, UpdateView, F
 from partner.forms import MainInfoForm
 from public.permissions_mixin_views import DynamicPermissionRequiredMixin
 from .models import Partner, Province, City, MainInfo
+
+
+class ProvinceAutocomplete(autocomplete.Select2QuerySetView):
+    model = Province
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        qs = qs.filter(name__contains=self.q)
+        return qs
+
+
+class CustomerCompanyAutocompleteView(autocomplete.Select2QuerySetView):
+    model = Partner
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        return qs.filter(type='customer', is_company=True)
+
+
+class CityAutocomplete(autocomplete.Select2QuerySetView):
+    model = City
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        prov = self.forwarded.get('province', None)
+        if prov:
+            qs = qs.filter(code=prov)
+        if self.q:
+            qs = qs.filter(name__contains=self.q)
+        return qs
 
 
 class MainInfoEditMixin(DynamicPermissionRequiredMixin):
@@ -65,9 +97,6 @@ class PartnerUpdateView(UpdateView):
     model = Partner
     fields = '__all__'
     template_name = 'form.html'
-
-
-
 
 
 def get_address(request):

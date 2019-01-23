@@ -3,11 +3,12 @@ from django.apps import apps
 from django.views.generic import DetailView, ListView
 from django.views.generic.edit import ModelFormMixin, BaseCreateView, CreateView
 
+from public.permissions_mixin_views import DynamicPermissionRequiredMixin
 from public.views import ContentTypeEditMixin, FilterListView
 from .models import Files
 
 
-class FilesCreateView(ContentTypeEditMixin, CreateView):
+class FilesCreateView(DynamicPermissionRequiredMixin,ContentTypeEditMixin, CreateView):
     model = Files
     fields = '__all__'
 
@@ -47,5 +48,5 @@ class FilesListView(FilterListView):
         return context
 
 
-class FilesDetailView(DetailView):
+class FilesDetailView(DynamicPermissionRequiredMixin,DetailView):
     model = Files

@@ -5,6 +5,7 @@
     {{ object|verbose_name|default_if_none:'' }}
 {% endblock %}
 {% block content %}
+    <button class="btn waves-effect blue">新建客户</button>
     {#    <script src="{% static 'js/materialize-autocomplete/jquery.materialize-autocomplete.js' %}"></script>#}
     <form action="" method="post">
         {#        <script src="{% static 'js/autocomplete.js' %}"></script>#}
@@ -16,6 +17,8 @@
             {% csrf_token %}
 
         </div>
+
+
         {% if formset %}
             <div class="card-panel">
                 <i>销售单明细</i>
@@ -35,7 +38,7 @@
                         <tr class="formset_row">
                             {% for field in form.visible_fields %}
                                 <td>
-{#                                    Include the hidden fields in the form#}
+                                    {#                                    Include the hidden fields in the form#}
                                     {% if forloop.first %}
                                         {% for hidden in form.hidden_fields %}
                                             {{ hidden }}
@@ -56,82 +59,67 @@
     {#    <script src="{% static 'js/jquery.cityselect.js' %}"></script>#}
 {% endblock %}
 {% block footer %}
+    {{ form.media }}
+    {#    <style>#}
+    {#        .select2-search__field {#}
+    {#            width: 100% !important;#}
+    {#            z-index: 215000000 !important;#}
+    {#        }#}
+    {#    </style>#}
     {{ block.super }}
-    <script>
-        var PARTNER_DATA;
 
+    {#    <script>#}
+    {##}
+    {#        var ajax_url = '{% url 'get_address' %}';#}
+    {#        var DATA;#}
+    {##}
+    {#        function get_address() {#}
+    {#            console.log($('.prov').val())#}
+    {#            $.ajax({#}
+    {#                url: ajax_url,#}
+    {#                method: 'GET',#}
+    {#                data: {#}
+    {#                    'prov': $('.prov').val(),#}
+    {#                },#}
+    {#                success: function (data) {#}
+    {#                    DATA = data;#}
+    {#                    return change_city()#}
+    {##}
+    {#                }#}
+    {#            })#}
+    {#        }#}
+    {##}
+    {#        function change_city() {#}
+    {#            var val = $('.prov').val();#}
+    {#$('.city').children().not(':eq(0)').remove();#}
+    {#            $('.city').html("")#}
+    {#            for (var c  in DATA) {#}
+    {#                $('.city').append("<option value=" + DATA[c]['id'] + ">" + DATA[c]['name'] + "</option>");#}
+    {#            }#}
+    {#            $(".city").formSelect();#}
+    {#        }#}
+    {##}
+    {#        $('.prov').on('change', function () {#}
+    {#            get_address('city');#}
+    {#        });#}
+    {#        $('.checkbox').on('change', function () {#}
+    {#            if ($(this).checked) {#}
+    {#                $('.prov').attr('disable', 'disable');#}
+    {#                $('.city').prop('disable', true);#}
+    {#            }#}
+    {#        })#}
 
-        var $ap = $('.autocomplete').autocomplete({
-            onAutocomplete: function (input) {
-                // alert("aa" + DATA[input]['id'] + input);
-                $('input[name=partner]').val((PARTNER_DATA[input]['id']))
-            }, minLength: 2, limit: 10
+    {#</script>#}
 
-
-        });
-
-        function get_autocomplete(url) {
-            var $form = $('form');
-
-            $.ajax({
-                url: url,
-                data: $form.serialize(),
-                method: 'POST',
-                success: function (data) {
-                    $ap.autocomplete("updateData", data);
-                    $ap.autocomplete("open");
-                    PARTNER_DATA = data
-                }
-            })
-        }
-
-
-        var ajax_url = '{% url 'get_address' %}';
-        var DATA;
-
-        function get_address() {
-            console.log($('.prov').val())
-            $.ajax({
-                url: ajax_url,
-                method: 'GET',
-                data: {
-                    'prov': $('.prov').val(),
-                },
-                success: function (data) {
-                    DATA = data;
-                    return change_city()
-
-                }
-            })
-        }
-
-        function change_city() {
-            var val = $('.prov').val();
-            {#$('.city').children().not(':eq(0)').remove();#}
-            $('.city').html("")
-            for (var c  in DATA) {
-                $('.city').append("<option value=" + DATA[c]['id'] + ">" + DATA[c]['name'] + "</option>");
-            }
-            $(".city").formSelect();
-        }
-
-        $('.prov').on('change', function () {
-            get_address('city');
-        });
-        $('.checkbox').on('change', function () {
-            if ($(this).checked) {
-                $('.prov').attr('disable', 'disable');
-                $('.city').prop('disable', true);
-            }
-        })
-
-    </script>
 {% endblock %}
 <script>
+
     {% block domready %}
-
         {{ block.super }}
-
+        {#$('.select2-selection--single').append("<div style='z-index:999;' class='right' id='add'>添加</div>");#}
+        {#$('#add').on('click', function (e) {#}
+        {#    md_package_list.modal('open')#}
+        {#md_package_list.modal('open');#}
 
     {% endblock %}
 </script>

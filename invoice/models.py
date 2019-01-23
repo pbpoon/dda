@@ -256,7 +256,7 @@ class InvoiceItem(OrderItemSaveCreateCommentMixin, models.Model):
 
     @property
     def amount(self):
-        return Decimal('{0:.2f}'.format(self.quantity * self.price))
+        return Decimal('{0:.0f}'.format(self.quantity * self.price))
 
     @property
     def state(self):

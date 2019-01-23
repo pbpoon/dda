@@ -196,6 +196,7 @@ class ProductionOrderRawItem(OrderItemBase):
             'item': '%s:%s费' % (str(self.product), self.order.production_type),
             'from_order_item': self,
             'quantity': self.quantity,
+            'uom': self.uom,
             'line': self.line,
             'price': self.price}}
 
@@ -245,6 +246,8 @@ class ProductionOrderProduceItem(OrderItemBase):
                                            verbose_name='草稿码单')
     package_list = models.ForeignKey('product.PackageList', on_delete=models.SET_NULL, blank=True, null=True,
                                      verbose_name='码单')
+    pic = models.IntegerField('件', blank=True, null=True)  # 用于界石毛板
+    pi = models.IntegerField('皮', blank=True, null=True)  # 用于界石毛板
 
     class Meta:
         verbose_name = '生产单成品行'

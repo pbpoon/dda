@@ -6,8 +6,16 @@ from functools import reduce
 
 import django_filters
 from django.db.models import Q
-
 from .models import Stock, Warehouse
+
+
+def to_set(objs):
+    lst = set()
+    for obj in objs:
+        if obj.product.thickness is None:
+            continue
+        lst.add(obj.product.thickness)
+    return sorted(lst)
 
 
 class StockFilter(django_filters.FilterSet):
@@ -16,10 +24,11 @@ class StockFilter(django_filters.FilterSet):
     WH_CHOICES = [(w.id, w) for w in Warehouse.objects.all()]
     QUARRY = [(q.id, q) for q in Quarry.objects.all()]
     BATCH = [(b.id, b) for b in Batch.objects.all()]
+    THICKNESS_CHOICES = [(t, t) for t in to_set(Stock.objects.select_related('product'))]
     warehouse = django_filters.ChoiceFilter(label='仓库', choices=WH_CHOICES, method='filter_by_warehouse')
     block = django_filters.CharFilter(label='编号', method='filter_by_block')
     type = django_filters.ChoiceFilter(label='类型', method='filter_by_type', choices=TYPE_CHOICES)
-
+    thickness = django_filters.ChoiceFilter(label='厚度', method='filter_by_thickness', choices=THICKNESS_CHOICES)
     quarry = django_filters.ChoiceFilter(label='矿口', choices=QUARRY, method='filter_by_quarry')
     batch = django_filters.ChoiceFilter(label='批次', choices=BATCH, method='filter_by_batch')
     long_gt = django_filters.CharFilter(label='长度大于', method='filter_by_long_gt')
@@ -42,6 +51,10 @@ class StockFilter(django_filters.FilterSet):
 
     def filter_by_type(self, queryset, name, value):
         expression = {'product__type': value}
+        return queryset.filter(**expression)
+
+    def filter_by_thickness(self, queryset, name, value):
+        expression = {'product__thickness': value}
         return queryset.filter(**expression)
 
     def filter_by_quanrry(self, queryset, name, value):

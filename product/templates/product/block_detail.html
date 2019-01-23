@@ -13,7 +13,7 @@
                 {% for stock in object.stock.all %}
                     {% if stock.product.type != 'semi_slab' %}
                         <li><a href="#"
-                               onclick="open_package_list_by_stock('{% url 'stock_slabs_detail' stock.id %}')">{{ stock.product.get_type_display }}:{{ stock.piece }}件/{{ stock.quantity }}{{ stock.uom }}@{{ stock.location }}</a>
+                               onclick="open_package_list_by_stock('{% url 'stock_slabs_detail' stock.id %}')">{{ stock.product.get_type_display }}({{ stock.product.thickness|default_if_none:'' }}):{{ stock.piece }}件/{{ stock.quantity }}{{ stock.uom }}@{{ stock.location }}</a>
                         </li>
                     {% else %}
                         <li>

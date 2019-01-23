@@ -21,6 +21,7 @@ class Customer(Partner):
 
     class Meta:
         proxy = True
+        app_label = 'partner'
         verbose_name = '客户'
 
     def save(self, *args, **kwargs):
@@ -42,4 +43,5 @@ class Customer(Partner):
     def get_update_url(self):
         return reverse('customer_update', args=[self.id])
 
-
+    def get_delete_url(self):
+        return reverse('customer_delete', args=[self.id])

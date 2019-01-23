@@ -10,7 +10,7 @@ UOM_CHOICES = (('t', '吨'), ('m3', '立方'), ('m2', '平方'))
 
 class MoveLocationOrder(MrpOrderAbstract):
     partner = models.ForeignKey('partner.Partner', on_delete=models.SET_NULL, null=True, blank=True,
-                                limit_choices_to={'type__in': 'service'},
+                                limit_choices_to={'type': 'service'},
                                 verbose_name='运输单位', help_text='账单[对方]对应本项。如果为空，则不会生产账单')
     order = OrderField(order_str='MO', blank=True, verbose_name='单号', default='New', max_length=20)
     warehouse = models.ForeignKey('stock.Warehouse', on_delete=models.CASCADE, verbose_name='移出仓库',

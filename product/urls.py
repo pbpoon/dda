@@ -19,8 +19,10 @@ from . import views
 
 urlpatterns = [
     path('block_list', views.get_block_list, name='get_block_list'),
-    path('product_list', views.get_product_list, name='get_product_list'),
-    path('product_info', views.get_product_info, name='get_product_info'),
+    path('block-autocomplete/', views.BlockAutocompleteView.as_view(), name='block_autocomplete'),
+    path('sales_order_product_list/', views.ProductAutocomplete.as_view(), name='get_product_list'),
+    # path('sales_order_product_list/', views.SalesOrderProductAutocomplete.as_view(), name='get_sales_order_product_list'),
+    path('product_info/', views.get_product_info, name='get_product_info'),
     path('package_list/<pk>/pdf/', views.PackageListPdfView.as_view(), name='package_pdf'),
 
 ]

@@ -25,7 +25,7 @@ class MainInfoForm(forms.ModelForm):
         name = self.cleaned_data.get('name')
         instance = super().save(commit=False)
         if not instance.company:
-            instance.company, _ = Partner.objects.get_or_create(name=name, is_company=True, type='supplier')
+            instance.company, _ = Partner.objects.get_or_create(name=name, is_company=True, type='supplier', )
         else:
             instance.company.name = name
             instance.company.save()

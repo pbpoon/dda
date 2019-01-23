@@ -6,6 +6,7 @@ import django_filters
 from .models import Category, Block, Product
 
 
+
 class BlockFilter(django_filters.FilterSet):
     from product.models import Quarry, Batch
     QUARRY = [(q.id, q) for q in Quarry.objects.all()]
@@ -45,17 +46,17 @@ class ProductFilter(BlockFilter):
         fields = ('name', 'quarry', 'batch')
 
     def filter_by_block(self, queryset, name, value):
-        expression = {'block_name__icontains': value}
+        expression = {'block__name__icontains': value}
         return queryset.filter(**expression)
 
     def filter_by_quarry(self, queryset, name, value):
-        expression = {'block_quarry_id': value}
+        expression = {'block__quarry_id': value}
         return queryset.filter(**expression)
 
     def filter_by_batch(self, queryset, name, value):
-        expression = {'block_batch_id': value}
+        expression = {'block__batch_id': value}
         return queryset.filter(**expression)
 
     def filter_by_category(self, queryset, name, value):
         catgory_ids = Category.objects.get(pk=value).get_child_list()
-        return queryset.filter(**{'block_category_id__in': catgory_ids})
+        return queryset.filter(**{'block__category_id__in': catgory_ids})

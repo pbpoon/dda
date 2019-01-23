@@ -26,7 +26,7 @@
             {% for object in object_list %}
                 <tr>
                     <td><a href="{{ object.product.block.get_absolute_url }}">{{ object.product }}</a></td>
-                    <td><a href="#" onclick="open_package_list_by_stock('{% url 'stock_slabs_detail' object.id %}')">
+                    <td><a  onclick="open_package_list_by_stock('{% url 'stock_slabs_detail' object.id %}')">
                         {% if object.product.type == 'slab' %}{{ object.get_part }} 夹/ {% endif %}
                         {{ object.piece }} 件/ {{ object.quantity }}{{ object.uom }}</a></td>
                     <td>{{ object.location }}</td>
@@ -42,7 +42,10 @@
 {% endblock %}
 
 {% block subheadline %}
-    {% for key, value in total.items %}
-        <span>{{ key }}:{{ value }}</span><br>
-    {% endfor %}
+    <div class="card-panel">
+
+    <span>产品编号:{{ count_total }}</span><br>
+    <span>件数:{{ piece_total }}</span><br>
+    <span>数量:{{ quantity_total }}</span>
+    </div>
 {% endblock %}

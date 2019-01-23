@@ -14,7 +14,9 @@ function add_item(url) {
         method: 'GET',
         success: function (data) {
             $('#modal1 .container').html(data);
-            md.modal('open')
+            // when modal is open
+            md.modal('open');
+            // $('#modal1').removeAttr('tabindex');
         }
     })
 }
@@ -28,8 +30,8 @@ function edit_item(url) {
         url: url,
         success: function (data) {
             $('#modal1 .container').html(data);
-            md.modal('open')
-
+            md.modal('open');
+            $('#modal1').removeAttr('tabindex');
         }
     });
 }
@@ -154,19 +156,13 @@ function post(URL, PARAMS) {
 }
 
 //onchange事件通用方法，第一参数默认是this，第二个参数必须为url地址，之后的参数问问input的name
-function onchange_set_product_info() {
-    var args = new Array(arguments.length);
-    for (var i = 0; i < arguments.length; i++) {
-        args[i] = arguments[i];
-    }
-    var DATA;
+function onchange_set_product_info(url) {
     var form = $('#item_form');
     $.ajax({
-            url: arguments[1],
+            url: url,
             method: 'GET',
             data: form.serialize(),
             success: function (data) {
-                DATA = data;
                 for (var d in data) {
                     $('#item_form [name=' + d + ']').val(data[d])
                 }

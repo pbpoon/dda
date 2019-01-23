@@ -42,33 +42,12 @@ class OrderFormInitialEntryMixin:
         return initial
 
 
-class OrderItemEditMixin(DynamicPermissionRequiredMixin, OrderFormInitialEntryMixin, ModelFormMixin, View):
+class ModalEditMixin(DynamicPermissionRequiredMixin, OrderFormInitialEntryMixin, ModelFormMixin, View):
     template_name = 'item_form.html'
-    model = None
-    order = None
 
     def handle_no_permission(self):
         path = self.request.META.get('HTTP_REFERER')
         return HttpResponse(render_to_string('no_premission_modal.html', {'return_path': path}))
-
-    def get_initial(self):
-        initial = super().get_initial()
-        initial['order'] = self.order
-        return initial
-
-    def get_order(self, **kwargs):
-        if kwargs.get('order_id'):
-            # 取得model的某个field是ForeignKey的model
-            return self.model._meta.get_field('order').remote_field.model.objects.get(pk=kwargs.get('order_id'))
-        return self.object.order
-
-    def dispatch(self, request, *args, **kwargs):
-        if kwargs.get('pk'):
-            self.object = self.get_object()
-        else:
-            self.object = None
-        self.order = self.get_order(**kwargs)
-        return super().dispatch(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
         form = self.get_form()
@@ -86,6 +65,37 @@ class OrderItemEditMixin(DynamicPermissionRequiredMixin, OrderFormInitialEntryMi
             return JsonResponse({'state': 'ok', 'url': path})
         msg += '失败'
         return HttpResponse(render_to_string(self.template_name, {'form': form, 'error': msg}))
+
+    def dispatch(self, request, *args, **kwargs):
+        if kwargs.get('pk'):
+            self.object = self.get_object()
+        else:
+            self.object = None
+        return super().dispatch(request, *args, **kwargs)
+
+
+class OrderItemEditMixin(ModalEditMixin):
+    model = None
+    order = None
+
+    def get_initial(self):
+        initial = super().get_initial()
+        initial['order'] = self.order
+        return initial
+
+    def get_order(self, **kwargs):
+        if kwargs.get('pk'):
+            self.object = self.get_object()
+        else:
+            self.object = None
+        if kwargs.get('order_id'):
+            # 取得model的某个field是ForeignKey的model
+            return self.model._meta.get_field('order').remote_field.model.objects.get(pk=kwargs.get('order_id'))
+        return self.object.order
+
+    def dispatch(self, request, *args, **kwargs):
+        self.order = self.get_order(**kwargs)
+        return super().dispatch(request, *args, **kwargs)
 
 
 class OrderItemDeleteMixin(DynamicPermissionRequiredMixin, BaseDeleteView):

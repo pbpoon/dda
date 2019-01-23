@@ -1,4 +1,5 @@
 {% load static %}
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="zh-hans">
 <head>
@@ -10,14 +11,20 @@
     {#    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">#}
     {#        <link href="http://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">#}
     <!--Import materialize.css-->
-    {#            <link rel="stylesheet" href="{% static 'css/materialize.min.css' %}">#}
-    <link href="https://cdn.bootcss.com/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/materialize.css' %}">
+    {#        <link href="https://cdn.bootcss.com/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">#}
     {#    <link rel="stylesheet" href="{% static 'select2-materialize/select2-materialize.css' %}">#}
     {#    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-rc.2/css/materialize.min.css">#}
 
     <style>
-        .ui-autocomplete {
-            z-index: 215000000 !important;
+        {#.ui-autocomplete {#}
+        {#    z-index: 215000000 !important;#}
+
+        {#.select2-container {#}
+        {#    z-index: 99999;#}
+
+        input[placeholder] {
+            width: 100% !important;
         }
 
         header, main, footer {
@@ -34,7 +41,24 @@
             }
         }
 
+        .modal.bottom-sheet {
+            top: auto;
+            bottom: -100%;
+            margin: 0;
+            width: 100%;
+            max-height: 90%;
+            border-radius: 0;
+            will-change: bottom, opacity;
+        }
 
+        .modal.modal-fixed-footer {
+            padding: 0;
+            height: 100%;
+        }
+
+        a:hover {
+            cursor: pointer;
+        }
     </style>
 
 </head>
@@ -55,8 +79,10 @@
 {% include 'cart_detail.html' %}
 {% block footer %}
     <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
-    {#<script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>#}
+    {#    <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>#}
+    {#    <script type="text/javascript" src="{% static 'admin/js/vendor/jquery/jquery.js' %}"></script>#}
     <script src="{% static 'js/materialize.min.js' %}"></script>
+
     {#    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-rc.1/js/materialize.min.js"></script>#}
     <script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script><!--设置csrftoken需要-->
     <script>
@@ -80,18 +106,24 @@
 </body>
 <script>
     $(document).ready(function () {
-        $('.sidenav').sidenav();
+        $('#modal1').removeAttr('tabindex');
+        $('#modal2').removeAttr('tabindex');
+        $('#modal3').removeAttr('tabindex');
+        $('.sidenav').sidenav({draggable:true});
         $('.fixed-action-btn').floatingActionButton({hoverEnabled: false});
         $('input[name=date]').datepicker({'format': 'yyyy-mm-dd'});
         $('.datepicker').datepicker({'format': 'yyyy-mm-dd'});
         $('select').formSelect();
-        $('.collapsible').collapsible();
+        $('.collapsible').collapsible({accordion: true});
         {% block domready %}{% endblock %}
+
     });
     {% if messages %}
         {% for message in messages %}
             M.toast({html: '{{ message }}'}, 4000);
         {% endfor %}
     {% endif %}
+
+
 </script>
 </html>

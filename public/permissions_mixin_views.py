@@ -17,6 +17,10 @@ class DynamicPermissionRequiredMixin(LoginRequiredMixin, PermissionRequiredMixin
                 ('%s.' + i + '_%s' for i in self.model_permission)))
         return perms
 
+    def handle_no_permission(self):
+        path = self.request.META.get('HTTP_REFERER')
+        return HttpResponse(render_to_string('no_permissions.html', {'return_path': path}))
+
 
 class ViewPermissionRequiredMixin(DynamicPermissionRequiredMixin):
     model_permission = ('view',)

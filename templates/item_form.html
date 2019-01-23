@@ -6,13 +6,12 @@
 {% endif %}
 {% if form %}
     {#    <script src="{% static 'js/autocomplete.js' %}"></script>#}
-{#    {{ form.meida }}#}
-
     <ul class="input-field"><!--非常重要-->
         {{ form.as_ul }}
         <!--导入外部的form动态渲染-->
     </ul>
-{#    {{ form.js }}#}
+    {{ form.media }}
+
     <script>
         $('.datepicker').datepicker({
             'format': 'yyyy-mm-dd', container: 'body'
@@ -21,5 +20,9 @@
         {% if error %}
             M.toast({html: '{{ error }}'}, 4000);
         {% endif %}
+
+        $('#id_product')[0].onchange = function () {
+            onchange_set_product_info('{% url "get_product_info" %}')
+        };
     </script>
 {% endif %}

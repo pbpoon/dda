@@ -12,6 +12,7 @@ from public.forms import FormUniqueTogetherMixin
 from public.widgets import AutocompleteWidget, OptionalChoiceField, SwitchesWidget, RadioWidget
 from stock.models import Location, Warehouse
 from mrp.models import MoveLocationOrder, MoveLocationOrderItem
+from dal import autocomplete
 
 
 class MoveLocationOrderForm(forms.ModelForm):
@@ -30,16 +31,18 @@ class MoveLocationOrderForm(forms.ModelForm):
 
 
 class MoveLocationOrderItemForm(FormUniqueTogetherMixin, forms.ModelForm):
-    product_autocomplete = forms.CharField(label='产品编号', widget=AutocompleteWidget(url='get_product_list'))
+    # product_autocomplete = forms.CharField(label='产品编号', widget=AutocompleteWidget(url='get_product_list'))
 
     class Meta:
         model = MoveLocationOrderItem
-        fields = ('order', 'location', 'location_dest', 'product_autocomplete', 'product', 'piece', 'quantity', 'uom',
+        fields = ('order', 'location', 'location_dest', 'product', 'piece', 'quantity', 'uom',
                   'package_list')
         widgets = {
             'order': forms.HiddenInput,
-            'product': forms.HiddenInput,
             'package_list': forms.HiddenInput,
+            'product': autocomplete.ModelSelect2(url='get_product_list',
+                                                 attrs={'class': 'browser-default'},
+                                                 forward=['location']),
         }
 
     def save(self, commit=True):
@@ -63,8 +66,6 @@ class MoveLocationOrderItemForm(FormUniqueTogetherMixin, forms.ModelForm):
             # loc = Location.objects.filter(id=order.location.id, is_virtual=False)
             dest = Location.objects.filter(id__in=Location.objects.get(id=order.location_dest.id).get_child_list())
             # onchange的ajax取数据url
-            get_product_list = reverse_lazy('get_product_list')
-            get_product_info = reverse_lazy('get_product_info')
 
             self.fields['location'].queryset = loc
             self.fields['location'].initial = order.location.id
@@ -86,9 +87,6 @@ class MoveLocationOrderItemForm(FormUniqueTogetherMixin, forms.ModelForm):
             #     'onchange': 'onchange_set_product_info({},"{}","quantity","piece", "uom")'.format('this.value',
             #                                                                                       get_product_info)}
 
-        else:
-            self.fields['product_autocomplete'].initial = instance.product.name + instance.product.get_type_display()
-
 
 class ProductionOrderForm(forms.ModelForm):
     class Meta:
@@ -102,21 +100,23 @@ class ProductionOrderForm(forms.ModelForm):
 
 
 class ProductionOrderRawItemForm(FormUniqueTogetherMixin, forms.ModelForm):
-    product_autocomplete = forms.CharField(label='产品编号', widget=AutocompleteWidget(url='get_product_list'))
     type = forms.CharField(widget=forms.HiddenInput)
+    m3 = forms.DecimalField(label='立方', required=False)
 
     class Meta:
         model = ProductionOrderRawItem
         fields = (
-            'product_autocomplete', 'type', 'product', 'location', 'location_dest', 'order', 'line', 'piece',
+            'type', 'product', 'location', 'location_dest', 'order', 'line', 'piece',
             'quantity',
-            'uom', 'price')
+            'uom', 'm3', 'price')
         widgets = {
             'location': forms.HiddenInput,
             'location_dest': forms.HiddenInput,
             'order': forms.HiddenInput,
             'line': forms.HiddenInput,
-            'product': forms.HiddenInput,
+            'product': autocomplete.ModelSelect2(url='get_product_list',
+                                                 attrs={'class': 'browser-default'},
+                                                 forward=['location', 'type']),
         }
 
     def __init__(self, *args, **kwargs):
@@ -130,7 +130,6 @@ class ProductionOrderRawItemForm(FormUniqueTogetherMixin, forms.ModelForm):
         self.fields['type'].initial = product_type
         if instance:
             # 如果是编辑状态，就把本荒料编号添加上
-            self.fields['product_autocomplete'].initial = instance.product.name + instance.product.get_type_display()
             qs = qs.filter(id=kwargs.get('instance').product.id)
             this_product_id = qs[0].id
         elif order and order.items.all():
@@ -143,9 +142,9 @@ class ProductionOrderRawItemForm(FormUniqueTogetherMixin, forms.ModelForm):
         # self.fields['product'].queryset = qs
 
         # onchange的ajax取数据url
-        url = reverse_lazy('get_product_info')
-        self.fields['product'].widget.attrs = {
-            'onchange': 'onchange_set_product_info({},"{}","quantity")'.format('this', url)}
+        # url = reverse_lazy('get_product_info')
+        # self.fields['product'].widget.attrs = {
+        #     'onchange': 'onchange_set_product_info({},"{}","quantity")'.format('this', url)}
 
         # 根据product type的expense_by来设置price是否显示及是否必填
         if order.production_type.expense_by == 'produce':
@@ -154,6 +153,8 @@ class ProductionOrderRawItemForm(FormUniqueTogetherMixin, forms.ModelForm):
             self.fields['price'].required = True
         if product_type == 'block':
             self.fields['quantity'].required = True
+        if product_type != 'block':
+            self.fields['m3'].widget = forms.HiddenInput()
         elif product_type == 'semi_slab':
             self.fields['piece'].widget.attrs = {'disabled': True}
             self.fields['piece'].label = '可用件数'
@@ -164,6 +165,17 @@ class ProductionOrderRawItemForm(FormUniqueTogetherMixin, forms.ModelForm):
             # self.fields['uom'] = forms.HiddenInput()
             self.fields['uom'].initial = 'm2'
 
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if instance.product.type == 'block':
+            m3 = self.cleaned_data.get('m3')
+            instance.piece = 1
+            instance.quantity = m3
+            instance.uom = 'm3'
+        if commit:
+            instance.save()
+        return instance
+
 
 class ProductionOrderProduceItemForm(FormUniqueTogetherMixin, forms.ModelForm):
     # 以下2个是为了传值到quick create draft package list
@@ -172,7 +184,8 @@ class ProductionOrderProduceItemForm(FormUniqueTogetherMixin, forms.ModelForm):
 
     class Meta:
         model = ProductionOrderProduceItem
-        fields = ('order', 'raw_item', 'thickness', 'piece', 'quantity', 'price', 'package_list', 'draft_package_list')
+        fields = ('order', 'raw_item', 'thickness', 'piece', 'pic', 'pi', 'quantity', 'price', 'package_list',
+                  'draft_package_list')
         widgets = {
             'order': forms.HiddenInput,
             'raw_item': forms.HiddenInput,
@@ -187,6 +200,12 @@ class ProductionOrderProduceItemForm(FormUniqueTogetherMixin, forms.ModelForm):
         # 根据生产的产品项来设置thickness的是否必填及是否显示
         if product_type == 'semi_slab':
             self.fields['thickness'].required = True
+            self.fields['piece'].widget = forms.HiddenInput()
+            self.fields['pic'].widget = forms.NumberInput()
+            self.fields['pi'].widget = forms.NumberInput()
+            self.fields['pic'].required = True
+            self.fields['pi'].required = True
+            self.fields['piece'].widget = forms.HiddenInput()
             self.fields['quantity'].widget = forms.HiddenInput()
         else:
             raw_product = ProductionOrderRawItem.objects.get(pk=kwargs['initial']['raw_item']).product
@@ -224,6 +243,8 @@ class ProductionOrderProduceItemForm(FormUniqueTogetherMixin, forms.ModelForm):
             if instance.product.type == 'slab':
                 instance.package_list = PackageList.objects.create(product=instance.product,
                                                                    return_path=instance.order.get_absolute_url())
+        if instance.product.type == 'semi_slab':
+            instance.piece = instance.pic + instance.pi
         if instance.package_list:
             instance.quantity = instance.package_list.get_quantity()
             instance.piece = instance.package_list.get_piece()
@@ -231,12 +252,6 @@ class ProductionOrderProduceItemForm(FormUniqueTogetherMixin, forms.ModelForm):
         if commit:
             instance.save()
         return instance
-        # if self.draft_package_list:
-        #     self.package_list = self.draft_package_list.make_package_list(product=self.product)
-        #     self.piece = self.package_list.get_piece()
-        #     self.quantity = self.package_list.get_quantity()
-        #     self.draft_package_list = None
-        # self.uom = self.product.get_uom()
 
 
 class InOutOrderForm(forms.ModelForm):
@@ -284,6 +299,13 @@ class MrpItemExpensesForm(forms.ModelForm):
             'object_id': forms.HiddenInput,
         }
 
+    def clean_quantity(self):
+        cd = self.cleaned_data
+        expense_by_uom = cd.get('expense_by_uom')
+        if expense_by_uom == 'another' and not cd.get('quantity', None):
+            raise forms.ValidationError('必须输入数量')
+        return cd['quantity']
+
 
 class TurnBackOrderForm(forms.ModelForm):
     class Meta:
@@ -319,35 +341,142 @@ class InventoryOrderForm(forms.ModelForm):
 
 class InventoryOrderItemForm(FormUniqueTogetherMixin, forms.ModelForm):
     product_display = forms.CharField(widget=forms.TextInput(attrs={'disabled': True}), required=False, label='产品')
+    old_location_display = forms.CharField(widget=forms.TextInput(attrs={'disabled': True}), required=False, label='原库位')
 
     class Meta:
         model = InventoryOrderItem
         fields = (
-            'report', 'product_display', 'old_location', 'now_location', 'now_piece', 'now_quantity', 'uom', 'ps',
+            'report', 'product_display', 'old_location', 'old_location_display','now_location', 'now_piece', 'now_quantity', 'uom', 'ps',
             'product',
-            'entry', 'order', 'line', 'now_package_list', 'old_quantity', 'old_piece',)
+            'entry', 'order', 'line', 'now_package_list', 'old_package_list', 'old_quantity', 'old_piece',
+            'package_list', 'piece',
+            'quantity')
         widgets = {
             'product': forms.HiddenInput,
             'entry': forms.HiddenInput,
             'order': forms.HiddenInput,
             'line': forms.HiddenInput,
             'location': forms.HiddenInput,
+            'old_location': forms.HiddenInput,
             'old_piece': forms.HiddenInput,
+            'piece': forms.HiddenInput,
+            'quantity': forms.HiddenInput,
             'old_quantity': forms.HiddenInput,
+            'old_package_list': forms.HiddenInput,
+            'now_package_list': forms.HiddenInput,
+            'package_list': forms.HiddenInput,
             'ps': forms.Textarea,
             'report': RadioWidget(attrs={'class': 'with-gap'}),
+            'now_location': autocomplete.ModelSelect2(url='location_autocomplete',
+                                                      attrs={'class': 'browser-default'},
+                                                      forward=['old_location'])
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         instance = kwargs.get('instance')
-        qs = Location.objects.filter(id__in=instance.order.warehouse.get_main_location().get_child_list()).distinct()
-        self.fields['now_location'].queryset = qs
-        self.fields['now_location'].initial = instance.old_location.id
+        # qs = Location.objects.filter(id__in=instance.order.warehouse.get_main_location().get_child_list()).distinct()
+        # self.fields['now_location'].queryset = qs
+        # self.fields['now_location'].initial = instance.old_location.id
         self.fields['product_display'].initial = instance.product
+        self.fields['old_location_display'].initial = instance.old_location
         self.fields['now_piece'].widget.attrs = {'placeholder': instance.old_piece}
         self.fields['now_quantity'].widget = forms.TextInput(
             attrs={'placeholder': instance.old_quantity, 'class': "validate"})
+        if instance.product.type == 'slab':
+            self.fields['now_piece'].widget = forms.HiddenInput()
+            self.fields['now_quantity'].widget = forms.HiddenInput()
+
+    def get_diff_piece(self):
+        cd = self.cleaned_data
+        n_p = cd.get('now_piece', 0)
+        piece = abs(n_p - cd.get('old_piece'))
+        return piece
+
+    def get_diff_quantity(self):
+        cd = self.cleaned_data
+        n_q = cd.get('now_quantity', 0)
+        quantity = abs(n_q - cd['old_quantity'])
+        return quantity
+
+    def get_diff_slab_ids(self):
+        cd = self.cleaned_data
+        if cd['product'].type == 'slab':
+            old_slab_ids = cd['old_package_list'].items.values_list('slab', flat=True)
+            now_slab_ids = cd['now_package_list'].items.values_list('slab', flat=True)
+            diff_slab_ids = set(old_slab_ids) ^ set(now_slab_ids)
+            return diff_slab_ids
+        return None
+
+    # 如果选择是未盘点
+    def set_None(self):
+        cd = self.cleaned_data
+        cd['now_piece'], cd['piece'] = None, None
+        cd['now_quantity'], cd['quantity'] = None, None
+        return cd
+
+    # 如果盘点为相等，就把现在的数量等于之前的数量
+    # 并且如果盘点的是毛板，有码单的，就把盘点的数量
+    def set_is_equal(self):
+        cd = self.cleaned_data
+        cd['now_piece'] = cd['old_piece']
+        cd['now_quantity'] = cd['old_quantity']
+        cd['piece'] = cd['old_piece']
+        cd['quantity'] = cd['old_quantity']
+        cd['location'] = cd['old_location']
+        cd['location_dest'] = cd['now_location']
+        if cd.get('old_package_list'):
+            slab_ids_list = [item.get_slab_id() for item in cd['old_package_list'].items.all()]
+            cd['package_list'].update(cd['package_list'], slab_ids_list)
+            cd['now_package_list'].update(cd['now_package_list'], slab_ids_list)
+        cd['location'], cd['location_dest'] = cd['old_location'], cd['now_location']
+        return cd
+        # 如果盘点选项是 is_lose就把now的数据设置为0，把实际的数据设置为old的数据
+
+    def set_is_lose(self):
+        cd = self.cleaned_data
+        cd['now_piece'] = 0
+        cd['now_quantity'] = 0
+        cd['piece'] = cd['old_piece']
+        cd['quantity'] = cd['old_quantity']
+        cd['location'] = cd['old_location']
+        cd['location_dest'] = cd['old_location'].get_inventory_location()
+        if cd.get('old_package_list'):
+            slab_ids_list = [item.get_slab_id() for item in cd['old_package_list'].items.all()]
+            if slab_ids_list:
+                cd['now_package_list'].update(cd['now_package_list'], slab_ids_list)
+        cd['location'], cd['location_dest'] = cd['old_location'], cd['old_location'].get_inventory_location()
+        return cd
+
+    def set_not_equal(self):
+        cd = self.cleaned_data
+        if cd['now_piece'] == 0:
+            cd['report'] = 'is_lose'
+            return self.set_is_lose()
+        elif cd['now_piece'] == cd['old_piece']:
+            if cd['product'].type != 'slab':
+                cd['report'] = 'is_equal'
+                return self.set_is_equal()
+        n_p = cd.get('now_piece', 0)
+        n_q = cd.get('now_quantity', 0)
+        if cd['now_package_list']:
+            cd['now_quantity'] = cd['now_package_list'].get_quantity()
+            cd['now_piece'] = cd['now_package_list'].get_piece()
+        cd['piece'] = 0 if cd['product'].type == 'block' else self.get_diff_piece()
+        cd['quantity'] = self.get_diff_quantity()
+        if cd['old_package_list']:
+            PackageList.update(cd['package_list'], self.get_diff_slab_ids())
+
+        if (n_p - cd['old_piece']) > 0 or (n_q - cd['old_quantity']) > 0:
+            cd['location'], cd['location_dest'] = cd['old_location'].get_inventory_location(), cd['now_location']
+        else:
+            cd['location'], cd['location_dest'] = cd['old_location'].get_inventory_location(), cd['now_location']
+
+    def clean_report(self):
+        report = self.cleaned_data.get('report')
+        if report == None:
+            raise forms.ValidationError('请选择盘点情况')
+        return report
 
     def clean(self):
         cd = self.cleaned_data
@@ -357,24 +486,29 @@ class InventoryOrderItemForm(FormUniqueTogetherMixin, forms.ModelForm):
         if report == 'not_equal':
             if not now_piece or not now_quantity:
                 raise forms.ValidationError('盘点件及数量不能为空')
+        if report == None:
+            cd = self.set_None()
+        else:
+            attr = 'set_%s' % (report)
+            cd = getattr(self, attr)()
         return cd
 
 
 class InventoryOrderNewItemForm(forms.ModelForm):
-    name_autocomplete = forms.CharField(label='产品编号',
-                                        widget=AutocompleteWidget(url='get_block_list',
-                                                                  onAutocomplete_function='set_block'))
+    # name_autocomplete = forms.CharField(label='产品编号',
+    #                                     widget=AutocompleteWidget(url='get_block_list',
+    #                                                               onAutocomplete_function='set_block'))
 
     class Meta:
         model = InventoryOrderNewItem
         fields = (
-            'product_type', 'name_autocomplete', 'block', 'thickness', 'location_dest', 'piece', 'quantity', 'uom',
+            'product_type',  'block', 'thickness', 'location_dest', 'piece', 'quantity', 'uom',
             'ps', 'product', 'entry',
             'order',
             'line', 'package_list', 'draft_package_list', 'location')
 
         widgets = {
-            'block': forms.HiddenInput,
+            'block': autocomplete.ModelSelect2(url='block_autocomplete', attrs={'class': 'browser-default'}),
             'order': forms.HiddenInput,
             'entry': forms.HiddenInput,
             'line': forms.HiddenInput,
@@ -403,8 +537,8 @@ class InventoryOrderNewItemForm(forms.ModelForm):
                 self.fields['uom'].initial = 'm2'
         else:
             self.fields['product_type'].required = True
-        if instance:
-            self.fields['name_autocomplete'].initial = instance.product
+        # if instance:
+        #     self.fields['name_autocomplete'].initial = instance.product
 
     def clean_block(self):
         block = self.cleaned_data.get('block')
@@ -413,6 +547,7 @@ class InventoryOrderNewItemForm(forms.ModelForm):
         return block
 
     def clean(self):
+        from product.models import Block
         cd = self.cleaned_data
         product_type = cd.get('product_type')
         order = cd.get('order')
@@ -424,8 +559,8 @@ class InventoryOrderNewItemForm(forms.ModelForm):
             cd['piece'] = 1
         else:
             cd['uom'] = 'm2'
-        cd['product'] = cd['block'].create_product(type=cd['product_type'], defaults={}, name=cd['block'].name,
-                                                   thickness=cd.get('thickness', None))
+        cd['product'] = Block.create_product(type=cd['product_type'], defaults={}, name=cd['block'].name,
+                                             thickness=cd.get('thickness', None))
         if cd['product_type'] == 'slab':
             cd['package_list'] = PackageList.objects.create(product=cd['product'])
         return cd
@@ -444,10 +579,10 @@ class SupplierForm(forms.ModelForm):
             'type': RadioWidget(),
             'is_company': SwitchesWidget,
             'is_activate': SwitchesWidget,
-            'entry': forms.HiddenInput()
+            'entry': forms.HiddenInput(),
+            'province': autocomplete.ModelSelect2(url='get_province',
+                                                  attrs={'class': 'browser-default'}),
+            'city': autocomplete.ModelSelect2(url='get_city',
+                                              forward=['province'],
+                                              attrs={'class': ' browser-default'})
         }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['province'].widget.attrs = {'class': 'prov'}
-        self.fields['city'].widget.attrs = {'class': 'city'}

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Created by pbpoon on 2018/10/30
+from dal import autocomplete
 from django import forms
 
 from product.models import Block
@@ -26,6 +27,11 @@ class PurchaseOrderForm(forms.ModelForm):
         exclude = ('order', 'state')
         widgets = {
             'entry': forms.HiddenInput,
+            'province': autocomplete.ModelSelect2(url='get_province',
+                                                  attrs={'class': 'browser-default'}),
+            'city': autocomplete.ModelSelect2(url='get_city',
+                                              forward=['province'],
+                                              attrs={'class': ' browser-default'})
         }
 
 

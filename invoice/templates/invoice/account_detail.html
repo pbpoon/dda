@@ -1,4 +1,24 @@
 {% extends 'detail.html' %}
-{% block content %}
+{% block headline %}
     {{ object }}
+{% endblock %}
+{% block subheadline %}
+    启用：{{ object.activate }} / 显示:{{ object.is_visible }}
+{% endblock %}
+{% block content %}
+    <ul>
+
+    <li>
+    账户名称：{{ object.name }}
+    </li>
+    <li>
+    银行：{{ object.bank }}
+    </li>
+    <li>
+    账户人：{{ object.owner }}
+    </li>
+    <li>
+    账号：{{ object.account_number }}
+    </li>
+    </ul>
 {% endblock %}

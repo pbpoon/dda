@@ -26,10 +26,11 @@ class Warehouse(models.Model):
     当创建一个warehouse时候，相应的创建一个内部的库位，为置顶库位
     """
     name = models.CharField('仓库名称', max_length=50, unique=True, db_index=True)
-    code = models.CharField('缩写名称', max_length=20, null=False)
+    code = models.CharField('缩写名称', max_length=20, blank=True, null=True)
     is_activate = models.BooleanField('启用', default=True)
     partner = models.ForeignKey('partner.Partner', on_delete=models.SET_NULL, verbose_name='合作伙伴', null=True,
-                                blank=True, related_name='warehouse')
+                                blank=True, related_name='warehouse',
+                                limit_choices_to={'type__in': ('production', 'supplier')})
     created = models.DateTimeField('创建时间', auto_now_add=True)
     updated = models.DateTimeField('更新时间', auto_now=True)
     is_production = models.BooleanField('有生产活动', default=False)
@@ -92,7 +93,10 @@ class Location(models.Model):
             name = '{}/{}'.format(parent.name, name)
             parent = parent.parent
         warehouse_name = self.warehouse.name + '/' if self.warehouse else ''
-        return '%s%s' % (warehouse_name, name)
+        string = '%s%s' % (warehouse_name, name)
+        if self.is_main:
+            string += '**'
+        return string
 
     def __str__(self):
         return self.get_full_name()
@@ -125,8 +129,15 @@ class Location(models.Model):
     def get_child(self):
         return self.__class__.objects.filter(id__in=self.get_child_list()).distinct()
 
-    def tree_view(self):
-        return tree_view(self)
+    def tree_view(self, container=None):
+        if container is None:
+            container = []
+        result = container
+        for chl in self.child.all():
+            result.append(chl)
+            if chl.child.count() > 0:
+                chl.tree_view(result)
+        return (self, result)
 
 
 class StockTrace(models.Model):
@@ -170,14 +181,14 @@ class OriginalStockTrace(models.Model):
 
 
 class Stock(models.Model):
-    product = models.ForeignKey('product.Product', on_delete=models.CASCADE, related_name='stock')
+    product = models.ForeignKey('product.Product', on_delete=models.CASCADE, related_name='stock', db_index=True)
     piece = models.IntegerField('件', default=1)
     quantity = models.DecimalField('数量', decimal_places=2, max_digits=10)
     reserve_quantity = models.DecimalField('预留数量', decimal_places=2, max_digits=10, default=0)
     reserve_piece = models.IntegerField('预留件', default=0)
     uom = models.CharField('单位', choices=UOM_CHOICES, max_length=6)
     location = models.ForeignKey('Location', on_delete=models.CASCADE, limit_choices_to={'is_virtual': False},
-                                 related_name='stock')
+                                 related_name='stock', db_index=True)
     created = models.DateTimeField('创建时间', auto_now_add=True)
     updated = models.DateTimeField('更新时间', auto_now=True)
 
@@ -202,6 +213,12 @@ class Stock(models.Model):
 
     def get_part_number(self):
         return {item.part_number for item in self.items.all()}
+
+    def get_weight(self, number=None):
+        qs = self.items.all()
+        if number:
+            qs = qs.filter(part_number=number)
+        return '约 {:.2f}t'.format(sum(item.get_weight() for item in qs))
 
     def __str__(self):
         return "{}@{}:{}件/{}{}".format(self.product, self.location, self.piece, self.quantity, self.uom)

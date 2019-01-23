@@ -5,6 +5,9 @@
 {% block subheadline %}
     最近发货地址：<b>{{ object.get_last_order_address }}</b>
 {% endblock %}
+{% block state-right %}
+    <a class="waves-effect blue btn" href="{% url 'sales_order_create_by_customer' object.id %} ">新建销售订单</a>
+{% endblock %}
 
 {% block sidebar %}
     {{ block.super }}
@@ -18,4 +21,9 @@
             {% endfor %}
         </div>
     {% endif %}
+{% endblock %}
+{% block operate %}
+{#    {% if btn_visible.delete or not object.items.all %}#}
+            <button class="btn grey" onclick="item_remove('{{ object.get_delete_url }}')">删除</button>
+{#        {% endif %}#}
 {% endblock %}

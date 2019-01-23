@@ -167,7 +167,7 @@ class OrderAbstract(HasChangedMixin, models.Model):
 
     class Meta:
         abstract = True
-        ordering = ['-created']
+        ordering = ['-date', '-created']
 
     @property
     def invoice_usage(self):

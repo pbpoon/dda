@@ -16,6 +16,7 @@
         {% if btn_visible.cancel %}
             <button class="btn grey" onclick="state_confirm('cancel')">取消</button>
         {% endif %}
+{#        {% if btn_visible.delete or not object.items.all %}#}
         {% if btn_visible.delete %}
             <button class="btn grey" onclick="item_remove('{{ object.get_delete_url }}')">删除</button>
         {% endif %}

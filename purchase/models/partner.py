@@ -22,6 +22,7 @@ class Supplier(Partner):
     class Meta:
         proxy = True
         verbose_name = '供应商'
+        app_label = 'partner'
 
     def save(self, *args, **kwargs):
         self.type = 'supplier'

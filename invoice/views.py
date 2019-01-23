@@ -13,6 +13,7 @@ from django.contrib import messages
 from invoice.filters import InvoiceFilter
 from invoice.form import AssignInvoiceForm, InvoiceForm
 from partner.models import Partner
+from public.permissions_mixin_views import DynamicPermissionRequiredMixin
 from public.views import GetItemsMixin, OrderItemEditMixin, StateChangeMixin, OrderItemDeleteMixin, ModalOptionsMixin, \
     FilterListView
 from django.views.generic.edit import CreateView, UpdateView, ModelFormMixin
@@ -72,11 +73,11 @@ class SalesInvoiceListView(InvoiceListView):
     model = SalesInvoice
 
 
-class SalesInvoiceDetailView(InvoiceDetailView):
+class SalesInvoiceDetailView( InvoiceDetailView):
     model = SalesInvoice
 
 
-class InvoiceEditMixin:
+class InvoiceEditMixin(DynamicPermissionRequiredMixin):
     model = Invoice
     template_name = 'form.html'
     form_class = InvoiceForm
@@ -132,15 +133,15 @@ class InvoiceItemDeleteView(OrderItemDeleteMixin):
     model = InvoiceItem
 
 
-class AccountDetailView(DetailView):
+class AccountDetailView(DynamicPermissionRequiredMixin, DetailView):
     model = Account
 
 
-class AccountListView(ListView):
+class AccountListView(DynamicPermissionRequiredMixin, ListView):
     model = Account
 
 
-class AccountCreateView(CreateView):
+class AccountCreateView(DynamicPermissionRequiredMixin, CreateView):
     model = Account
     fields = '__all__'
     template_name = 'form.html'
@@ -168,11 +169,11 @@ class PaymentDetailView(StateChangeMixin, DetailView):
         return self.object.draft()
 
 
-class PaymentListView(ListView):
+class PaymentListView(DynamicPermissionRequiredMixin, ListView):
     model = Payment
 
 
-class PaymentEditView(ModelFormMixin, View):
+class PaymentEditView(DynamicPermissionRequiredMixin, ModelFormMixin, View):
     model = Payment
     fields = ('date', 'partner', 'account', 'type', 'amount', 'entry')
     template_name = 'item_form.html'
@@ -275,7 +276,7 @@ class AssignPaymentFormView(TemplateResponseMixin, View):
 
 
 # 账单快速少收货款操作
-class QuickInvoiceAssignUnderchargePayment(ModalOptionsMixin):
+class QuickInvoiceAssignUnderchargePayment(DynamicPermissionRequiredMixin, ModalOptionsMixin):
     model = Invoice
 
     def do_yes(self, *args):
@@ -294,15 +295,15 @@ class QuickInvoiceAssignUnderchargePayment(ModalOptionsMixin):
         return '是否登记少收货款,金额:{}'.format(self.object.due_amount)
 
 
-class InvoiceDueDateDefaultSetListView(ListView):
+class InvoiceDueDateDefaultSetListView(FilterListView):
     model = InvoiceDueDateDefaultSet
 
 
-class InvoiceDueDateDefaultSetDetailView(DetailView):
+class InvoiceDueDateDefaultSetDetailView(DynamicPermissionRequiredMixin, DetailView):
     model = InvoiceDueDateDefaultSet
 
 
-class InvoiceDueDateDefaultSetEditMixin:
+class InvoiceDueDateDefaultSetEditMixin(DynamicPermissionRequiredMixin):
     model = InvoiceDueDateDefaultSet
     fields = '__all__'
     template_name = 'item_form.html'

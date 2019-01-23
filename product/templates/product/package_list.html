@@ -7,7 +7,7 @@
     {% endif %}
         <p>{{ package.get_piece }}件 / {{ package.get_part_number|length }}夹 /
             {{ package.get_quantity }}{{ package.product.get_uom }}</p>
-        <div class="right">
+        <div class="left">
             <button class="btn-small" id="all_select">全选</button>
         </div>
     </div>
@@ -54,7 +54,6 @@
                     {% for item in part_number.list %}
                         <tr {% if item.get_slab_id not in package_slabs_ids %}class="green-text"{% endif %}>
                             <td>
-
                                 <p>
                                     <label>
                                         <input form="select_slab_form" data-quantity="{{ item.get_quantity }}"
@@ -74,12 +73,12 @@
                                 </p>
                             </td>
                             <td>{{ item }}
-                                <a href="#!"
-                                   onclick="edit_item({{ item.id }},'{% url 'package_list_draft_item_edit' item.id %}')">
-                                    修改
-                                </a>
+{#                                <a href="#!"#}
+{#                                   onclick="edit_item({{ item.id }},'{% url 'package_list_draft_item_edit' item.id %}')">#}
+{#                                    修改#}
+{#                                </a>#}
                             </td>
-                            <td>{{ item.get_quantity }}</td>
+                            <td style="text-align: right">{{ item.get_quantity }}</td>
                             <td>{{ item.get_location }}
                             </td>
                         </tr>

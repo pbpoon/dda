@@ -1,4 +1,5 @@
 {% extends 'detail.html' %}
+{% load public %}
 {% block headline %}
     {{ object }}
 {% endblock %}
@@ -48,13 +49,12 @@
 {% endblock %}
 {% block action_btn %}
 <!-- action btn -->
-{% load public %}
 <div class="fixed-action-btn click-to-toggle">
     <a class="btn-floating btn-large red">
         <i class="large material-icons">mode_edit</i>
     </a>
     <ul>
-        {% if user.state == 'draft' %}
+{#        {% if user.state == 'draft' %}#}
             {% if object.get_update_url %}
                 <li>
                     <a href="{{ object.get_update_url }}" class="btn-floating red waves-effect waves-light btn"><i
@@ -70,7 +70,7 @@
                 </li>
             {% endif %}
 
-        {% endif %}
+{#        {% endif %}#}
         {% if object %}
             {% if user|check_permission:'comment.add_comment' %}
                 <li>
@@ -79,9 +79,6 @@
                             class="material-icons">format_quote</i></button>
                 </li>
             {% endif %}
-            <li>
-                <button class="btn-floating green"><i class="material-icons">publish</i></button>
-            </li>
             {% if user|check_permission:'files.add_files' %}
                 <li>
                     <button class="btn-floating blue"

@@ -14,16 +14,29 @@ from wechatpy.enterprise.client import WeChatClient
 from wechatpy.exceptions import InvalidSignatureException
 from wechatpy.replies import BaseReply, create_reply
 
+from action.models import WxConf
+
 corp_id = 'wwb132fd0d32417e5d'
-EncodingAESKey = '3BQNStGMtbmLAiCnQlabHRtEL3qclhAL8XeZ9yM7K0e'
-token = 'ohsAdNB8d3DHdv8xQj8'
+
+
+# EncodingAESKey = '3BQNStGMtbmLAiCnQlabHRtEL3qclhAL8XeZ9yM7K0e'
+# token = 'ohsAdNB8d3DHdv8xQj8'
+# wx_conf = WxConf(agent_id=corp_id)
 
 
 class WechatBaseView(View):
-    crypto = WeChatCrypto(token, EncodingAESKey, corp_id)
+    app_name = 'zdzq_main'
+    # wx_conf = WxConf(app_name=app_name)
+    # crypto = WeChatCrypto(wx_conf.Token, wx_conf.EncodingAESKey, wx_conf.corp_id)
     wx_data = {}
 
+    def get_wx_conf(self):
+        return WxConf(app_name=self.app_name)
+
     def dispatch(self, request, *args, **kwargs):
+        wx_conf = self.get_wx_conf()
+        self.crypto = WeChatCrypto(wx_conf.Token, wx_conf.EncodingAESKey, wx_conf.corp_id)
+
         self.wx_data['signature'] = request.GET.get('msg_signature', '')
         self.wx_data['timestamp'] = request.GET.get('timestamp', '')
         self.wx_data['nonce'] = request.GET.get('nonce', '')

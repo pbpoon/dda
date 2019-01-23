@@ -34,9 +34,11 @@
                     {% endif %}
                 </td>
                 <td>{{ item.location }}=>{{ item.location_dest }}</td>
+
                 <td>{% for expense in item.expenses.all %}
                     <div class=text-right>
-                        {{ expense }}={{ expense.amount }}<br></div>{% endfor %}</td>
+                        <a onclick="edit_item('{% url 'mrp_item_expenses_edit' item|model_name item.id expense.id %}')">{{ expense }}={{ expense.amount }}</a><a onclick="item_remove('{% url 'mrp_item_expenses_delete' expense.id %}')"><i class="material-icons">delete_forever</i></a> <br></div>{% endfor %}</td>
+
                 <td>{% if object.state == 'draft' %}
                     <!-- Dropdown Trigger -->
 

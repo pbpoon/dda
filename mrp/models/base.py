@@ -9,7 +9,7 @@ from public.models import OrderItemSaveCreateCommentMixin
 from purchase.models import OrderAbstract
 
 UOM_CHOICES = (('t', '吨'), ('m3', '立方'), ('m2', '平方'))
-EXPENSES_UOM = (('part', '夹数'), ('quantity', '数量(t/m3/m2)'), ('one', '次/个/车'))
+EXPENSES_UOM = (('part', '夹数'), ('quantity', '数量(t/m3/m2)'), ('one', '次/个/车'), ('another', '手动输入数量'))
 
 
 class MrpOrderAbstract(OrderAbstract):
@@ -60,10 +60,10 @@ class OrderItemBase(OrderItemSaveCreateCommentMixin, models.Model):
 
     expenses = GenericRelation('mrp.Expenses')
 
-
     class Meta:
         abstract = True
         unique_together = ('order', 'product')
+        ordering = ('line',)
 
     @property
     def state(self):
@@ -90,21 +90,22 @@ class Expenses(models.Model):
     item = GenericForeignKey()
     expense = models.ForeignKey('ExpensesItem', on_delete=models.CASCADE, verbose_name='费用名称')
     expense_by_uom = models.CharField('计费单位', choices=EXPENSES_UOM, max_length=20)
+    quantity = models.DecimalField('数量', decimal_places=2, max_digits=10, blank=True, null=True)
 
     class Meta:
         verbose_name = '费用明细'
 
-    @property
-    def quantity(self):
-        obj = self.content_type.model_class().objects.get(pk=self.object_id)
-        if self.expense_by_uom == 'part':
-            quantity = None if not obj.package_list else obj.package_list.get_part()
-        elif self.expense_by_uom == 'quantity':
-            quantity = obj.quantity
-        else:
-            quantity = 1
-        quantity = 0 if not quantity else quantity
-        return quantity
+    # @property
+    # def quantity(self):
+    #     obj = self.content_type.model_class().objects.get(pk=self.object_id)
+    #     if self.expense_by_uom == 'part':
+    #         quantity = None if not obj.package_list else obj.package_list.get_part()
+    #     elif self.expense_by_uom == 'quantity':
+    #         quantity = obj.quantity
+    #     else:
+    #         quantity = 1
+    #     quantity = 0 if not quantity else quantity
+    #     return quantity
 
     @property
     def uom(self):
@@ -127,6 +128,19 @@ class Expenses(models.Model):
 
     def __str__(self):
         return '{}: {}*{}/{}'.format(self.expense.name, self.quantity, self.expense.price, self.uom)
+
+    def save(self, *args, **kwargs):
+        obj = self.content_type.model_class().objects.get(pk=self.object_id)
+        quantity = 0
+        if self.expense_by_uom == 'part':
+            quantity = None if not obj.package_list else obj.package_list.get_part()
+        elif self.expense_by_uom == 'quantity':
+            quantity = obj.quantity
+        elif self.expense_by_uom == 'one':
+            quantity = 1
+        if quantity:
+            self.quantity = quantity
+        super().save(*args, **kwargs)
 
 
 class ExpensesItem(models.Model):

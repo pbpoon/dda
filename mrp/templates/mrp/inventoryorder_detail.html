@@ -52,19 +52,17 @@
                 <td>
                     {% if item.report != 'not_equal' %}
                         {% if item.old_package_list %}
-                            <a href="#"
-                               onclick="open_package_list('{{ item.old_package_list.get_absolute_url }}')">
+                            <a onclick="open_package_list('{{ item.old_package_list.get_absolute_url }}')">
                             {{ item.old_package_list.get_part }}夹/{% endif %} {{ item.old_piece }}件/
                     {{ item.old_quantity }}{{ item.product.get_uom }}</a>
                     {% else %}
                         {{ item.old_piece }}件/{{ item.old_quantity }}{{ item.product.get_uom }}
-                    {% endif %}
                     <br>
                     {#                    {% if item.report == 'not_equal' %}#}
                     <span class="blue-text">
                                                     {% if item.now_package_list %}
 
-                                                        <a href="#"
+                                                        <a
                                                            onclick="open_package_list('{% url 'inventory_order_package_detail' item.now_package_list.id %}','{{ object.state }}')">
                                                         {{ item.now_package_list.get_part }}
                                                         夹/ {{ item.now_package_list.get_piece }}件/
@@ -74,7 +72,7 @@
                                                         {{ item.now_quantity }}{{ item.product.get_uom }}
                                                         </span>
                                                     {% endif %}
-                    {#                    {% endif %}#}
+                                        {% endif %}
                 </td>
                 <td>{{ item.old_location }}<br>
                     <span class="blue-text">{{ item.now_location }}</span></td>
@@ -146,7 +144,7 @@
                     </td>
                     <td><span class="blue-text">
                         {% if item.package_list %}
-                            <a href="#"
+                            <a
                                onclick="open_package_list('{% url 'inventory_order_new_package_detail' item.package_list.id %}','{{ object.state }}')">
                             {{ item.package_list.get_part }}夹/ {{ item.piece }}件/
                                 {{ item.quantity }}{{ item.product.get_uom }}</a>

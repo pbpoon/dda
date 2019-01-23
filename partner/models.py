@@ -87,7 +87,7 @@ class Partner(models.Model):
 
     class Meta:
         verbose_name = '伙伴资料'
-        # unique_together = ['phone', 'name']
+        unique_together = [('phone', 'name', 'province', 'city'), ]
 
     def get_address(self):
         if self.province:

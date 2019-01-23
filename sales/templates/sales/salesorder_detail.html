@@ -114,7 +114,7 @@
 {% block operate %}
     <a class="btn waves-effect green" href="#"
        onclick="confirm_option('{% url 'sales_order_invoice_options' object.id %}')">创建账单</a>
-    <a class="btn waves-effect default" href="{% url 'sales_order_pdf' object.id %}">打印pdf</a>
+    <a class="btn waves-effect default" href="{% url 'sales_order_pdf' object.id %}"><i class="material-icons">picture_as_pdf</i>打印</a>
 {% endblock %}
 {% block sidebar %}
     {% if object.in_out_order.all %}

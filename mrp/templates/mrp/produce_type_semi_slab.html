@@ -17,8 +17,10 @@
             <td><a href="{{ item.product.block.get_absolute_url }}">{{ item.product }}</a>
             </td>
             <td>
-                {{ item.piece }}件 |
-                {{ item.quantity }}{{ item.uom }}</td>
+                {{ item.piece }}件 | {% if item.product.block.uom == 't' %}
+            {{ item.product.block.weight }}t<br>{% endif %}
+                {{ item.quantity }}{{ item.uom }}
+                </td>
             <td>{{ item.price }}</td>
             <td>{{ item.get_amount }}</td>
             <td>{% if object.state == 'draft' %}
@@ -57,11 +59,10 @@
                     <td>{% if object.state == 'draft' %}
 
                         <a class='dropdown-trigger btn-floating grey' href='#'
-                           data-target='dropdown{{ forloop.parentloop.counter }}produce'> <i
+                           data-target='dropdown-{{ forloop.parentloop.counter }}-{{ produce.id }}-produce'> <i
                                 class="material-icons">more_vert</i></a>
-
                         <!-- Dropdown Structure -->
-                        <ul id='dropdown{{ forloop.parentloop.counter }}produce' class='dropdown-content'>
+                        <ul id='dropdown-{{ forloop.parentloop.counter }}-{{ produce.id }}-produce' class='dropdown-content'>
                             <li>
                                 <a onclick="edit_item( '{% url 'production_produce_item_edit' produce.id %}')">
                                     修改</a></li>

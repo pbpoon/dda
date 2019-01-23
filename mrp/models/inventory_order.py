@@ -49,6 +49,9 @@ class InventoryOrder(HasChangedMixin, models.Model):
     def get_create_item_url(self):
         return reverse('inventory_order_new_item_create', args=[self.id])
 
+    def get_delete_url(self):
+        return reverse('inventory_order_delete', args=[self.id])
+
     def get_all_items(self):
         items = list(self.items.all())
         items.extend(list(self.new_items.all()))
@@ -82,10 +85,12 @@ class InventoryOrder(HasChangedMixin, models.Model):
 
     def get_stock(self):
         # 把相等或未盘点的剔出
-        items = self.items.exclude(Q(report='is_equal') | Q(report=None))
+        items = list(self.items.exclude(Q(report='is_equal') | Q(report=None)))
         new_items = self.new_items.all()
+        change_loc_items = self.items.filter(report='is_equal')
+        if change_loc_items:
+            items.extend(list(change_loc_items))
         if new_items:
-            items = list(items)
             items.extend(list(new_items))
         return StockOperate(self, items)
 
@@ -160,11 +165,17 @@ class InventoryOrderItem(models.Model):
         # if self.report == 'not_equal':
         n_p = self.now_piece or 0
         n_q = self.now_quantity or 0
-        if (n_p - self.old_piece) > 0 or (n_q - self.old_quantity) > 0:
+        if (n_p - self.old_piece) > 0 or (int(n_q) - int(self.old_quantity)) > 0:
             return 1
-        if (n_p - self.old_piece) < 0 or (n_q - self.old_quantity) < 0:
+        if (n_p - self.old_piece) < 0 or (int(n_q) - int(self.old_quantity)) < 0:
             return -1
         return 0
+
+    @property
+    def change_loc(self):
+        if self.old_location != self.now_location:
+            return True
+        return False
 
     def get_diff_piece(self):
         n_p = self.now_piece or 0
@@ -180,77 +191,109 @@ class InventoryOrderItem(models.Model):
         if self.product.type == 'slab':
             old_slab_ids = self.old_package_list.items.values_list('slab', flat=True)
             now_slab_ids = self.now_package_list.items.values_list('slab', flat=True)
-            diff_slab_ids = old_slab_ids ^ now_slab_ids
+            diff_slab_ids = set(old_slab_ids) ^ set(now_slab_ids)
             return diff_slab_ids
         return False
 
     # 如果选择是未盘点
-    def set_None(self):
-        self.now_piece = None
-        self.now_quantity = None
-        self.piece = None
-        self.quantity = None
+    # def set_None(self):
+    #     self.now_piece = None
+    #     self.now_quantity = None
+    #     self.piece = None
+    #     self.quantity = None
+    #
+    # # 如果盘点为相等，就把现在的数量等于之前的数量
+    # # 并且如果盘点的是毛板，有码单的，就把盘点的数量
+    # def set_is_equal(self):
+    #     self.now_piece = self.old_piece
+    #     self.now_quantity = self.old_quantity
+    #     self.piece = self.old_piece
+    #     self.quantity = self.old_quantity
+    #     self.location = self.old_location
+    #     self.location_dest = self.now_location
+    #     if self.old_package_list:
+    #         slab_ids_list = [item.get_slab_id() for item in self.old_package_list.items.all()]
+    #         self.package_list.update(self.package_list, slab_ids_list)
+    #         self.now_package_list.update(self.now_package_list, slab_ids_list)
+    #     self.location, self.location_dest = self.old_location, self.now_location or self.old_location
+    #
+    #     # 如果盘点选项是 is_lose就把now的数据设置为0，把实际的数据设置为old的数据
+    #
+    # def set_is_lose(self):
+    #     self.now_piece = 0
+    #     self.now_quantity = 0
+    #     self.piece = self.old_piece
+    #     self.quantity = self.old_quantity
+    #     self.location = self.old_location
+    #     self.location_dest = self.old_location.get_inventory_location()
+    #     if self.old_package_list:
+    #         slab_ids_list = [item.get_slab_id() for item in self.old_package_list.items.all()]
+    #         if slab_ids_list:
+    #             self.now_package_list.update(self.now_package_list, slab_ids_list)
+    #     self.location, self.location_dest = self.old_location, self.old_location.get_inventory_location()
+    #
+    # def set_not_equal(self):
+    #     if self.now_piece == 0:
+    #         self.report = 'is_lose'
+    #         return self.set_is_lose()
+    #     elif self.now_piece == self.old_piece:
+    #         self.report = 'is_equal'
+    #         return self.set_is_equal()
+    #     if self.now_package_list:
+    #         self.now_quantity = self.now_package_list.get_quantity()
+    #         self.now_piece = self.now_package_list.get_piece()
+    #     self.piece = 0 if self.product.type == 'block' else self.get_diff_piece()
+    #     self.quantity = self.get_diff_quantity()
+    #     if self.old_package_list:
+    #         self.package_list.update(self.package_list, self.get_diff_slab_ids())
+    #
+    #     n_p = self.now_piece or 0
+    #     n_q = self.now_quantity or 0
+    #     if (n_p - self.old_piece) > 0 or (n_q - self.old_quantity) > 0:
+    #         self.location, self.location_dest = self.old_location.get_inventory_location(), self.now_location
+    #     else:
+    #         self.location, self.location_dest = self.old_location.get_inventory_location(), self.now_location
 
-    # 如果盘点为相等，就把现在的数量等于之前的数量
-    # 并且如果盘点的是毛板，有码单的，就把盘点的数量
-    def set_is_equal(self):
-        self.now_piece = self.old_piece
-        self.now_quantity = self.old_quantity
-        self.piece = self.old_piece
-        self.quantity = self.old_quantity
-        self.location = self.old_location
-        self.location_dest = self.now_location
-        if self.old_package_list:
-            slab_ids_list = [item.get_slab_id() for item in self.old_package_list.items.all()]
-            self.package_list.update(self.package_list, slab_ids_list)
-            self.now_package_list.update(self.now_package_list, slab_ids_list)
-        self.location, self.location_dest = self.old_location, self.now_location or self.old_location
-
-        # 如果盘点选项是 is_lose就把now的数据设置为0，把实际的数据设置为old的数据
-
-    def set_is_lose(self):
-        self.now_piece = 0
-        self.now_quantity = 0
-        self.piece = self.old_piece
-        self.quantity = self.old_quantity
-        self.location = self.old_location
-        self.location_dest = self.old_location.get_inventory_location()
-        if self.old_package_list:
-            slab_ids_list = [item.get_slab_id() for item in self.old_package_list.items.all()]
-            if slab_ids_list:
-                self.now_package_list.update(self.now_package_list, slab_ids_list)
-        self.location, self.location_dest = self.old_location, self.old_location.get_inventory_location()
-
-    def set_not_equal(self):
-        if self.now_piece == 0:
-            self.report = 'is_lose'
-            return self.set_is_lose()
-        elif self.now_piece == self.old_piece:
-            self.report = 'is_equal'
-            return self.set_is_equal()
+    def not_equal_update_package_list(self):
+        inv = self.old_location.get_inventory_location()
         if self.now_package_list:
-            self.now_quantity = self.now_package_list.get_quantity()
             self.now_piece = self.now_package_list.get_piece()
-        self.piece = 1 if self.product.type == 'block' else self.get_diff_piece()
-        self.quantity = self.get_diff_quantity()
-        if self.old_package_list:
+            self.now_quantity = self.now_package_list.get_quantity()
+            self.piece = self.get_diff_piece()
+            self.quantity = self.get_diff_quantity()
             self.package_list.update(self.package_list, self.get_diff_slab_ids())
-
-        n_p = self.now_piece or 0
-        n_q = self.now_quantity or 0
-        if (n_p - self.old_piece) > 0 or (n_q - self.old_quantity) > 0:
-            self.location, self.location_dest = self.old_location.get_inventory_location(), self.now_location
-        else:
-            self.location, self.location_dest = self.old_location.get_inventory_location(), self.now_location
+        if self.state == 0:
+            self.location, self.location_dest = self.old_location, self.now_location
+        elif self.state > 0:
+            self.location, self.location_dest = inv, self.now_location
+        elif self.state < 0:
+            self.location, self.location_dest = self.old_location, inv
+        return self.save()
 
     def save(self, *args, **kwargs):
-        if self.product.type == 'semi_slab':
-            self.now_quantity = self.now_piece * self.product.semi_slab_single_qty
         if self.pk:
-            if self.report == None:
-                self.set_None()
-            attr = 'set_%s' % (self.report)
-            getattr(self, attr)()
+            if self.product.type == 'semi_slab':
+                if self.product.semi_slab_single_qty:
+                    single_qty = self.product.semi_slab_single_qty
+                else:
+                    from stock.models import Stock
+                    stock = Stock.objects.get(product=self.product, location=self.old_location)
+                    single_qty = stock.quantity / stock.piece
+                self.now_quantity = self.now_piece * single_qty
+
+            if not self.location or not self.location_dest:
+                inv = self.old_location.get_inventory_location()
+                if self.report == 'is_equal':
+                    self.location, self.location_dest = self.old_location, self.now_location
+                elif self.report == 'is_lose':
+                    self.location, self.location_dest = self.old_location,  inv
+                elif self.report == 'not_equal':
+                    if self.state == 0:
+                        self.location, self.location_dest = self.old_location, self.now_location
+                    elif self.state > 0:
+                        self.location, self.location_dest = inv, self.now_location
+                    elif self.state < 0:
+                        self.location, self.location_dest = self.old_location, inv
 
         super().save(*args, **kwargs)
 

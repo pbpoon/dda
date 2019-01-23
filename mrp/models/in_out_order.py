@@ -165,6 +165,55 @@ class InOutOrder(MrpOrderAbstract):
             return CreateInvoice(self, Partner.get_expenses_partner(), items_dict, usage='杂费',
                                  state='confirm', payment=payment)
 
+    def make_purchase_order_items(self):
+        # 如果是新建状态
+        # 该采购单已收货的items取出
+        already_check_in_items = self.purchase_order.items.filter(
+            order__in_out_order__state__in=('confirm', 'done'))
+        purchase_order_items = self.purchase_order.items.all()
+        if already_check_in_items:
+            purchase_order_items.exclude(product_id__in=[item.product.id for item in already_check_in_items])
+        for item in purchase_order_items:
+            InOutOrderItem.objects.create(product=item.product, piece=item.piece,
+                                          quantity=item.quantity,
+                                          uom=item.uom, order=self, purchase_order_item=item)
+
+    def make_sales_order_items(self):
+        # 选出产品类型为荒料的已出货项的
+        from_order_items = self.sales_order.items.all()
+        for item in from_order_items:
+            if item.get_can_in_out_order_qty()['piece'] > 0:
+                stock = item.product.stock.filter(
+                    location_id__in=self.warehouse.get_main_location().get_child_list(),
+                    product=item.product).distinct()
+                if not stock:
+                    continue
+                if item.package_list:
+                    package = item.package_list.make_package_from_list(item.product_id,
+                                                                       from_package_list=item.package_list)
+                else:
+                    package = None
+
+                defaults = {'piece': stock[0].piece,
+                            'quantity': stock[0].quantity,
+                            'package_list': package, 'product': item.product, 'order': self,
+                            'uom': item.uom, 'sales_order_item': item}
+                InOutOrderItem.objects.create(**defaults)
+
+    def make_items(self):
+        # 如果是update状态，有object就返回items
+        if self.purchase_order:
+            return self.make_purchase_order_items()
+        return self.make_sales_order_items()
+
+    def save(self, *args, **kwargs):
+        new = False
+        if not self.pk:
+            new = True
+        super().save(*args, **kwargs)
+        if new:
+            self.make_items()
+
 
 class InOutOrderItem(OrderItemBase):
     order = models.ForeignKey('InOutOrder', on_delete=models.CASCADE, related_name='items', verbose_name='对应订单')
@@ -207,3 +256,28 @@ class InOutOrderItem(OrderItemBase):
 
     def get_expenses_amount(self):
         return sum(expense.amount for expense in self.expenses.all())
+
+        # already_check_out_items = self.order.sales_order.items.filter(
+        #     order__in_out_order__state__in=('confirm', 'done'), product__type='block')
+        # sales_order_items = self.order.sales_order.items.all()
+        # if already_check_out_items:
+        #     sales_order_items.exclude(product_id__in=[item.product.id for item in already_check_out_items])
+        # if sales_order_items:
+        #     # 生成新item的项目
+        #     for item in sales_order_items:
+        #         package = None
+        #         if item.product.type == 'slab':
+        #             # slabs_id_lst = [item.get_slab_id() for item in
+        #             #                 item.package_list.items.filter(slab__stock__isnull=False,
+        #             #                                                slab__stock__location=self.object.warehouse.get_main_location())]
+        #             # 如果有码单，就生成一张新码单，并把码单的from_package_list链接到旧的码单，
+        #             # 为了在提货单draft状态下可以选择到旧码单的slab
+        #             # ps：后来更改为建一张空码单， 提货时候再选择
+        #             package = item.package_list.make_package_from_list(item.product_id,
+        #                                                                from_package_list=item.package_list)
+        #         defaults = {'piece': item.piece if not package else package.get_piece(),
+        #                     'quantity': item.quantity if not package else package.get_quantity(),
+        #                     'package_list': package, 'product': item.product, 'order': self.object,
+        #                     'uom': item.uom, 'sales_order_item': item}
+        #         InOutOrderItem.objects.create(**defaults)
+        # return self.object.items.all()
