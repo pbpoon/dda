@@ -7,8 +7,8 @@ from django.http import HttpResponse
 from django.template.loader import render_to_string
 
 
-class DynamicPermissionRequiredMixin(LoginRequiredMixin, PermissionRequiredMixin):
-    model_permission = ('add', 'change', 'delete')
+class ModelPermissionRequiredMixin:
+    model_permission = None
 
     def get_permission_required(self):
         meta = self.model._meta
@@ -22,9 +22,28 @@ class DynamicPermissionRequiredMixin(LoginRequiredMixin, PermissionRequiredMixin
         return HttpResponse(render_to_string('no_permissions.html', {'return_path': path}))
 
 
+class DynamicPermissionRequiredMixin(ModelPermissionRequiredMixin, LoginRequiredMixin, PermissionRequiredMixin):
+    model_permission = ('add', 'change')
+
+
 class ViewPermissionRequiredMixin(DynamicPermissionRequiredMixin):
     model_permission = ('view',)
 
     def handle_no_permission(self):
         path = self.request.META.get('HTTP_REFERER')
         return HttpResponse(render_to_string('no_permissions.html', {'return_path': path}))
+
+
+class PostPermissionRequiredMixin(ModelPermissionRequiredMixin):
+
+    def has_permission(self):
+        """
+        Override this method to customize the way permissions are checked.
+        """
+        perms = self.get_permission_required()
+        return self.request.user.has_perms(perms)
+
+    def post(self, request, *args, **kwargs):
+        if not self.has_permission():
+            return self.handle_no_permission()
+        return super().post(request, *args, **kwargs)

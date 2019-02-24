@@ -24,9 +24,11 @@ class Files(models.Model):
     desc = models.CharField('简述', max_length=120, blank=True, null=True)
     entry = models.ForeignKey('auth.User', on_delete=models.CASCADE, verbose_name='登记人',
                               related_name='%(class)s_entry')
+    created = models.DateTimeField('创建时间', auto_now_add=True)
 
     class Meta:
         verbose_name = '文件'
+        ordering = ['-created']
 
     def __str__(self):
         name = self.content.name.split('/')[-1]

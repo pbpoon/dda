@@ -2,11 +2,57 @@
 {% load public %}
 {{ form.media }}
 {% block content %}
+     <div class="row">
+        <div class="col s12 text-left">
+            <ul class="tabs">
+                <li class="tab col s6"><a class="active" href="#items">明细行({{ object.items.count }})</a></li>
+                {% if object.invoices.all %}
+                    <li class="tab col s6"><a href="#invoice">账单({{ object.invoices.count }})</a></li>
+                {% endif %}
+            </ul>
+        </div>
+        <div id="items" class="col s12">
     {% if object.production_type.produce_item_type == 'semi_slab' %}
         {% include 'mrp/produce_type_semi_slab.html' %}
     {% elif object.production_type.produce_item_type == 'slab' %}
         {% include 'mrp/produce_type_slab.html' %}
     {% endif %}
+        </div>
+     {% if object.invoices.all %}
+            <div id="invoice" class="col s12">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>状态</th>
+                        <th>单号</th>
+                        <th>类型</th>
+                        <th>金额</th>
+                        <th>未付余额</th>
+                        <th>日期</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for invoice in object.invoices.all %}
+                        {% if invoice.state not in 'cancel' %}
+                            <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td><span
+                                    class="badge">{{ invoice.get_state_display }}</span></td>
+                            <td><a href="{{ invoice.get_absolute_url }}" class="collection-item">{{ invoice.order }}</a>
+                            </td>
+                            <td>{{ invoice.usage }}({{ invoice.get_type_display }})</td>
+                            <td>{{ invoice.amount }}</td>
+                            <td>{{ invoice.due_amount }}</td>
+                            <td>{{ invoice.date|date:"Y/m/d" }}</td>
+                        {% endif %}
+                    {% endfor %}
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+     </div>
     <!--右下角浮动按钮组-->
 {% endblock %}
 
@@ -21,17 +67,17 @@
     业务伙伴：{{ object.partner }} / 经办人:{{ object.handler }}
 {% endblock %}
 {% block sidebar %}
-{% if object.get_invoices %}
-        <span>账单</span>
-        <hr>
-        <div class="collection">
-            {% for invoice in object.get_invoices %}
-                {% if invoice.state not in 'cancel' %}
-                <a href="{{ invoice.get_absolute_url }}" class="collection-item">{{ invoice }}<span class="badge">{{ invoice.get_state_display }}</span></a>
-                {% endif %}
-            {% endfor %}
-        </div>
-    {% endif %}
+{#{% if object.get_invoices %}#}
+{#        <span>账单</span>#}
+{#        <hr>#}
+{#        <div class="collection">#}
+{#            {% for invoice in object.get_invoices %}#}
+{#                {% if invoice.state not in 'cancel' %}#}
+{#                <a href="{{ invoice.get_absolute_url }}" class="collection-item">{{ invoice }}<span class="badge">{{ invoice.get_state_display }}</span></a>#}
+{#                {% endif %}#}
+{#            {% endfor %}#}
+{#        </div>#}
+{#    {% endif %}#}
     {% if object.get_files %}
         <div class="collection">
 

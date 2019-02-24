@@ -51,14 +51,22 @@ class SalesOrder(OrderAbstract):
     def get_delete_url(self):
         return reverse('sales_order_delete', args=[self.id])
 
+    def get_list_url(self):
+        return reverse('sales_order_list', args=[self.id])
+
     @property
     def amount(self):
         return sum(item.amount for item in self.items.all())
 
     @property
     def due_amount(self):
-        return sum(invoice.amount for item in self.items.all() for invoice in
-                   item.invoice_items.filter(order__state='done').distinct())
+        return self.amount - self.confirm_amount
+
+    @property
+    def confirm_amount(self):
+        return sum(invoice.confirm_amount for invoice in self.invoices.all())
+        # return sum(invoice.amount for item in self.items.all() for invoice in
+        #            item.invoice_items.filter(order__state='done').distinct())
 
     def get_piece(self):
         return sum(item.piece for item in self.items.all() if item.piece)
@@ -114,8 +122,9 @@ class SalesOrder(OrderAbstract):
             self.state = 'confirm'
             self.save()
             self.create_comment(**kwargs)
+            self.make_invoice()
             comment = '更新<a href="%s">%s</a>状态:%s, 修改本账单' % (self.get_absolute_url(), self, self.state)
-            for invoice in self.get_invoices():
+            for invoice in self.invoices.all():
                 if invoice.state != 'draft':
                     continue
                 invoice.state = 'confirm'
@@ -125,12 +134,16 @@ class SalesOrder(OrderAbstract):
         return False, msg
 
     def done(self, **kwargs):
-        if self.get_can_in_out_order_qty()['piece'] == 0 and (self.amount - self.due_amount) <= 0:
+        # if self.get_can_in_out_order_qty()['piece'] == 0 and (int(self.amount) - int(self.due_amount)) <= 0:
+        if self.get_can_in_out_order_qty()['piece'] == 0 and self.due_amount <= 0:
             self.state = 'done'
             self.save()
             if kwargs.get('comment'):
                 kwargs['comment'] += '本订单已全部提货，完成收款'
         self.create_comment(**kwargs)
+        if self.state == 'done':
+            return True, ''
+        return False, ''
 
     def draft(self, **kwargs):
         is_done, msg = True, ''
@@ -145,7 +158,7 @@ class SalesOrder(OrderAbstract):
             self.save()
             self.create_comment(**kwargs)
             comment = '更新<a href="%s">%s</a>状态:%s, 修改本账单' % (self.get_absolute_url(), self, self.state)
-            for invoice in self.get_invoices():
+            for invoice in self.invoices.all():
                 invoice.state = 'draft'
                 invoice.save()
                 invoice.create_comment(**{'comment': comment})
@@ -164,7 +177,7 @@ class SalesOrder(OrderAbstract):
             self.save()
             self.create_comment(**kwargs)
             comment = '更新<a href="%s">%s</a>状态:%s, 修改本账单' % (self.get_absolute_url(), self, self.state)
-            for invoice in self.get_invoices():
+            for invoice in self.invoices.all():
                 invoice.state = 'cancel'
                 invoice.save()
                 invoice.create_comment(**{'comment': comment})
@@ -173,10 +186,14 @@ class SalesOrder(OrderAbstract):
     def _get_invoice_usage(self):
         return '销售货款'
 
-    def get_invoices(self):
-        invoices = set(self.invoices.all())
-        invoices |= {invoice.order for item in self.items.all() for invoice in item.invoice_items.all().distinct()}
-        return invoices
+    # @property
+    # def invoices(self):
+    #     from invoice.models import SalesInvoice
+    #     invoices = SalesInvoice.objects.none()
+    #     for item in self.items.all():
+    #         for invoice in item.invoice_items.all():
+    #             invoices |= invoice.order
+    #     return invoices
 
     @property
     def can_make_invoice_amount(self):
@@ -185,6 +202,11 @@ class SalesOrder(OrderAbstract):
     def make_invoice(self):
         items_dict = {}
         for item in self.items.all():
+            # invoice_line = item.prepare_invoice_item()
+            # if invoice_line in items_dict:
+            #     items_dict[invoice_line]['quantity'] += invoice_line['quantity']
+            # else:
+            #     items_dict.update(item.prepare_invoice_item())
             items_dict.update(item.prepare_invoice_item())
         state = self.state if self.state != 'done' else 'confirm'
         return CreateInvoice(self, self.partner, items_dict, type=1, state=state).invoice
@@ -216,7 +238,7 @@ class SalesOrderItem(OrderItemSaveCreateCommentMixin, models.Model):
     @property
     def amount(self):
         if self.quantity:
-            return Decimal('{0:.2f}'.format(self.quantity * self.price))
+            return Decimal('{0:.0f}'.format(self.quantity * self.price))
         return 0
 
     def save(self, *args, **kwargs):

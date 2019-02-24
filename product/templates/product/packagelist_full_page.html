@@ -28,7 +28,7 @@
             移动到其他夹
         </button>
         <button form="update_line" type="submit" class="btn waves-effect">刷新序号</button>
-        {% if add_new %}
+        {% if add_new == 'True' %}
             <button class="btn waves-effect red"
                     onclick='move_option("{% url 'package_list_item_delete' object.id %}")'>
                 删除所选
@@ -91,7 +91,7 @@
                                         <label>
                                             <input form="select_slab_form" data-quantity="{{ item.get_quantity }}"
                                                    type="checkbox" name="select"
-                                                    {% if state not in 'draft, confirm,done' %}
+                                                    {% if state not in 'draft,confirm' %}
                                                    disabled
                                                     {% endif %}
                                                     {% if item.get_slab_id in now_slabs_ids %}
@@ -106,10 +106,11 @@
                                     {% if item.get_slab_id not in now_slabs_ids %}
                                         <s>{% endif %}
                                     {{ item }}
-                                    <a href="#!"
-                                       onclick="edit_item('{% url 'package_list_item_edit' item.id %}')">
+                                {% if state == 'draft' %}
+                                    <a  onclick="edit_item('{% url 'package_list_item_edit' item.id %}')">
                                         修改
                                     </a>
+                                {% endif %}
                                     {% if item.get_slab_id not in now_slabs_ids %}
                                         </s>
                                     {% endif %}

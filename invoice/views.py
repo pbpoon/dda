@@ -1,3 +1,4 @@
+from datetime import datetime
 from django import forms
 from django.apps import apps
 from django.contrib.contenttypes.models import ContentType
@@ -11,11 +12,11 @@ from django.views.generic.detail import DetailView
 from django.contrib import messages
 
 from invoice.filters import InvoiceFilter
-from invoice.form import AssignInvoiceForm, InvoiceForm
+from invoice.form import AssignInvoiceForm, InvoiceForm, PaymentForm
 from partner.models import Partner
 from public.permissions_mixin_views import DynamicPermissionRequiredMixin
 from public.views import GetItemsMixin, OrderItemEditMixin, StateChangeMixin, OrderItemDeleteMixin, ModalOptionsMixin, \
-    FilterListView
+    FilterListView, SentWxMsgMixin
 from django.views.generic.edit import CreateView, UpdateView, ModelFormMixin
 from django.views.generic.base import TemplateResponseMixin, View
 
@@ -73,7 +74,7 @@ class SalesInvoiceListView(InvoiceListView):
     model = SalesInvoice
 
 
-class SalesInvoiceDetailView( InvoiceDetailView):
+class SalesInvoiceDetailView(InvoiceDetailView):
     model = SalesInvoice
 
 
@@ -111,8 +112,16 @@ class InvoiceCreateView(InvoiceEditMixin, CreateView):
     #     return form
 
 
+class SalesInvoiceCreateView(InvoiceCreateView):
+    model = SalesInvoice
+
+
 class InvoiceUpdateView(InvoiceEditMixin, UpdateView):
     pass
+
+
+class SalesInvoiceUpdateView(InvoiceUpdateView):
+    model = SalesInvoice
 
 
 class InvoiceItemEditView(OrderItemEditMixin):
@@ -153,12 +162,24 @@ class AccountCreateView(DynamicPermissionRequiredMixin, CreateView):
         return form
 
 
+class AccountUpdateView(DynamicPermissionRequiredMixin, UpdateView):
+    model = Account
+    fields = '__all__'
+    template_name = 'form.html'
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        form.fields['activate'].widget = SwitchesWidget()
+        form.fields['is_visible'].widget = SwitchesWidget()
+        return form
+
+
 class PaymentDetailView(StateChangeMixin, DetailView):
     model = Payment
 
     def get_btn_visible(self, state):
-        return {'draft': {'confirm': True},
-                'confirm': {'delete': True, 'draft': True},
+        return {'draft': {'confirm': True, 'delete': True},
+                'confirm': {'draft': True},
                 }[state]
 
     def confirm(self):
@@ -173,10 +194,30 @@ class PaymentListView(DynamicPermissionRequiredMixin, ListView):
     model = Payment
 
 
-class PaymentEditView(DynamicPermissionRequiredMixin, ModelFormMixin, View):
+class PaymentEditView(SentWxMsgMixin, DynamicPermissionRequiredMixin, ModelFormMixin, View):
+    app_name = 'payment'  # 发微信
+
+    model_permission = ('add',)
+
     model = Payment
-    fields = ('date', 'partner', 'account', 'type', 'amount', 'entry')
+    # fields = ('date', 'partner', 'account', 'type', 'amount', 'entry')
+    form_class = PaymentForm
     template_name = 'item_form.html'
+
+    def get_url(self):
+        return "%s" % (self.request.build_absolute_uri(self.object.get_absolute_url()))
+
+    def get_title(self):
+        return '[%s %s] ¥ %.2f' % (self.object.account, self.object.get_type_display(), self.object.amount)
+
+    def get_description(self):
+        html = '\n金额:¥ %s  [%.2f]\n' % (self.object.amount, self.object.get_type_display())
+        html += '\n账户:%s' % self.object.account
+        html += '\n对方:%s' % self.object.partner
+        html += '\n日期:%s' % self.object.date
+        now = datetime.now()
+        html += '\n登记人:%s @%s' % (self.object.entry, datetime.strftime(now, '%Y/%m/%d %H:%M'))
+        return html
 
     def get_invoice(self):
         if self.kwargs.get('invoice_id'):
@@ -198,7 +239,7 @@ class PaymentEditView(DynamicPermissionRequiredMixin, ModelFormMixin, View):
         invoice = self.get_invoice()
         context['form'].fields['date'].widget.attrs['class'] = 'datepicker'
         context['form'].fields['amount'].widget.attrs['placeholder'] = '本单欠：' + str(invoice.due_amount)
-        context['form'].fields['amount'].widget.attrs['max'] = str(invoice.due_amount)
+        # context['form'].fields['amount'].widget.attrs['max'] = str(invoice.due_amount)
         context['form'].fields['entry'].widget = forms.HiddenInput()
         context['form'].fields['partner'].widget = forms.HiddenInput()
         if invoice:
@@ -216,21 +257,49 @@ class PaymentEditView(DynamicPermissionRequiredMixin, ModelFormMixin, View):
         form = context['form']
         msg = '修改' if self.object else '添加'
         invoice = self.get_invoice()
+        files = self.request.FILES.getlist('files')
         if form.is_valid():
             instance = form.save(commit=False)
             if invoice:
                 instance.type = invoice.type
             instance.save()
+            print(instance)
+            self.object = instance
+            print('obj', self.object)
+            if files:
+                desc = form.cleaned_data.get('desc', None)
+                from files.models import Files
+                for file in files:
+                    f = Files(object=instance, content=file, entry=self.request.user, desc=desc)
+                    f.save()
             if invoice:
-                assign = Assign.objects.create(invoice=invoice, payment=instance, amount=instance.amount,
+                due_amount = min(invoice.due_amount, instance.amount)
+                assign = Assign.objects.create(invoice=invoice, payment=instance, amount=due_amount,
                                                entry=self.request.user)
             instance.create_comment()
             msg += '成功'
             messages.success(self.request, msg)
+            print('ready_sent_msg')
+            self.sent_msg()
+            print('out_sent_msg')
             # return redirect(path)
             return JsonResponse({'state': 'ok', 'url': path})
         msg += '失败'
         return HttpResponse(render_to_string(self.template_name, {'form': form, 'error': msg}))
+
+
+class PaymentDeleteView(OrderItemDeleteMixin):
+    model = Payment
+
+    def get_success_url(self):
+        invoice = None
+        for assign in self.object.assign_invoice.all():
+            invoice = assign.invoice
+            break
+        if invoice:
+            return invoice.get_absolute_url()
+        return self.object.partner.get_absolute_url()
+        # return self.request.META.get('HTTP_REFERER')
 
 
 class AssignDeleteView(View):

@@ -7,6 +7,19 @@
         <div class="divider"></div>
 
         <p>{% block subheadline %}
+            {% if filter.form %}
+    <div class="card-panel">
+    <h6>
+        <form action="" method="GET">
+            {% for f in filter.form %}
+                {% if f.name == 'state' %}
+                    {{ f }}
+                {% endif %}
+            {% endfor %}
+        </form>
+    </h6>
+    </div>
+    {% endif %}
         {% endblock %}</p>
     </div>
 {% endblock %}

@@ -213,7 +213,7 @@ class OriginalStockTraceView(DetailView, MultipleObjectMixin):
     paginate_by = 10
 
     def get_context_data(self, **kwargs):
-        qs = self.object.original_stock_trace.all()
+        qs = self.object.get_stock_trace_all()
         return super().get_context_data(object_list=qs, **kwargs)
 
 
@@ -372,6 +372,13 @@ class InventoryOrderPackageListDetailView(PackageListDetail):
                 'state': state}
         context.update(data)
         return context
+
+    def post(self, *args, **kwargs):
+        self.object = self.get_object()
+        slab_list = self.request.POST.getlist('select')
+        self.object.update(self.object, slab_list)
+        data = {'state': 'ok'}
+        return JsonResponse(data)
 
 
 # 库存盘点码单（新建）显示
@@ -602,3 +609,7 @@ class PackageListPdfView(BaseDetailView, PDFTemplateView):
     #     'margin-bottom': '0',
     #     'margin-right': '0',
     # }
+
+    def get_filename(self):
+        self.object = self.get_object()
+        return '%s.pdf'%(self.object)

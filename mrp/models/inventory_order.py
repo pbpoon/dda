@@ -1,5 +1,6 @@
 import collections
 
+from decimal import Decimal
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from django.db.models import Q
@@ -85,11 +86,12 @@ class InventoryOrder(HasChangedMixin, models.Model):
 
     def get_stock(self):
         # 把相等或未盘点的剔出
-        items = list(self.items.exclude(Q(report='is_equal') | Q(report=None)))
+        # items = list(self.items.exclude(Q(report='is_equal') | Q(report=None)))
+        items = [item for item in self.items.all() if item.state != 0]
         new_items = self.new_items.all()
-        change_loc_items = self.items.filter(report='is_equal')
-        if change_loc_items:
-            items.extend(list(change_loc_items))
+        # change_loc_items = self.items.filter(report='is_equal')
+        # if change_loc_items:
+        #     items.extend(list(change_loc_items))
         if new_items:
             items.extend(list(new_items))
         return StockOperate(self, items)
@@ -103,7 +105,7 @@ class InventoryOrder(HasChangedMixin, models.Model):
         return is_done, msg
 
     def confirm(self):
-        if any((item for item in self.items.all() if not item.is_done)):
+        if any((item for item in self.items.all() if not item.is_check)):
             return False, '有明细行没有进行盘点'
         self.state = 'confirm'
         self.save()
@@ -120,14 +122,15 @@ class InventoryOrder(HasChangedMixin, models.Model):
 class InventoryOrderItem(models.Model):
     order = models.ForeignKey('InventoryOrder', on_delete=models.CASCADE, related_name='items', verbose_name='对应订单')
     line = LineField(for_fields=['order'], blank=True, verbose_name='行')
-    report = models.CharField('情况报告', choices=((None, '未盘点'), ('is_equal', '与原数据相符'), ('is_lose', '丢失,已不在库的'),
-                                               ('not_equal', '数据不符(下方输入数据)')), blank=True, null=True, max_length=10,
-                              default=None)
+    is_check = models.BooleanField('已盘', default=False)
+    # report = models.CharField('情况报告', choices=(('is_equal', '与原数据相符'), ('is_lose', '丢失,已不在库的'),
+    #                                            ('not_equal', '数据不符(下方输入数据)'), ('change_loc', '位置有变动')), max_length=10,
+    #                           default='is_equal')
     product = models.ForeignKey('product.Product', on_delete=models.CASCADE, verbose_name='产品')
     old_location = models.ForeignKey('stock.Location', related_name='%(class)s_old_location', verbose_name='原库位',
                                      on_delete=models.DO_NOTHING, blank=True, null=True)
-    now_location = models.ForeignKey('stock.Location', related_name='%(class)s_now_location', verbose_name='现库位',
-                                     on_delete=models.DO_NOTHING, blank=True, null=True)
+    # now_location = models.ForeignKey('stock.Location', related_name='%(class)s_now_location', verbose_name='现库位',
+    #                                  on_delete=models.DO_NOTHING, blank=True, null=True)
     location = models.ForeignKey('stock.Location', related_name='%(class)s_location', verbose_name='库位',
                                  on_delete=models.DO_NOTHING, blank=True, null=True)
     location_dest = models.ForeignKey('stock.Location', related_name='%(class)s_dest_location', verbose_name='目标库位',
@@ -154,6 +157,14 @@ class InventoryOrderItem(models.Model):
         verbose_name = '盘点库存明细行'
         ordering = ('line',)
 
+    #
+    # @property
+    # def report(self):
+    #     if self.state == 0:
+    #         return 'is_equal'
+    #     else:
+    #         return 'not_equal'
+
     @property
     def is_done(self):
         if any(((self.piece and self.quantity), self.report)):
@@ -165,17 +176,19 @@ class InventoryOrderItem(models.Model):
         # if self.report == 'not_equal':
         n_p = self.now_piece or 0
         n_q = self.now_quantity or 0
-        if (n_p - self.old_piece) > 0 or (int(n_q) - int(self.old_quantity)) > 0:
+        p = (n_p - self.old_piece)
+        q = round(n_q, 2) - round(self.old_quantity, 2)
+        if p > 0 or q > 0:
             return 1
-        if (n_p - self.old_piece) < 0 or (int(n_q) - int(self.old_quantity)) < 0:
+        elif p < 0 or q < 0:
             return -1
         return 0
 
-    @property
-    def change_loc(self):
-        if self.old_location != self.now_location:
-            return True
-        return False
+    # @property
+    # def change_loc(self):
+    #     if self.old_location != self.now_location:
+    #         return True
+    #     return False
 
     def get_diff_piece(self):
         n_p = self.now_piece or 0
@@ -254,21 +267,13 @@ class InventoryOrderItem(models.Model):
     #     else:
     #         self.location, self.location_dest = self.old_location.get_inventory_location(), self.now_location
 
-    def not_equal_update_package_list(self):
-        inv = self.old_location.get_inventory_location()
-        if self.now_package_list:
-            self.now_piece = self.now_package_list.get_piece()
-            self.now_quantity = self.now_package_list.get_quantity()
-            self.piece = self.get_diff_piece()
-            self.quantity = self.get_diff_quantity()
-            self.package_list.update(self.package_list, self.get_diff_slab_ids())
-        if self.state == 0:
-            self.location, self.location_dest = self.old_location, self.now_location
-        elif self.state > 0:
-            self.location, self.location_dest = inv, self.now_location
-        elif self.state < 0:
-            self.location, self.location_dest = self.old_location, inv
-        return self.save()
+    # def update_package_list(self):
+    #     if self.now_package_list:
+    #         self.now_piece = self.now_package_list.get_piece()
+    #         self.now_quantity = self.now_package_list.get_quantity()
+    #         self.piece = self.get_diff_piece()
+    #         self.quantity = self.get_diff_quantity()
+    #         self.package_list.update(self.package_list, self.get_diff_slab_ids())
 
     def save(self, *args, **kwargs):
         if self.pk:
@@ -280,20 +285,31 @@ class InventoryOrderItem(models.Model):
                     stock = Stock.objects.get(product=self.product, location=self.old_location)
                     single_qty = stock.quantity / stock.piece
                 self.now_quantity = self.now_piece * single_qty
+            if self.now_package_list:
+                self.now_piece = self.now_package_list.get_piece()
+                self.now_quantity = self.now_package_list.get_quantity()
+            self.piece = self.get_diff_piece()
+            self.quantity = self.get_diff_quantity()
+            if self.package_list:
+                self.package_list.update(self.package_list, self.get_diff_slab_ids())
 
-            if not self.location or not self.location_dest:
-                inv = self.old_location.get_inventory_location()
-                if self.report == 'is_equal':
-                    self.location, self.location_dest = self.old_location, self.now_location
-                elif self.report == 'is_lose':
-                    self.location, self.location_dest = self.old_location,  inv
-                elif self.report == 'not_equal':
-                    if self.state == 0:
-                        self.location, self.location_dest = self.old_location, self.now_location
-                    elif self.state > 0:
-                        self.location, self.location_dest = inv, self.now_location
-                    elif self.state < 0:
-                        self.location, self.location_dest = self.old_location, inv
+        inv = self.old_location.get_inventory_location()
+
+        n_p = self.now_piece or 0
+        n_q = self.now_quantity or 0
+        p = (n_p - self.old_piece)
+        q = round(n_q, 2) - round(self.old_quantity, 2)
+        # if p > 0 or q > 0:
+        #     return 1
+        # elif p < 0 or q < 0:
+        #     return -1
+        # return 0
+        if p < 0 or q < 0:
+            self.location, self.location_dest = self.old_location, inv
+        elif p > 0 or q > 0:
+            self.location, self.location_dest = inv, self.old_location
+        else:
+            self.location, self.location_dest = self.old_location, self.old_location
 
         super().save(*args, **kwargs)
 

@@ -3,16 +3,17 @@
 # Created by pbpoon on 2018/10/30
 from django.urls import path
 from . import views
-
 urlpatterns = [
     path('expenses/', views.ExpensesInvoiceListView.as_view(), name='expenses_invoice_list'),
     path('purchase/', views.PurchaseInvoiceListView.as_view(), name='purchase_invoice_list'),
     path('sales/', views.SalesInvoiceListView.as_view(), name='sales_invoice_list'),
     path('<invoice_id>/payment/<partner_id>/', views.PaymentEditView.as_view(), name='payment_create_from_invoice'),
-    path('<invoice_id>/payment/<partner_id>/', views.PaymentEditView.as_view(), name='payment_create_from_invoice'),
-    path('payment/edit/<pk>/', views.PaymentEditView.as_view(), name='payment_edit'),
+    # path('<invoice_id>/payment/<partner_id>/', views.PaymentEditView.as_view(), name='payment_create_from_invoice'),
+    path('payment/<pk>/edit/', views.PaymentEditView.as_view(), name='payment_edit'),
+    path('payment/<pk>/delete/', views.PaymentDeleteView.as_view(), name='payment_delete'),
     path('payment/<pk>/', views.PaymentDetailView.as_view(), name='payment_detail'),
     path('payment/', views.PaymentListView.as_view(), name='payment_list'),
+    path('account/<pk>/update/', views.AccountUpdateView.as_view(), name='account_update'),
     path('account/create/', views.AccountCreateView.as_view(), name='account_create'),
     path('account/<pk>/', views.AccountDetailView.as_view(), name='account_detail'),
     path('account/', views.AccountListView.as_view(), name='account_list'),
@@ -29,6 +30,7 @@ urlpatterns = [
          name='invoice_due_date_default_create'),
     path('invoice_due_date_default_list/', views.InvoiceDueDateDefaultSetListView.as_view(),
          name='invoice_due_date_default_list'),
+    path('create/<app_label_lower>/<order_id>/', views.SalesInvoiceCreateView.as_view(), name='sales_invoice_create'),
     path('create/<app_label_lower>/<order_id>/', views.InvoiceCreateView.as_view(), name='invoice_create'),
     path('update/<pk>/', views.InvoiceUpdateView.as_view(), name='invoice_update'),
     path('purchase/<pk>/', views.PurchaseInvoiceDetailView.as_view(), name='purchase_invoice_detail'),

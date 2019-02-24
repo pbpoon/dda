@@ -97,14 +97,15 @@ class StockOperate:
                     a.quantity -= max_quantity
                     piece -= max_piece
                     quantity -= max_quantity
-                    if a.piece == 0 or quantity == 0:
+                    if a.piece == 0:
                         a.delete()
                     else:
                         # 修正毛板的库存方数
                         if a.product.type == 'semi_slab':
-                            a.quantity = a.piece * a.product.semi_slab_single_qty
+                            single_qty = a.product.semi_slab_single_qty if a.product.semi_slab_single_qty else a.product._get_semi_single_qty()
+                            a.quantity = a.piece * single_qty
                         a.save()
-                    if piece == 0 or quantity == 0:
+                    if piece == 0 or quantity <= 0:
                         break
             except Exception as e:
                 max_piece, max_quantity = min((available.piece - available.reserve_piece), piece), \
@@ -150,7 +151,7 @@ class StockOperate:
                     piece -= max_piece
                     quantity -= max_quantity
                     a.save()
-                    if piece == 0 or quantity == 0:
+                    if piece == 0:
                         if slabs:
                             slabs.update(is_reserve=True)
                         return True
@@ -163,7 +164,7 @@ class StockOperate:
                     piece += max_piece
                     quantity += max_quantity
                     a.save()
-                    if piece == 0 or quantity == 0:
+                    if piece == 0:
                         if slabs:
                             slabs.update(is_reserve=False)
                         return True

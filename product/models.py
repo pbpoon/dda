@@ -122,6 +122,12 @@ class Block(models.Model):
             return Decimal('{0:.2f}'.format(m3))
         return Decimal('{0:.2f}'.format(0))
 
+    def get_size(self):
+        if self.long and self.height and self.width:
+            return '%s * %s * %s ' % (self.long, self.height, self.width)
+        else:
+            return ''
+
     def get_files(self):
         from files.models import Files
         files = Files.objects.none()
@@ -144,7 +150,11 @@ class Block(models.Model):
         return product
 
     def get_stock_trace_all(self):
-        stock_traces = [trace for p in self.products.all() for trace in p.product_stock_trace.all()]
+        original_stock_trace_list = [{'事务': (item.stock_trace, None), '状态': '完成', '形态': '旧数据', '件': item.piece,
+                                      '数量': str(item.quantity) + str(item.uom), '原库位': '', '目标库位': item.address,
+                                      '日期': item.date} for item in self.original_stock_trace.all()]
+        stock_traces = [trace for p in self.products.prefetch_related('product_stock_trace') for trace in
+                        p.product_stock_trace.all()]
         stock_trace_list = []
         for t in stock_traces:
             obj = t.get_obj()
@@ -158,9 +168,9 @@ class Block(models.Model):
                                      '原库位': obj.location,
                                      '目标库位': obj.location_dest,
                                      '日期': obj.order.date,
-                                     'created': obj.order.created,
                                      })
-        return sorted(stock_trace_list, key=lambda x: (x['日期'], x['created']))
+        stock_trace_list.extend(original_stock_trace_list)
+        return sorted(stock_trace_list, key=lambda x: x['日期'])
 
     @property
     def stock(self):
@@ -232,6 +242,15 @@ class Product(models.Model):
             raise ValueError('产品类型不为荒料时，必须录入厚度规格')
         return super().save(*args, **kwargs)
 
+    def _get_semi_single_qty(self):
+        # m3 = self.block.get_m3()
+        # thickness = 1.4 if self.thickness == 1.5 else self.thickness
+        # ccl = (100-thickness)/(thickness+0.4)
+        # single_qty = m3 * Decimal(ccl)
+        piece, quantity = self.get_available()
+        single_qty = quantity / piece
+        return Decimal(single_qty)
+
     def get_m3(self):
         return self.block.get_m3()
 
@@ -240,6 +259,9 @@ class Product(models.Model):
 
     def get_uom(self):
         return self.block.uom if self.type == 'block' else 'm2'
+
+    def get_block_size(self):
+        return self.block.get_size()
 
     @property
     def uom(self):
@@ -406,6 +428,14 @@ class PackageList(models.Model):
             qs = qs.filter(part_number=number)
         return '约 {:.2f}t'.format(sum(item.get_weight() for item in qs))
 
+    def get_out_warehouse(self):
+        if self.items.exists():
+            for item in self.items.all():
+                if item.slab.stock:
+                    return item.slab.stock.location.warehouse.address
+            else:
+                return ''
+
     def get_absolute_url(self):
         return reverse('package_detail', args=[self.id])
 
@@ -416,29 +446,21 @@ class PackageList(models.Model):
     def make_package_from_list(product_id, lst=None, from_package_list=None):
         # with transaction.atomic():
         order = PackageList.objects.create(product_id=product_id, from_package_list=from_package_list)
-        items_lst = []
         if lst:
-            for id in lst:
-                # slab = Slab.objects.get(pk=id)
-                slab_values = Slab.objects.filter(pk=id).values('id', 'part_number').first()
-                # PackageListItem.objects.create(order=order, slab_id=slab.id, part_number=slab.part_number)
-                items_lst.append(
-                    PackageListItem(order=order, slab_id=slab_values['id'], part_number=slab_values['part_number']))
-            PackageListItem.objects.bulk_create(items_lst)
-
-            # PackageListItem.objects.create(slab=slab, part_number=slab.part_number, order=order)
+            for slab in Slab.objects.filter(id__in=lst).values('id', 'part_number'):
+                PackageListItem.objects.create(order=order, slab_id=slab['id'],
+                                               part_number=slab['part_number']),
         return order
 
     @staticmethod
     def update(package_list, slab_id_lst):
-        new_items = []
-        slabs_values = Slab.objects.filter(id__in=slab_id_lst).values('id', 'part_number')
+        # new_items = []
         # with transaction.atomic():
         package_list.items.all().delete()
+        slabs_values = Slab.objects.filter(id__in=slab_id_lst)
         for slab in slabs_values:
-            new_items.append(
-                PackageListItem(slab_id=slab['id'], part_number=slab['part_number'], order=package_list))
-        PackageListItem.objects.bulk_create(new_items)
+            PackageListItem.objects.create(slab_id=slab.id, part_number=slab.part_number,
+                                           order=package_list)
         package_list.save()
         return package_list
 
@@ -452,7 +474,8 @@ class PackageList(models.Model):
 class PackageListItem(models.Model):
     order = models.ForeignKey('PackageList', on_delete=models.CASCADE, related_name='items', verbose_name='码单',
                               blank=True, null=True)
-    slab = models.ForeignKey('Slab', on_delete=models.CASCADE, related_name='package_list', verbose_name='板材', db_index=True)
+    slab = models.ForeignKey('Slab', on_delete=models.CASCADE, related_name='package_list', verbose_name='板材',
+                             db_index=True)
     part_number = models.SmallIntegerField('夹号')
     line = LineField(verbose_name='序号', for_fields=['order', 'part_number'], blank=True)
 

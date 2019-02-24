@@ -5,7 +5,7 @@ from django.db.models import Q
 
 from partner.models import Partner
 from public.widgets import DatePickerWidget, SwitchesWidget
-from .models import Assign, Invoice, InvoiceItem
+from .models import Assign, Invoice, InvoiceItem, Payment
 from django import forms
 
 
@@ -45,7 +45,7 @@ class InvoiceForm(forms.ModelForm):
             partner = kwargs.pop('partner')
         else:
             if instance:
-                partner = kwargs.get('instance').get('partner')
+                partner = instance.partner
         super().__init__(*args, **kwargs)
         # p = Partner.objects.filter(pk=partner.id)
         lst = [i for i in Partner.invoices.all().values_list('id', flat=True)]
@@ -72,3 +72,12 @@ class InvoiceForm(forms.ModelForm):
                                                uom=item.uom, price=0, order=inv, from_order_item=item)
             inv.create_comment(**{'comment': comment})
         return inv
+
+
+class PaymentForm(forms.ModelForm):
+    files = forms.FileField(required=False, label='附件', widget=forms.FileInput(attrs={'multiple': True}))
+    desc = forms.CharField(required=False, label='附件说明')
+
+    class Meta:
+        model = Payment
+        fields = ('date', 'partner', 'account', 'type', 'amount', 'entry')

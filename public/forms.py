@@ -3,6 +3,7 @@
 # Created by pbpoon on 2018/10/30
 from django import forms
 
+from public.widgets import SwitchesWidget
 from stock.models import Location
 
 
@@ -23,6 +24,7 @@ class LocationForm(forms.ModelForm):
             'warehouse': forms.HiddenInput,
             'is_main': forms.HiddenInput,
             'usage': forms.HiddenInput,
+            'is_activate':SwitchesWidget,
         }
 
 

@@ -20,6 +20,7 @@ class MoveLocationOrder(MrpOrderAbstract):
 
     class Meta:
         verbose_name = '移库单'
+        ordering = ('-date', '-created')
 
     def _get_invoice_usage(self):
         return '运输费'
@@ -38,6 +39,9 @@ class MoveLocationOrder(MrpOrderAbstract):
 
     def get_update_url(self):
         return reverse('move_location_order_update', args=[self.id])
+
+    def get_delete_url(self):
+        return reverse('move_location_order_delete', args=[self.id])
 
     def get_stock(self):
         from public.stock_operate import StockOperate
@@ -89,20 +93,19 @@ class MoveLocationOrder(MrpOrderAbstract):
                 self.state = 'cancel'
                 self.save()
                 self.create_comment(**kwargs)
-        elif self.state == 'done':
-            self.state = 'cancel'
-            self.save()
-            self.create_comment(**kwargs)
+        # elif self.state == 'done':
+        #     self.state = 'cancel'
+        #     self.save()
+        #     self.create_comment(**kwargs)
         elif self.state == 'draft':
             self.state = 'cancel'
             self.save()
             self.create_comment(**kwargs)
         for invoice in self.invoices.all():
-            invoice.state = 'cancel'
-            invoice.save()
             comment = '更新 %s <a href="%s">%s</a>状态:%s, 修改本账单' % (
                 self._meta.verbose_name, self.get_absolute_url(), self, self.state)
-            invoice.create_comment(**{'comment': comment})
+            # invoice.create_comment(**{'comment': comment})
+            invoice.cancel(**{'comment': comment})
         return is_done, msg
 
     def make_expenses_invoice(self):

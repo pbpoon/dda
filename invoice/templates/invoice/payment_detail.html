@@ -21,7 +21,6 @@
             </thead>
             <tbody>
             {% for assign in object.assign_invoice.all %}
-
                 <tr>
                     <td><a href="{{ assign.invoice.get_absolute_url }}">{{ assign.invoice }}</a></td>
                     <td>{{ assign.amount }}</td>

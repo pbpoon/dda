@@ -126,6 +126,14 @@ class Invoice(HasChangedMixin, models.Model):
         return sum(assign.amount for assign in self.assign_payments.all())
 
     def get_absolute_url(self):
+        type = self.content_type.model
+        # print(type)
+        if type == 'purchaseorder':
+            return reverse('purchase_invoice_detail', args=[self.id])
+        elif type == 'salesorder':
+            return reverse('sales_invoice_detail', args=[self.id])
+        elif type in ['inoutorder', 'inventoryorder', 'movelocationorder', 'productionorder', 'turnbackorder']:
+            return reverse('expenses_invoice_detail', args=[self.id])
         return reverse('invoice_detail', args=[self.id])
 
     def get_update_url(self):
@@ -349,6 +357,9 @@ class Payment(HasChangedMixin, models.Model):
     def get_absolute_url(self):
         return reverse('payment_detail', args=[self.id])
 
+    def get_delete_url(self):
+        return reverse('payment_delete', args=[self.id])
+
     def get_balance(self):
         # 可分配的余额
         return self.amount - sum(assign.amount for assign in self.assign_invoice.all())
@@ -385,14 +396,6 @@ class Payment(HasChangedMixin, models.Model):
         return files
 
 
-def format_number(seq, n):
-    num = ''
-    for i in range(n):
-        num += '.'
-    lst = re.findall(num, seq)
-    return '-'.join(lst)
-
-
 class Account(models.Model):
     activate = models.BooleanField('启用', default=True)
     name = models.CharField('账户名称', max_length=20)
@@ -406,13 +409,30 @@ class Account(models.Model):
     def get_absolute_url(self):
         return reverse('account_detail', args=[self.id])
 
+    def get_update_url(self):
+        return reverse('account_update', args=[self.id])
+
     def __str__(self):
         desc = '(%s)' % (self.account_number[:-4]) if self.account_number else ''
         return '{}'.format(self.name, desc)
 
     def display(self):
         if self.account_number:
-            number = format_number(self.account_number, 4)
+            # number = format_number(self.account_number, 4)
+            def format_n(num):
+                num = str(num)
+                string = ''
+                while len(num) > 4:
+                    if string:
+                        string += '-'
+                    string += num[:4]
+                    num = num[4:]
+                if num:
+                    string += '-' + num
+                return string
+
+            # n = self.account_number
+            number = format_n(self.account_number)
             return "%s: %s  %s" % (self.bank, self.owner, number)
 
     @classmethod

@@ -39,6 +39,7 @@ class InOutOrder(MrpOrderAbstract):
 
     class Meta:
         verbose_name = '出入库操作'
+        ordering = ('-date', '-created')
 
     def _get_invoice_usage(self):
         return '杂费'

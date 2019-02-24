@@ -8,28 +8,52 @@
 {% endblock %}
 {% block content %}
     <div class="card-panel">
-    <table>
-        <thead>
-        <tr>
-            <th>事务</th>
-            <th>地址</th>
-            <th>数量</th>
-            <th>日期</th>
-        </tr>
-        </thead>
-        <tbody>
-        {% for item in object_list %}
-            <tr>
-            <td>{{ item.stock_trace }}</td>
-            <td>{{ item.address }}</td>
-            <td class="text-right">{% if item.part %}{{ item.part }}夹 /{% endif %}
-                {% if item.piece %}{{ item.piece }}件 /{% endif %}
-                {{ item.quantity }}{{ item.uom }}</td>
-            <td>{{ item.date|date:'Y/m/d' }}</td>
-        {% endfor %}
-        </tr>
-        </tbody>
-    </table>
+{#    <table>#}
+{#        <thead>#}
+{#        <tr>#}
+{#            <th>事务</th>#}
+{#            <th>地址</th>#}
+{#            <th>数量</th>#}
+{#            <th>日期</th>#}
+{#        </tr>#}
+{#        </thead>#}
+{#        <tbody>#}
+        <table>
+            {% for track in object.get_stock_trace_all %}
+                {% if forloop.first %}
+                    <thead>
+                    <tr>
+                        {% for key in track.keys %}
+                            <th>{{ key }}</th>
+                        {% endfor %}
+                    </tr>
+                    </thead>
+                {% endif %}
+                <tbody>
+                <tr>
+                    {% for key,value in track.items %}
+                        {% if forloop.first %}
+                            <td><a href="{{ value.1.get_absolute_url }}">{{ value.0 }}</a></td>
+                        {% else %}
+                            <td>{{ value }}</td>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+                </tbody>
+            {% endfor %}
+        </table>
+{#        {% for item in object_list %}#}
+{#            <tr>#}
+{#            <td>{{ item.stock_trace }}</td>#}
+{#            <td>{{ item.address }}</td>#}
+{#            <td class="text-right">{% if item.part %}{{ item.part }}夹 /{% endif %}#}
+{#                {% if item.piece %}{{ item.piece }}件 /{% endif %}#}
+{#                {{ item.quantity }}{{ item.uom }}</td>#}
+{#            <td>{{ item.date|date:'Y/m/d' }}</td>#}
+{#        {% endfor %}#}
+{#        </tr>#}
+{#        </tbody>#}
+{#    </table>#}
     {% include 'paginatior.html' %}
     </div>
 {% endblock %}

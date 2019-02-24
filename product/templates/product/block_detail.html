@@ -27,34 +27,34 @@
         </form>
     {% endif %}
     <!--事务-->
-    {% if object.get_stock_trace_all %}
-        <p class="h3">事务记录</p>
-        <hr>
-        <table>
-            {% for track in object.get_stock_trace_all %}
-                {% if forloop.first %}
-                    <thead>
-                    <tr>
-                        {% for key in track.keys %}
-                            <th>{{ key }}</th>
-                        {% endfor %}
-                    </tr>
-                    </thead>
-                {% endif %}
-                <tbody>
-                <tr>
-                    {% for key,value in track.items %}
-                        {% if forloop.first %}
-                            <td><a href="{{ value.1.get_absolute_url }}">{{ value.0 }}</a></td>
-                        {% else %}
-                            <td>{{ value }}</td>
-                        {% endif %}
-                    {% endfor %}
-                </tr>
-                </tbody>
-            {% endfor %}
-        </table>
-    {% endif %}
+{#    {% if object.get_stock_trace_all %}#}
+{#        <p class="h3">事务记录</p>#}
+{#        <hr>#}
+{#        <table>#}
+{#            {% for track in object.get_stock_trace_all %}#}
+{#                {% if forloop.first %}#}
+{#                    <thead>#}
+{#                    <tr>#}
+{#                        {% for key in track.keys %}#}
+{#                            <th>{{ key }}</th>#}
+{#                        {% endfor %}#}
+{#                    </tr>#}
+{#                    </thead>#}
+{#                {% endif %}#}
+{#                <tbody>#}
+{#                <tr>#}
+{#                    {% for key,value in track.items %}#}
+{#                        {% if forloop.first %}#}
+{#                            <td><a href="{{ value.1.get_absolute_url }}">{{ value.0 }}</a></td>#}
+{#                        {% else %}#}
+{#                            <td>{{ value }}</td>#}
+{#                        {% endif %}#}
+{#                    {% endfor %}#}
+{#                </tr>#}
+{#                </tbody>#}
+{#            {% endfor %}#}
+{#        </table>#}
+{#    {% endif %}#}
 {% endblock %}
 {% block headline %}
     {{ object.name }}
@@ -84,7 +84,7 @@
     {% if object.original_stock_trace.all %}
         <div class="collection">
             <a class="collection-item" href="{% url 'block_original_stock_trace' object.id %}">
-                <span>旧系统事务记录({{ object.original_stock_trace.count }})</span>
+                <span>事务记录({{ object.original_stock_trace.count }})</span>
                 <i class="material-icons right">folder</i>
             </a>
         </div>

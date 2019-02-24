@@ -2,106 +2,158 @@
 {% load public %}
 {{ form.media }}
 {% block content %}
-    <table class="table table-sm">
-        <thead>
-        <tr>
-            <th>#</th>
-            <th>编号</th>
-            <th>数量</th>
-            <th>库位=>目标库位</th>
-            <th>费用</th>
-            <th>编辑</th>
-        </tr>
-        </thead>
-        <tbody>
-        {% for item in object_list %}
-            <tr id="block_list_tr">
-                <td>{{ item.line }}</td>
-                <td><a href="{{ item.product.block.get_absolute_url }}">{{ item.product }}</a>
-                </td>
-                <td>
-                    {% if item.package_list %}
-                        <a href="#"
-                           onclick="open_package_list('{{ item.package_list.get_absolute_url }}','{{ object.state }}')">
-                            {{ item.package_list.get_part }}夹/ {{ item.piece }}件/
-                            {{ item.quantity }}{{ item.product.get_uom }}</a>
-                    {% elif item.product.type == 'slab' %}
-                        <a href="#"
-                           onclick="open_package_list('{% url 'order_item_package_create' item|label_name item.id item.product.id item.location.id %}')">挑选货品</a>
-                    {% else %}
-                        {{ item.piece }}件/
-                        {{ item.quantity }}{{ item.product.get_uom }}
+    <div class="row">
+        <div class="col s12 text-left">
+            <ul class="tabs">
+                <li class="tab col s6"><a class="active" href="#items">明细行({{ object.items.count }})</a></li>
+                {% if object.invoices.all %}
+                    <li class="tab col s6"><a href="#invoice">账单({{ object.invoices.count }})</a></li>
+                {% endif %}
+            </ul>
+        </div>
+        <div id="items" class="col s12">
+<table class="table">
+    <thead>
+    <tr>
+        <th>#</th>
+        <th>编号</th>
+        <th>数量</th>
+        <th>库位=>目标库位</th>
+        <th>费用</th>
+        <th>编辑</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for item in object_list %}
+    <tr id="block_list_tr">
+        <td>{{ item.line }}</td>
+        <td><a href="{{ item.product.block.get_absolute_url }}">{{ item.product }}</a>
+        </td>
+        <td>
+            {% if item.package_list %}
+                <a  onclick="open_package_list('{{ item.package_list.get_absolute_url }}','{{ object.state }}')">
+                    {{ item.package_list.get_part }}夹/ {{ item.piece }}件/
+                    {{ item.quantity }}{{ item.product.get_uom }}</a>
+                {#                    {% elif item.product.type == 'slab' %}#}
+                {#                        <a #}
+                {#                           onclick="open_package_list('{% url 'order_item_package_create' item|label_name item.id item.product.id item.location.id %}')">挑选货品</a>#}
+            {% else %}
+                {{ item.piece }}件/
+                {{ item.quantity }}{{ item.product.get_uom }}
+            {% endif %}
+        </td>
+        <td>{{ item.location }}=>{{ item.location_dest }}</td>
+
+        <td>
+            {% for expense in item.expenses.all %}
+            <div class=text-right>
+                {% if object.state == 'draft' %}
+                <a onclick="edit_item('{% url 'mrp_item_expenses_edit' item|model_name item.id expense.id %}')">{{ expense }}={{ expense.amount }}</a><a
+                    onclick="item_remove('{% url 'mrp_item_expenses_delete' expense.id %}')"><i class="material-icons">delete_forever</i></a>{% else %}
+                    {{ expense }}={{ expense.amount }}
                     {% endif %}
-                </td>
-                <td>{{ item.location }}=>{{ item.location_dest }}</td>
+                <br></div>{% endfor %}
 
-                <td>{% for expense in item.expenses.all %}
-                    <div class=text-right>
-                        <a onclick="edit_item('{% url 'mrp_item_expenses_edit' item|model_name item.id expense.id %}')">{{ expense }}={{ expense.amount }}</a><a onclick="item_remove('{% url 'mrp_item_expenses_delete' expense.id %}')"><i class="material-icons">delete_forever</i></a> <br></div>{% endfor %}</td>
+        </td>
+        <td>{% if object.state == 'draft' %}
+            <!-- Dropdown Trigger -->
 
-                <td>{% if object.state == 'draft' %}
-                    <!-- Dropdown Trigger -->
+            <a class='dropdown-trigger btn-small btn-floating grey' href='#'
+               data-target='dropdown{{ forloop.counter }}'>
+                <i
+                        class="material-icons">more_vert</i></a>
 
-                    <a class='dropdown-trigger btn-small btn-floating grey' href='#'
-                       data-target='dropdown{{ forloop.counter }}'>
-                        <i
-                                class="material-icons">more_vert</i></a>
+            <!-- Dropdown Structure -->
+            <ul id='dropdown{{ forloop.counter }}' class='dropdown-content'>
+                <li>
+                    <a onclick="edit_item('{% url 'move_location_order_item_edit' item.id %}')">修改
+                    </a>
+                </li>
+                <li>
+                    <a onclick="item_remove('{% url 'move_location_order_item_delete' item.id %}')">
+                        删除
+                    </a>
+                </li>
+                <hr>
+                <li>
+                    <a onclick="add_item('{% url 'mrp_item_expenses_create' item|model_name item.id %}')">
+                        添加费用
+                    </a>
+                </li>
+            </ul>
+        {% endif %}</td>
+    </tr>
 
-                    <!-- Dropdown Structure -->
-                    <ul id='dropdown{{ forloop.counter }}' class='dropdown-content'>
-                        <li>
-                            <a onclick="edit_item('{% url 'move_location_order_item_edit' item.id %}')">修改
-                            </a>
-                        </li>
-                        <li>
-                            <a onclick="item_remove('{% url 'move_location_order_delete' item.id %}')">
-                                删除
-                            </a>
-                        </li>
-                        <hr>
-                        <li>
-                            <a onclick="add_item('{% url 'mrp_item_expenses_create' item|model_name item.id %}')">
-                                添加费用
-                            </a>
-                        </li>
-                    </ul>
-                {% endif %}</td>
-            </tr>
-
-        {% endfor %}
-        </tbody>
-        <tfoot>
-        <tr>
-            <th colspan="2">合计</th>
-            <th>
-                {% for key, item in object.get_total.items %}
-                    {{ key }}:{% if item.part %}{{ item.part }}夹 / {% endif %}{{ item.piece }}件 /
-                    {{ item.quantity }}{{ item.uom }}<br>
-                {% endfor %}
-            </th>
-            <th></th>
-            <th>{{ object.get_expenses_amount }}</th>
-            <th></th>
-        </tr>
-        </tfoot>
-    </table>
-    <!--右下角浮动按钮组-->
-    {% include 'float_btn.html' %}
+    {% endfor %}
+    </tbody>
+    <tfoot>
+    <tr>
+        <th colspan="2">合计</th>
+        <th>
+            {% for key, item in object.get_total.items %}
+                {{ key }}:{% if item.part %}{{ item.part }}夹 / {% endif %}{{ item.piece }}件 /
+                {{ item.quantity }}{{ item.uom }}<br>
+            {% endfor %}
+        </th>
+        <th></th>
+        <th>{{ object.get_expenses_amount }}</th>
+        <th></th>
+    </tr>
+    </tfoot>
+</table>
+        </div>
+    {% if object.invoices.all %}
+            <div id="invoice" class="col s12">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>状态</th>
+                        <th>单号</th>
+                        <th>类型</th>
+                        <th>金额</th>
+                        <th>未付余额</th>
+                        <th>日期</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for invoice in object.invoices.all %}
+                        {% if invoice.state not in 'cancel' %}
+                            <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td><span
+                                    class="badge">{{ invoice.get_state_display }}</span></td>
+                            <td><a href="{{ invoice.get_absolute_url }}" class="collection-item">{{ invoice.order }}</a>
+                            </td>
+                            <td>{{ invoice.usage }}({{ invoice.get_type_display }})</td>
+                            <td>{{ invoice.amount }}</td>
+                            <td>{{ invoice.due_amount }}</td>
+                            <td>{{ invoice.date|date:"Y/m/d" }}</td>
+                        {% endif %}
+                    {% endfor %}
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+<!--右下角浮动按钮组-->
+{% include 'float_btn.html' %}
 
 {% endblock %}
 {% block sidebar %}
-    {% if object.invoices.all %}
-        <span>账单</span>
-        <hr>
-        <div class="collection">
-            {% for invoice in object.invoices.all %}
-                {% if invoice.state not in 'cancel' %}
-                    <a href="{{ invoice.get_absolute_url }}" class="collection-item">{{ invoice }}<span
-                            class="badge">{{ invoice.get_state_display }}</span></a>
-                {% endif %}
-            {% endfor %}
-        </div>
-    {% endif %}
+{#    {% if object.invoices.all %}#}
+{#        <span>账单</span>#}
+{#        <hr>#}
+{#        <div class="collection">#}
+{#            {% for invoice in object.invoices.all %}#}
+{#                {% if invoice.state not in 'cancel' %}#}
+{#                    <a href="{{ invoice.get_absolute_url }}" class="collection-item">{{ invoice }}<span#}
+{#                            class="badge">{{ invoice.get_state_display }}</span></a>#}
+{#                {% endif %}#}
+{#            {% endfor %}#}
+{#        </div>#}
+{#    {% endif %}#}
     {% if object.get_files %}
         <div class="collection">
             <a class="collection-item" href="{% url 'object_files_list' object|label_name object.id %}">

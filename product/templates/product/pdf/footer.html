@@ -38,6 +38,10 @@
          li {
             padding: 3px;
         }
+        .quote ul li {
+            font-size: large;
+            font-weight: bold;
+        }
     </style>
     <link rel="stylesheet" href="{% static '/css/package_list_pdf.css' %}">
     <link rel="stylesheet" href="{% static '/css/materialize.css' %}">
@@ -46,8 +50,11 @@
 <footer>
     <div class="row">
         <div class="col s5">
-            <div class="quote" style="height: 3cm;">
-            <ul>
+            <div class="quote" style="height: 2cm;">
+            <ul style="position: absolute;top:0;">
+                {% if object.get_out_warehouse %}
+                <li>提货地址：{{ object.get_out_warehouse }}</li>
+                {% endif %}
                 <li>本产品为天然矿物加工而成，略有色差，花差。</li>
             </ul>
             </div>

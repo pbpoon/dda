@@ -49,7 +49,7 @@ class ProductionOrder(MrpOrderAbstract):
 
     class Meta:
         verbose_name = '生产订单'
-        ordering = ('-date',)
+        ordering = ('-date', '-created')
 
     def _get_invoice_usage(self):
         return '%s费用' % self.production_type.name
@@ -268,6 +268,16 @@ class ProductionOrderProduceItem(OrderItemBase):
     def get_location_dest(self):
         return self.order.location
 
+    def save(self, *args, **kwargs):
+        if self.package_list:
+            self.piece = self.package_list.get_piece()
+            self.quantity = self.package_list.get_quantity()
+        if self.raw_item.product.type == 'semi_slab':
+            self.raw_item.piece = self.piece
+            single_qty = self.raw_item.product.semi_slab_single_qty if self.raw_item.product.semi_slab_single_qty else self.raw_item.product._get_semi_single_qty()
+            self.raw_item.quantity = self.piece * single_qty
+            self.raw_item.save()
+        super().save(*args, **kwargs)
     # def save(self, *args, **kwargs):
     # self.order = self.raw_item.order
     # thickness = self.thickness or self.raw_item.product.thickness

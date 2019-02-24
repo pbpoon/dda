@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Created by pbpoon on 2018/11/23
+from datetime import datetime
 from django import forms
 from django.apps import apps
 from django.contrib import messages
@@ -14,6 +15,7 @@ from django.views import View
 from django.views.generic import TemplateView, DetailView, ListView
 from django.views.generic.detail import BaseDetailView
 from django.views.generic.edit import BaseDeleteView, ModelFormMixin, ProcessFormView, FormMixin
+from wechatpy.enterprise import WeChatClient
 
 from public.forms import StateForm, ConfirmOptionsForm
 from public.widgets import SwitchesWidget, RadioWidget
@@ -108,7 +110,7 @@ class OrderItemDeleteMixin(DynamicPermissionRequiredMixin, BaseDeleteView):
 # 状态流程
 class StateChangeMixin(DynamicPermissionRequiredMixin):
     state_form = StateForm
-    model_permission = ('add', 'change')
+    model_permission = ['view']
 
     def handle_no_permission(self):
         path = self.request.META.get('HTTP_REFERER')
@@ -127,13 +129,26 @@ class StateChangeMixin(DynamicPermissionRequiredMixin):
                        'btn_visible': self.get_btn_visible(state)})
         return super(StateChangeMixin, self).get_context_data(**kwargs)
 
+    def has_change_permission(self):
+        meta = self.model._meta
+        perms = ['%s.change_%s' % (meta.app_label.lower(), meta.model_name.lower())]
+        # perms = list(
+        #     map(lambda x: x % (meta.app_label.lower(), meta.model_name.lower()),
+        #         ('%s.' + i + '_%s' for i in self.model_permission)))
+        return self.request.user.has_perms(perms)
+
     @transaction.atomic()
     def post(self, *args, **kwargs):
+        if not self.has_change_permission():
+            return self.handle_no_permission()
         self.object = self.get_object()
         form = self.state_form(self.request.POST)
+        state = self.request.POST.get('state')
+        if self.object.state == state:
+            messages.error(self.request, '该订单状态已为%s' % (state))
+            return redirect(self.get_success_url())
         if form.is_valid():
             # 创建数据库事务保存点
-            state = self.request.POST.get('state')
             sid = transaction.savepoint()
             is_done, msg = getattr(self, state)()
             if is_done:
@@ -153,10 +168,11 @@ class StateChangeMixin(DynamicPermissionRequiredMixin):
         raise ValueError('define confirm')
 
     def cancel(self):
-        raise ValueError('define confirm')
+        raise ValueError('define cancel')
 
     def draft(self):
         raise ValueError('define draft')
+
 
 
 # 前端modal form 选项
@@ -261,3 +277,37 @@ class ContentTypeEditMixin:
     def form_valid(self, form):
         self.object = form.save()
         return JsonResponse({'state': 'ok'})
+
+
+class SentWxMsgMixin:
+    app_name = None
+    user_ids = '@all'
+
+
+    def get_url(self):
+        print(self.request)
+        return "%s" % (self.request.build_absolute_uri())
+
+    def get_title(self):
+        raise ValueError('define get_title')
+
+    def get_description(self):
+        raise ValueError('define get_description')
+
+    def sent_msg(self):
+        from action.models import WxConf
+        if not self.app_name:
+            return False
+        try:
+            wx_conf = WxConf(app_name=self.app_name)
+            print(wx_conf,'in')
+            client = WeChatClient(wx_conf.corp_id, wx_conf.Secret)
+            print(client, '222')
+            print(self.get_title(),'title')
+            client.message.send_text_card(agent_id=wx_conf.AgentId, user_ids=self.user_ids, title=self.get_title(),
+                                          description=self.get_description(),
+                                          url=self.get_url())
+            print('out')
+        except Exception as e:
+            pass
+        return True

@@ -1,3 +1,4 @@
+from datetime import datetime
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render, redirect
 #
@@ -9,12 +10,15 @@ from django.views.generic.base import View
 # from wechatpy.enterprise.crypto import WeChatCrypto
 # from wechatpy.exceptions import InvalidSignatureException
 # from wechatpy.replies import BaseReply
+from wechatpy.enterprise import parse_message
 from wechatpy.enterprise.crypto import WeChatCrypto
 from wechatpy.enterprise.client import WeChatClient
 from wechatpy.exceptions import InvalidSignatureException
 from wechatpy.replies import BaseReply, create_reply
 
 from action.models import WxConf
+
+from django.views.decorators.csrf import csrf_exempt
 
 corp_id = 'wwb132fd0d32417e5d'
 
@@ -33,6 +37,7 @@ class WechatBaseView(View):
     def get_wx_conf(self):
         return WxConf(app_name=self.app_name)
 
+    @csrf_exempt
     def dispatch(self, request, *args, **kwargs):
         wx_conf = self.get_wx_conf()
         self.crypto = WeChatCrypto(wx_conf.Token, wx_conf.EncodingAESKey, wx_conf.corp_id)
@@ -40,34 +45,43 @@ class WechatBaseView(View):
         self.wx_data['signature'] = request.GET.get('msg_signature', '')
         self.wx_data['timestamp'] = request.GET.get('timestamp', '')
         self.wx_data['nonce'] = request.GET.get('nonce', '')
+        return super().dispatch(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
         echo_str = request.GET.get('echostr', '')
+        print(echo_str, 'get')
         try:
             echo_str = self.crypto.check_signature(
                 echo_str=echo_str, **self.wx_data
             )
-            return super().dispatch(request, echo_str, *args, **kwargs)
+            print('ok', 'get')
         except InvalidSignatureException:
             echo_str = 'error'
+            print('error', 'get')
         return HttpResponse(echo_str)
 
-    def get(self, request, echo_str, *args, **kwargs):
-        return HttpResponse(echo_str)
-
-    #     # POST方式用于接受和返回请求
+    # POST方式用于接受和返回请求
     def post(self, request, *args, **kwargs):
         reply = None
+        print(request.body, 'post_request')
         msg = self.crypto.decrypt_message(request.body, **self.wx_data)
         # 判断消息类型，文本消息则调用reply_text进行处理
+        msg = parse_message(msg)
+        self.orign_msg = msg
+        print(msg, 'post_msg')
         if msg.type == 'text':
-            reply = self.reply_text.do_reply(msg)
+            # reply = self.reply_text.do_reply(msg)
+            reply = self.reply_text()
         elif msg.type == 'event':
-            reply = self.reply_event.do_reply(msg)
+            # reply = self.reply_event.do_reply(msg)
+            pass
         else:
             pass
         if not reply or not isinstance(reply, BaseReply):
             reply = create_reply('暂不支持您所发送的消息类型哟~ 回复“帮助”查看使用说明。', msg)
-        response = HttpResponse(reply.render(), content_type="application/xml")
-        return response
+
+        response = self.crypto.encrypt_message(reply.render(), self.wx_data['nonce'], self.wx_data['timestamp'])
+        return HttpResponse(response)
 
 
 class WechatAuthView(View):
@@ -99,3 +113,67 @@ class WechatAuthView(View):
             print('go_url')
             return redirect(url)
         return super().dispatch(request, *args, **kwargs)
+
+
+class WxBlockSearchView(WechatBaseView):
+    app_name = 'block_search'
+
+    def get_stocks(self, obj):
+        html = ''
+        for stock in obj.stock.all():
+            if html:
+                html += '\n'
+            html += '%s' % stock
+        return html
+
+    def get_title(self, obj):
+        html = ''
+        for stock in obj.stock.all():
+            if html:
+                html += '\n'
+            html += '%s' % stock.product
+        return html
+
+    def get_description(self, obj):
+        html = '库存情况:\n%s\n\n' % self.get_stocks(obj)
+        html += '\n品种:%s' % obj.category
+        html += '\n矿山:%s' % obj.quarry
+        html += '\n批次: %s' % obj.batch
+        html += '\n重量:%st' % obj.weight
+        html += '\nm3:%s' % obj.get_m3()
+        html += '\n尺寸:%s' % obj.get_size()
+        html += "\n入库日期:%s" % (datetime.strftime(obj.created, "%Y/%m/%d"))
+        return html
+
+    def reply_text(self):
+        msg = self.orign_msg
+        text = msg.content
+        content = create_reply('', msg)
+        if text:
+            massages = []
+            from product.models import Block
+            blocks = Block.objects.filter(name__istartswith=text)
+            if blocks:
+                image = None
+                for block in blocks:
+                    for file in block.files.all():
+                        if file.type == 'image':
+                            image = file
+                            break
+                    # print(block)
+                    massage = {
+                        'title': '%s' % block,
+                        'description': self.get_description(block),
+                        'url': '%s' % self.request.build_absolute_uri(block.get_absolute_url()),
+                        'image': '%s' % (image.content.url if image else '')
+                    }
+                    massages.append(massage)
+            else:
+                massages = '没有查找到编号：%s' % text
+            content = create_reply(massages, msg)
+            # print(content)
+        return content
+
+
+class WxPaymentView(WechatBaseView):
+    app_name = 'payment'

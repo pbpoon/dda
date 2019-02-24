@@ -1,6 +1,5 @@
 {% extends 'list.html' %}
 {% block content %}
-
     <div class="collection">
         {% for object in object_list %}
             <a class="collection-item avatar grey-text" href="{{ object.get_absolute_url }}">
@@ -13,6 +12,8 @@
 
             </a>
         {% endfor %}
+            {% include 'paginatior.html' %}
+
     </div>
     {% block fixed-action-btn %}
         <div class="fixed-action-btn">

@@ -1,6 +1,6 @@
 {% extends 'detail.html' %}
 {% block headline %}{{ object }}{% endblock %}
-{% block main %}
+{% block content %}
     <div class="row">
         <div class="col s12 m6">
             <div class="card">
@@ -10,7 +10,7 @@
                 </div>
                 {% if object.product.type != 'semi_slab' %}
                     <div class="card-action">
-                        <a href="#" onclick="open_package_list_by_stock('{% url 'stock_slabs_detail' object.id %}')">打开码单</a>
+                        <a onclick="open_package_list_by_stock('{% url 'stock_slabs_detail' object.id %}')">打开码单</a>
                     </div>
                 {% endif %}
             </div>

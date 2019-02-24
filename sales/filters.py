@@ -10,6 +10,7 @@ from django.db.models import Q
 from dal import autocomplete
 from django.utils.html import format_html
 
+from public.filters import StateOrderFilter
 from .models import Customer
 
 
@@ -19,7 +20,8 @@ class CustomerAutocomplete(autocomplete.Select2QuerySetView):
     def create_object(self, text):
         phone = ''
         try:
-            phone = int(text)
+            text, phone = text.split('/')
+            # phone = int(text)
         except Exception as e:
             pass
         data = {self.create_field: text}
@@ -47,7 +49,7 @@ class CustomerAutocomplete(autocomplete.Select2QuerySetView):
         return qs
 
 
-class SalesOrderFilter(django_filters.FilterSet):
+class SalesOrderFilter(StateOrderFilter):
     partner = django_filters.CharFilter(label='客户资料', method='filter_by_partner', help_text='可输入姓名，电话，公司名称等信息来筛选')
 
     address = django_filters.CharFilter(label='发货地址', method='filter_by_address')
@@ -57,13 +59,10 @@ class SalesOrderFilter(django_filters.FilterSet):
         model = SalesOrder
         fields = ('state', 'partner', 'address')
 
-    # def filter_by_warehouse(self, queryset, name, value):
-    #     loc_ids = Warehouse.objects.get(pk=value).get_main_location().get_child_list()
-    #     return queryset.filter(**{'location_id__in': loc_ids})
-
-    # def filter_by_block(self, queryset, name, value):
-    #     expression = {'product__block__name__icontains': value}
-    #     return queryset.filter(**expression)
+    def __init__(self, data=None, *args, **kwargs):
+        if not data:
+            data = {'state': 'confirm'}
+        super().__init__(data=data, *args, **kwargs)
 
     def filter_by_partner(self, queryset, name, value):
         lst = []

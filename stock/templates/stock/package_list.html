@@ -16,7 +16,7 @@
                     <input type="checkbox" name="product" value="{{ package.product.id }}"
                            {% if object.reserve_piece != 0 %}disabled{% endif %}
                            {% if package.product.id|stringformat:"i" in cart.cart %}checked="checked"{% endif %}/>
-                    <span>选择{{ object.piece }}件 / {{ object.quantity }}{{ object.product.get_uom }}</span>
+                    <span>选择{{ object.piece }}件 / {{ object.quantity }}{{ object.product.get_uom }} ({{ object.product.get_block_size }})</span>
                 </label>
             </p>
         {% elif object.product.type == 'slab' %}
@@ -70,10 +70,9 @@
                                         </p>
                                     </td>
                                     <td>{{ item }}
-                                        <a href="#!"
-                                           onclick="edit_item({{ item.id }},'{% url 'package_list_draft_item_edit' item.id %}')">
-                                            修改
-                                        </a>
+{#                                        <a onclick="edit_item({{ item.id }},'{% url 'stock_slab_edit' item.id %}')">#}
+{#                                            修改#}
+{#                                        </a>#}
                                     </td>
                                     <td style="text-align: right">{{ item.get_quantity }}</td>
                                     <td>

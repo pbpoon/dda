@@ -2,6 +2,24 @@
 <ul id="slide-out" class="sidenav sidenav-fixed">
     <li class="logo"><img class="responsive-img" src="{% static '/image/logo.jpg' %}"
                           alt="{{ user.get_company.company.name }}" style="width: 100%; height:auto"></li>
+<li class="no-padding">
+
+        <ul class="collapsible">
+            <li class="bold{% if request.path|slice:'8' == '/account/' %} active {% endif %}">
+
+                <div class="collapsible-header">账号:{% if request.user.is_authenticated %}
+                    <a href="{% url 'dashboard' %}">{{ request.user }}</a>
+                {% else %}
+                    <a href="{% url 'login' %}">未登录</a>
+                {% endif %}
+            </div>
+            </li>
+        </ul>
+    </li>
+    {% if request.user.is_authenticated %}
+        <li class="no-padding"><a href="#"
+                                  onclick="show_car_detail('{% url 'cart_detail' %}')">选择了：{{ cart|length }}项</a></li>
+    {% endif %}
     <li class="no-padding">
 
         <ul class="collapsible collapsible-accordion">
@@ -11,6 +29,8 @@
                     <ul>
                         <li {% if request.path|slice:'7:' == 'available/' %} class="active" {% endif %} ><a
                                 href="{% url 'stock_list' %}">库存列表</a></li>
+
+                    <!--基础资料>仓库设置-->
                         <li{% if request.path|slice:'7:' == 'warehouse/' %} class="active" {% endif %}><a
                                 href="{% url 'warehouse_list' %}">仓库列表</a></li>
                     </ul>
@@ -26,6 +46,8 @@
                 <a class="collapsible-header waves-effect">产品</a>
                 <div class="collapsible-body">
                     <ul>
+                                        <!--基础资料>产品设置-->
+
                         <li {% if '/product/category/' in request.path %} class="active" {% endif %}><a
                                 href="{% url 'category_list' %}">品种分类</a></li>
                         <li {% if '/product/quarry/' in request.path %} class="active" {% endif %}><a
@@ -139,28 +161,9 @@
         </ul>
     </li>
     <!--采购app-->
-    <li class="no-padding">
 
-        <ul class="collapsible">
-            <li class="bold{% if request.path|slice:'8' == '/account/' %} active {% endif %}">
-
-                <div class="collapsible-header">账号</div>
-                <div class="collapsible-body">
-                    <ul>
-                        {% if request.user.is_authenticated %}
-                            <li><a href="{% url 'dashboard' %}">{{ request.user }}</a></li>
-                        {% else %}
-                            <li><a href="{% url 'login' %}">登录</a></li>
-                        {% endif %}
-                        {#                    <li><a href="{% url 'warehouse_list' %}">仓库列表</a></li>#}
-                    </ul>
-                </div>
-            </li>
-        </ul>
-    </li>
-    <li class="no-padding"><a href="#" onclick="show_car_detail('{% url 'cart_detail' %}')">选择了：{{ cart|length }}项</a></li>
     {#    <li><a href="{% url 'company' %}">公司资料</a></li>#}
-    <li class="no-padding"><a href="{% url 'files_list' %}">Files</a></li>
+    {#    <li class="no-padding"><a href="{% url 'files_list' %}">Files</a></li>#}
 </ul>
 <a href="#" data-target="slide-out" class="sidenav-trigger"><i class="material-icons">menu</i></a>
 {#<ul class="right hide-on-med-and-down">#}

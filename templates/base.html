@@ -22,6 +22,13 @@
 
         {#.select2-container {#}
         {#    z-index: 99999;#}
+        @media (max-width: 1900px) {
+            .tabs {
+                display: -webkit-flex;
+                display: -ms-flexbox;
+                display: flex;
+            }
+        }
 
         input[placeholder] {
             width: 100% !important;
@@ -58,6 +65,29 @@
 
         a:hover {
             cursor: pointer;
+        }
+
+        tbody tr td {
+            font-size: small;
+        }
+
+        .inline-ul {
+            display: block;
+            overflow: hidden;
+            white-space: nowrap
+        }
+
+        .inline-ul li {
+            list-style: none;
+            display: inline-block;
+        / / 使li对象显示为一行 margin-left: 30 px;
+        {#width: 130px;#}
+        }
+
+        .selected {
+            font-weight: bold;
+            margin-left: 15px;
+            margin-right: 15px;
         }
     </style>
 
@@ -105,14 +135,48 @@
 {% endblock %}
 </body>
 <script>
+
     $(document).ready(function () {
         $('#modal1').removeAttr('tabindex');
         $('#modal2').removeAttr('tabindex');
         $('#modal3').removeAttr('tabindex');
-        $('.sidenav').sidenav({draggable:true});
+        $('.sidenav').sidenav({draggable: true});
         $('.fixed-action-btn').floatingActionButton({hoverEnabled: false});
-        $('input[name=date]').datepicker({'format': 'yyyy-mm-dd'});
-        $('.datepicker').datepicker({'format': 'yyyy-mm-dd'});
+        $('input[name=date]').datepicker({
+            showMonthAfterYear: true,
+            selectYears: 10,
+            format: 'yyyy-mm-dd',
+            i18n: {
+                weekdaysLetter: ['日', '一', '二', '三', '四', '五', '六'],
+                today: '今天',
+                clear: '清除',
+                close: '关闭',
+                done: '确认',
+                cancel: '取消',
+                months: ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'],
+                monthsShort: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
+                weekdays: ['周日', '周一', '周二', '周三', '周四', '周五', '周六'],
+                weekdaysShort: ['周日', '周一', '周二', '周三', '周四', '周五', '周六'],
+            }
+        });
+        {#$('.datepicker').datepicker({'format': 'yyyy-mm-dd'});#}
+        $('.datepicker').datepicker({
+            showMonthAfterYear: true,
+            selectYears: 10,
+            format: 'yyyy-mm-dd',
+            i18n: {
+                weekdaysLetter: ['日', '一', '二', '三', '四', '五', '六'],
+                today: '今天',
+                clear: '清除',
+                close: '关闭',
+                done: '确认',
+                cancel: '取消',
+                months: ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'],
+                monthsShort: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
+                weekdays: ['周日', '周一', '周二', '周三', '周四', '周五', '周六'],
+                weekdaysShort: ['周日', '周一', '周二', '周三', '周四', '周五', '周六'],
+            }
+        });
         $('select').formSelect();
         $('.collapsible').collapsible({accordion: true});
         {% block domready %}{% endblock %}

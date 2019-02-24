@@ -11,6 +11,9 @@
         <!--导入外部的form动态渲染-->
     </ul>
     {{ form.media }}
+    <div class="progress" style="display: none">
+        <div class="indeterminate"><span>上传中</span></div>
+    </div>
 
     <script>
         $('.datepicker').datepicker({

@@ -1,14 +1,15 @@
 from django import forms
 from django.apps import apps
+from django.http import JsonResponse
 from django.views.generic import DetailView, ListView
-from django.views.generic.edit import ModelFormMixin, BaseCreateView, CreateView
+from django.views.generic.edit import ModelFormMixin, BaseCreateView, CreateView, BaseDeleteView
 
 from public.permissions_mixin_views import DynamicPermissionRequiredMixin
-from public.views import ContentTypeEditMixin, FilterListView
+from public.views import ContentTypeEditMixin, FilterListView, OrderItemDeleteMixin
 from .models import Files
 
 
-class FilesCreateView(DynamicPermissionRequiredMixin,ContentTypeEditMixin, CreateView):
+class FilesCreateView(DynamicPermissionRequiredMixin, ContentTypeEditMixin, CreateView):
     model = Files
     fields = '__all__'
 
@@ -19,8 +20,22 @@ class FilesCreateView(DynamicPermissionRequiredMixin,ContentTypeEditMixin, Creat
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
+        form.fields['content'].widget.attrs = {'multiple': True}
         form.fields['entry'].widget = forms.HiddenInput()
         return form
+
+    def form_valid(self, form):
+        files = self.request.FILES.getlist('content')
+        cd = form.cleaned_data
+        if len(files) > 1:
+            for f in files:
+                self.model.objects.create(content_type=cd['content_type'],
+                                          object_id=cd['object_id'],
+                                          content=f,
+                                          desc=cd.get('desc'),
+                                          entry=cd['entry'])
+            return JsonResponse({'state': 'ok'})
+        return super().form_valid(form)
 
 
 class FilesListView(FilterListView):
@@ -48,5 +63,9 @@ class FilesListView(FilterListView):
         return context
 
 
-class FilesDetailView(DynamicPermissionRequiredMixin,DetailView):
+class FilesDeleteView(OrderItemDeleteMixin):
+    model = Files
+
+
+class FilesDetailView(DynamicPermissionRequiredMixin, DetailView):
     model = Files

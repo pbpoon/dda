@@ -44,6 +44,7 @@ class TurnBackOrder(HasChangedMixin, models.Model):
 
     class Meta:
         verbose_name = '库存回退'
+        ordering = ('-date', '-created')
 
     def get_obj(self):
         return self.content_type.model_class().objects.get(pk=self.object_id)

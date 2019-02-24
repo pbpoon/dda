@@ -9,6 +9,7 @@ from django.views import View
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
 from django.views.generic.detail import BaseDetailView
 from django.views.generic.edit import ModelFormMixin
+from django.views.generic.list import MultipleObjectMixin
 from wkhtmltopdf.views import PDFTemplateView
 
 from cart.cart import Cart
@@ -22,15 +23,21 @@ from public.views import OrderItemEditMixin, FilterListView, ModalEditMixin, Mod
 from public.widgets import SwitchesWidget
 from stock.forms import SlabEditForm
 from .models import Warehouse, Location, Stock
-from .filters import StockFilter
+from .filters import StockFilter, WarehouseLocationFilter
 
 
 class WarehouseListView(FilterListView):
     model = Warehouse
 
 
-class WarehouseDetailView(DynamicPermissionRequiredMixin, DetailView):
+class WarehouseDetailView(DynamicPermissionRequiredMixin, DetailView, MultipleObjectMixin):
     model = Warehouse
+
+    def get_context_data(self, **kwargs):
+        items = self.object.locations.all()
+        filter = WarehouseLocationFilter(self.request.GET, queryset=items)
+        kwargs['filter'] = filter
+        return super().get_context_data(object_list=filter.qs.distinct(), **kwargs)
 
 
 class WarehouseEditMixin:
@@ -59,7 +66,7 @@ class LocationEditMixin(DynamicPermissionRequiredMixin, ModelFormMixin, View):
 
     def get_initial(self):
         initial = super().get_initial()
-        self.warehouse = Warehouse.objects.get(pk=self.kwargs.get('warehouse_id'))
+        self.warehouse = get_object_or_404(Warehouse, pk=self.kwargs.get('warehouse_id'))
         if self.warehouse:
             initial.update({'warehouse': self.warehouse.id})
         initial['usage'] = 'internal'
@@ -67,7 +74,8 @@ class LocationEditMixin(DynamicPermissionRequiredMixin, ModelFormMixin, View):
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        form.fields['parent'].queryset = self.warehouse.get_main_location().get_child()
+        if self.warehouse:
+            form.fields['parent'].queryset = self.warehouse.get_main_location().get_child()
         return form
 
     def post(self, *args, **kwargs):
@@ -89,15 +97,17 @@ class LocationCreateView(LocationEditMixin, CreateView):
     pass
 
 
-class LocationUpdateView(LocationEditMixin, UpdateView):
-    pass
+class LocationUpdateView(DynamicPermissionRequiredMixin, UpdateView):
+    model = Location
+    form_class = LocationForm
+    template_name = 'form.html'
 
 
 class LocationListView(ListView):
     model = Location
 
 
-class LocationDetail(DynamicPermissionRequiredMixin, DetailView):
+class LocationDetailView(DynamicPermissionRequiredMixin, DetailView):
     model = Location
 
 
@@ -212,3 +222,7 @@ class StockPackageListPdfView(BaseDetailView, PDFTemplateView):
         package = Package(self.object.product, self.object.items.all())
         kwargs['package'] = package
         return super().get_context_data(**kwargs)
+
+    def get_filename(self):
+        self.object = self.get_object()
+        return '%s.pdf'%(self.object.product)

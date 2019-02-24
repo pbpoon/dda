@@ -15,9 +15,9 @@
 
             {% if object.get_create_item_url %}
                 <li>
-                    <a href="#" onclick="add_item('{{ object.get_create_item_url }}')"
+                    <button  onclick="add_item('{{ object.get_create_item_url }}')"
                        class="btn-floating red waves-effect waves-light btn"><i
-                            class="material-icons">add</i></a>
+                            class="material-icons">add</i></button>
                 </li>
             {% endif %}
 

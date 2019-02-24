@@ -4,13 +4,11 @@
 {% endblock %}
 {% block subheadline %}
 {% endblock %}
-{% block main %}
-
+{% block content %}
     <div class="row">
         <h5>其下库位：</h5>
-
         <div class="col s12 m8">
-            {% for location in object.locations.all %}
+            {% for location in object_list %}
                 <div class="col s12 m6">
                     <div class="card-panel">
                         <a class="black-text" href="{{ location.get_absolute_url }}">
@@ -26,12 +24,11 @@
         </div>
     </div>
 
-        {% with object.get_main_location as main_location %}
-            <ul>
-                {{ main_location.tree_view|unordered_list }}
-            </ul>
-        {% endwith %}
-
+    {% with object.get_main_location as main_location %}
+        <ul>
+            {{ main_location.tree_view|unordered_list }}
+        </ul>
+    {% endwith %}
 {% endblock %}
 {% block action_btn %}
     <div class="fixed-action-btn click-to-toggle">
@@ -60,5 +57,17 @@
                 <button class="btn-floating blue"><i class="material-icons">attach_file</i></button>
             </li>
         </ul>
+    </div>
+{% endblock %}
+{% block sidebar %}
+    <div class="card-panel white">
+        <span>按条件筛选</span>
+        <div class="divider"></div>
+        <form action="" method="GET">
+            <ul>
+                {{ filter.form.as_ul }}
+            </ul>
+            <button class="btn waves-effect" type="submit">确定</button>
+        </form>
     </div>
 {% endblock %}

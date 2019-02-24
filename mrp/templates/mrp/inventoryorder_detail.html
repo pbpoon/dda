@@ -8,6 +8,8 @@
     {% if object.items.all or object.new_items.all %}
         {% include 'state.html' %}
     {% endif %}
+{#    <button class="btn grey" onclick="item_remove('{{ object.get_delete_url }}')">删除</button>#}
+
 {% endblock %}
 {% block content %}
     <i><b class="h4">原库存产品列表</b></i>
@@ -24,25 +26,43 @@
         </thead>
 
         <tbody>
-        {% for item in object.items.all %}
+        {% for item in object_list %}
             <tr>
                 <td>{{ item.line }}</td>
                 <td>
                     <p>
                         <label>
-                            <input type="checkbox" disabled
-                                   {% if item.is_done %}checked="checked"{% endif %}/>
+                            <input id="{{ item.id }}_check" type="checkbox" {% if object.state != 'draft' %}
+                                   disabled {% endif %}
+                                   {% if item.is_check %}checked="checked"{% endif %}
+                                   onclick="set_check('{{ item.id }}')"/>
                             <span>
 
                             </span>
                         </label>
-                    </p></td>
-                <td>{% if item.report == 'is_lose' %}
-                    <s>
-                        <a href="{{ item.product.block.get_absolute_url }}">{{ item.product }}</a>
-                    </s>{% else %}
+                        <script>
+                            function set_check(id) {
+                                var $this = $(this);
+                                $.ajax({
+                                    method: 'POST',
+                                    data: {'pk': id},
+                                    url: '{% url 'inventory_item_set_check' item.id %}',
+                                    success: function (data) {
+                                        console.log(data);
+                                        if (data['state'] === 'ok') {
+                                            $this.attr('checked', data['check'])
+                                        }
+                                    }
+                                })
+                            }
+                        </script>
+                    </p>
+                </td>
+                <td>
+                    {#                    <s>#}
+                    {#                        <a href="{{ item.product.block.get_absolute_url }}">{{ item.product }}</a>#}
+                    {#                    </s>#}
                     <a href="{{ item.product.block.get_absolute_url }}">{{ item.product }}</a>
-                {% endif %}
                     {% if item.state > 0 %}
                         <i class="material-icons">arrow_upward</i>
                     {% elif item.state < 0 %}
@@ -50,32 +70,31 @@
                     {% endif %}
                 </td>
                 <td>
-                    {% if item.report != 'not_equal' %}
-                        {% if item.old_package_list %}
-                            <a onclick="open_package_list('{{ item.old_package_list.get_absolute_url }}')">
-                            {{ item.old_package_list.get_part }}夹/{% endif %} {{ item.old_piece }}件/
-                    {{ item.old_quantity }}{{ item.product.get_uom }}</a>
-                    {% else %}
-                        {{ item.old_piece }}件/{{ item.old_quantity }}{{ item.product.get_uom }}
+                    {#                    {% if item.state != 0 %}#}
+                    {% if item.old_package_list_id %}
+                        {{ item.old_package_list.get_part }}夹/{% endif %}
+
+                    {{ item.old_piece }}件/{{ item.old_quantity }}{{ item.product.get_uom }}
+                    {#                    {% else %}#}
                     <br>
                     {#                    {% if item.report == 'not_equal' %}#}
                     <span class="blue-text">
-                                                    {% if item.now_package_list %}
+                                                    {% if item.now_package_list_id %}
 
                                                         <a
-                                                           onclick="open_package_list('{% url 'inventory_order_package_detail' item.now_package_list.id %}','{{ object.state }}')">
+                                                                onclick="open_package_list('{% url 'inventory_order_package_detail' item.now_package_list.id %}','{{ object.state }}')">
                                                         {{ item.now_package_list.get_part }}
-                                                        夹/ {{ item.now_package_list.get_piece }}件/
-                                                            {{ item.now_package_list.get_quantity }}{{ item.product.get_uom }}</a>
+                                                        夹/ {{ item.now_piece }}件/
+                                                            {{ item.now_quantity }}{{ item.product.get_uom }}</a>
                                                     {% else %}
                                                         {{ item.now_piece }}件/
                                                         {{ item.now_quantity }}{{ item.product.get_uom }}
                                                         </span>
                                                     {% endif %}
-                                        {% endif %}
+                    {#                    {% endif %}#}
                 </td>
-                <td>{{ item.old_location }}<br>
-                    <span class="blue-text">{{ item.now_location }}</span></td>
+                <td>{{ item.old_location }}
+                    {#                    <span class="blue-text">{{ item.now_location }}</span></td>#}
 
                 <td>{% if object.state == 'draft' %}
                     <!-- Dropdown Trigger -->
@@ -143,14 +162,14 @@
                     {% endif %}
                     </td>
                     <td><span class="blue-text">
-                        {% if item.package_list %}
+                        {% if item.package_list_id %}
                             <a
-                               onclick="open_package_list('{% url 'inventory_order_new_package_detail' item.package_list.id %}','{{ object.state }}')">
-                            {{ item.package_list.get_part }}夹/ {{ item.piece }}件/
-                                {{ item.quantity }}{{ item.product.get_uom }}</a>
+                                    onclick="open_package_list('{% url 'inventory_order_new_package_detail' item.package_list.id %}','{{ object.state }}')">
+                            {{ item.package_list.get_part }}夹/ {{ item.package_list.get_piece }}件/
+                                {{ item.package_list.get_quantity }}{{ item.product.get_uom }}</a>
                         {% else %}
-                            {{ item.piece }}件/
-                            {{ item.quantity }}{{ item.product.get_uom }}
+                            {{ item.now_piece }}件/
+                            {{ item.now_quantity }}{{ item.product.get_uom }}
                         {% endif %}
                     </span>
                     </td>
@@ -196,3 +215,15 @@
     {% endif %}
 {% endblock %}
 
+{% block sidebar %}
+    <div class="card-panel white">
+        <span>按条件筛选</span>
+        <div class="divider"></div>
+        <form action="" method="GET">
+            <ul>
+                {{ filter.form.as_ul }}
+            </ul>
+            <button class="btn waves-effect" type="submit">确定</button>
+        </form>
+    </div>
+{% endblock %}

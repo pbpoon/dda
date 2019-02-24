@@ -1,10 +1,15 @@
 {% extends 'list.html' %}
 {% block content %}
-    <form action="" method="post">
-        <ul>
-        {{ form.as_ul }}
-        <input class="btn" type="submit" value="确定">
-        {% csrf_token %}
-        </ul>
-    </form>
+    <div class="card-panel">
+        <form enctype="multipart/form-data" action="" method="post">
+            {{ form.as_p }}
+            <input class="btn" type="submit" value="确定">
+            {% csrf_token %}
+        </form>
+    </div>
 {% endblock %}
+{#<script>#}
+{#    {% block domready %}#}
+{#        {{ block.super }}#}
+{#    {% endblock %}#}
+{#</script>#}

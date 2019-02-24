@@ -37,7 +37,7 @@
                 <td>{{ item.item }}</td>
                 <td class="right-align">{{ item.quantity }}{{ item.uom }}</td>
                 <td class="right-align">{{ item.price }}</td>
-                <td class="right-align">{{ item.amount }}</td>
+                <td class="right-align">{{ item.amount|format_money }}</td>
                 <td>{% if object.state == 'draft' %}
                     <!-- Dropdown Trigger -->
 
@@ -65,7 +65,7 @@
         <tfoot>
         <tr>
             <th colspan="4" class="right-align">总金额：</th>
-            <th class="right-align">{{ object.amount }}</th>
+            <th class="right-align">{{ object.amount|format_money }}</th>
             <th></th>
         </tr>
         {% if object.assign_payments.all %}
@@ -102,7 +102,7 @@
         {% endif %}
         <tr>
             <th colspan="4" class="right-align">未付余额：</th>
-            <th class="right-align">{{ object.confirm_due_amount }}</th>
+            <th class="right-align">{{ object.confirm_due_amount|format_money }}</th>
 
             <th>
                 {% if object.state != 'cancel' %}

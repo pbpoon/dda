@@ -3,7 +3,7 @@ from django.apps import apps
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from django.db.models import Q
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy
@@ -12,14 +12,17 @@ from django.views.generic import ListView, DetailView
 from django.views.generic.detail import BaseDetailView
 from django.views.generic.edit import ModelFormMixin, CreateView, UpdateView, BaseDeleteView
 from django.contrib import messages
+from django.views.generic.list import MultipleObjectMixin
 from wkhtmltopdf.views import PDFTemplateView
 
 from invoice.models import CreateInvoice
-from mrp.filters import InOutOrderFilter, MoveLocationOrderFilter, ProductionOrderFilter, InventoryOrderFilter
+from mrp.filters import InOutOrderFilter, MoveLocationOrderFilter, ProductionOrderFilter, InventoryOrderFilter, \
+    ProductFilter
 from mrp.models import ProductionOrder, ProductionOrderRawItem, ProductionOrderProduceItem, ProductionType, InOutOrder, \
     InOutOrderItem, Expenses, ExpensesItem, InventoryOrder, InventoryOrderItem, InventoryOrderNewItem, MrpSupplier
 from mrp.models import TurnBackOrder, TurnBackOrderItem
 from partner.models import Partner
+
 from product.models import PackageList
 from public.permissions_mixin_views import ViewPermissionRequiredMixin, DynamicPermissionRequiredMixin
 from public.utils import Package, StockOperateItem
@@ -45,14 +48,11 @@ class MoveLocationOrderDetailView(StateChangeMixin, GetItemsMixin, DetailView):
     model = MoveLocationOrder
 
     def get_btn_visible(self, state):
-        btn_visible = {}
-        if state == 'draft':
-            btn_visible.update({'done': True, 'confirm': True, 'cancel': True})
-        elif state == 'confirm':
-            btn_visible.update({'done': True, 'draft': True})
-        elif state == 'done':
-            btn_visible.update({'turn_back': True})
-        return btn_visible
+        return {'draft': {'done': True, 'confirm': True, 'cancel': True},
+                'confirm': {'done': True, 'draft': True},
+                'done': {'turn_back': True},
+                'cancel': {'delete': True}
+                }[state]
 
     def done(self):
         return self.object.done()
@@ -62,6 +62,24 @@ class MoveLocationOrderDetailView(StateChangeMixin, GetItemsMixin, DetailView):
 
     def draft(self):
         return self.object.draft()
+
+    def cancel(self):
+        return self.object.cancel()
+
+
+class MoveLocationOrderDeleteView(BaseDeleteView):
+    model = MoveLocationOrder
+
+    def get_success_url(self):
+        return reverse_lazy('move_location_order_list')
+
+    def delete(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        if self.object.state in ('cancel', 'draft'):
+            messages.success(self.request, '已成功删除该订单')
+            return super().delete(self.request, *args, **kwargs)
+        messages.error(self.request, '不能删除该订单')
+        return HttpResponseRedirect(reverse_lazy(self.object.get_absolute_url()))
 
 
 class MoveLocationOrderEditMixin(OrderFormInitialEntryMixin):
@@ -132,6 +150,7 @@ class ProductionOrderDetailView(StateChangeMixin, DetailView):
 
     def get_btn_visible(self, state):
         return {'draft': {'done': True, 'cancel': True},
+                'cancel': {},
                 'done': {'turn_back': True}}[state]
 
     def done(self):
@@ -261,63 +280,6 @@ class InOutOrderEditView(OrderFormInitialEntryMixin):
             initial['partner'] = self.purchase_order.partner
             initial['type'] = 'in'
         return initial
-    #
-    # def get_purchase_order_items(self):
-    #     # 如果是新建状态
-    #     # 该采购单已收货的items取出
-    #     already_check_in_items = self.purchase_order.items.filter(
-    #         order__in_out_order__state__in=('confirm', 'done'))
-    #     purchase_order_items = self.purchase_order.items.all()
-    #     if already_check_in_items:
-    #         purchase_order_items.exclude(product_id__in=[item.product.id for item in already_check_in_items])
-    #     for item in purchase_order_items:
-    #         InOutOrderItem.objects.create(product=item.product, piece=item.piece,
-    #                                       quantity=item.quantity,
-    #                                       uom=item.uom, order=self.object, purchase_order_item=item)
-    #     return self.object.items.all()
-    #
-    # def get_sales_order_items(self):
-    #     # 选出产品类型为荒料的已出货项的
-    #     already_check_out_items = self.sales_order.items.filter(
-    #         order__in_out_order__state__in=('confirm', 'done'), product__type='block')
-    #     sales_order_items = self.sales_order.items.all()
-    #     if already_check_out_items:
-    #         sales_order_items.exclude(product_id__in=[item.product.id for item in already_check_out_items])
-    #     if sales_order_items:
-    #         # 生成新item的项目
-    #         for item in sales_order_items:
-    #             package = None
-    #             if item.product.type == 'slab':
-    #                 # slabs_id_lst = [item.get_slab_id() for item in
-    #                 #                 item.package_list.items.filter(slab__stock__isnull=False,
-    #                 #                                                slab__stock__location=self.object.warehouse.get_main_location())]
-    #                 # 如果有码单，就生成一张新码单，并把码单的from_package_list链接到旧的码单，
-    #                 # 为了在提货单draft状态下可以选择到旧码单的slab
-    #                 # ps：后来更改为建一张空码单， 提货时候再选择
-    #                 package = item.package_list.make_package_from_list(item.product_id,
-    #                                                                    from_package_list=item.package_list)
-    #             defaults = {'piece': item.piece if not package else package.get_piece(),
-    #                         'quantity': item.quantity if not package else package.get_quantity(),
-    #                         'package_list': package, 'product': item.product, 'order': self.object,
-    #                         'uom': item.uom, 'sales_order_item': item}
-    #             InOutOrderItem.objects.create(**defaults)
-    #     return self.object.items.all()
-    #
-    # def get_items(self):
-    #     # 如果是update状态，有object就返回items
-    #     if self.object:
-    #         items = self.object.items.all()
-    #         if items:
-    #             return items
-    #     if self.purchase_order:
-    #         return self.get_purchase_order_items()
-    #     return self.get_sales_order_items()
-
-    # def form_valid(self, form):
-    #     with transaction.atomic():
-    #         self.object = form.save()
-    #         self.get_items()
-    #         return super().form_valid(form)
 
 
 class PurchaseOrderInOrderCreateView(InOutOrderEditView, CreateView):
@@ -496,7 +458,7 @@ class InventoryOrderListView(FilterListView):
     filter_class = InventoryOrderFilter
 
 
-class InventoryOrderDetailView(StateChangeMixin, DetailView):
+class InventoryOrderDetailView(StateChangeMixin, DetailView, MultipleObjectMixin):
     model = InventoryOrder
 
     def get_btn_visible(self, state):
@@ -515,6 +477,12 @@ class InventoryOrderDetailView(StateChangeMixin, DetailView):
 
     def draft(self):
         return self.object.draft()
+
+    def get_context_data(self, **kwargs):
+        items = self.object.items.all()
+        filter = ProductFilter(self.request.GET, queryset=items)
+        kwargs['filter'] = filter
+        return super().get_context_data(object_list=filter.qs.distinct(), **kwargs)
 
 
 class InventoryOrderDeleteView(ViewPermissionRequiredMixin, BaseDeleteView):
@@ -545,14 +513,14 @@ class InventoryOrderEditMixin(OrderFormInitialEntryMixin):
 
         # print(Stock.objects.filter(**kwargs).distinct().explain())
         # 把需要盘点的所有先有库存创建items
-        i = 0
+        # i = 0
         for stock in stocks:
             old_item = {
                 'order': self.object,
                 'product': stock.product,
                 'uom': stock.uom,
                 'old_location': stock.location,
-                'now_location': stock.location,
+                # 'now_location': stock.location,
                 'old_piece': stock.piece,
                 'now_piece': stock.piece,
                 'old_quantity': stock.quantity,
@@ -562,16 +530,16 @@ class InventoryOrderEditMixin(OrderFormInitialEntryMixin):
             if stock.product.type == 'slab':
                 slab_ids = stock.items.values_list('id', flat=True)
                 package = PackageList.make_package_from_list(stock.product.id, slab_ids)
-                print('old_pg')
+                # print('old_pg')
                 old_item['old_package_list'] = package
-                old_item['now_package_list'] = package.copy(has_items=False)
-                print('now_pg')
+                old_item['now_package_list'] = package.copy(has_items=True)
+                # print('now_pg')
                 # old_item['package_list'] = package.copy(has_items=True)
                 old_item['package_list'] = package.copy(has_items=False)
-                print('pg')
+                # print('pg')
+                # print(i)
+                # i += 1
             InventoryOrderItem.objects.create(**old_item)
-            print(i)
-            i += 1
         # InventoryOrderItem.objects.bulk_create(items_lst)
         end = time.clock()
         print(end - start)
@@ -590,6 +558,21 @@ class InventoryOrderCreateView(InventoryOrderEditMixin, CreateView):
 class InventoryOrderUpdateView(InventoryOrderEditMixin, UpdateView):
     pass
 
+
+class InventoryOrderItemSetCheckView(View):
+    model = InventoryOrderItem
+
+    def post(self, *args, **kwargs):
+        pk = self.request.POST.get('pk')
+        if pk:
+            item = self.model.objects.get(pk=pk)
+            if item.is_check:
+                item.is_check = False
+            else:
+                item.is_check = True
+            item.save()
+            return JsonResponse({'state': 'ok', 'check': item.is_check})
+        return JsonResponse({'state': 'error'})
 
 
 class InventoryOrderItemEditView(OrderItemEditMixin):
@@ -614,7 +597,7 @@ class MrpSupplierListView(FilterListView):
     template_name = 'mrp/supplier_list.html'
 
 
-class MrpSupplierDetailView(DynamicPermissionRequiredMixin,DetailView):
+class MrpSupplierDetailView(DynamicPermissionRequiredMixin, DetailView):
     model = MrpSupplier
     template_name = 'mrp/supplier_detail.html'
 

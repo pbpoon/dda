@@ -9,6 +9,8 @@
             height: 3cm;
             margin-bottom: 1cm;
             width: 100%;
+            padding-bottom: 5px;
+            border-bottom: #5a5a5a dotted 1px;
         }
 
         .logo-font {
@@ -34,12 +36,16 @@
             bottom: 0;
             font-size: 36pt;
         }
-         li {
+
+        li {
             padding: 3px;
         }
+
         .info {
+            position: absolute;
+            top:0;
             font-weight: bold;
-            font-size: larger;
+            font-size: large;
         }
     </style>
     <link rel="stylesheet" href="{% static '/css/package_list_pdf.css' %}">
@@ -55,14 +61,14 @@
             </div>
         </div>
         <div class="col s5">
-            <div class="quote">
+            <div class="quote" style="height:2.5cm">
                 <div class="info">
-
-            <ul>
-                <li>产品名称:{{ object.product }}</li>
-                <li>总计:{{ object.get_part }}夹 / {{ object|call:'get_piece' }} 件 / {{ object.get_quantity }}m2</li>
-                <li>重量估算:{{ object|call:'get_weight' }}</li>
-            </ul>
+                    <ul style="position: relative; top:0;">
+                        <li>产品名称:{{ object.product }}</li>
+                        <li>总计:{{ object.get_part }}夹 / {{ object|call:'get_piece' }} 件 / {{ object.get_quantity }}m2
+                        </li>
+                        <li>重量估算:{{ object|call:'get_weight' }}</li>
+                    </ul>
                 </div>
             </div>
         </div>

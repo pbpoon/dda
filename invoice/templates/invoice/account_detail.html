@@ -7,7 +7,6 @@
 {% endblock %}
 {% block content %}
     <ul>
-
     <li>
     账户名称：{{ object.name }}
     </li>
@@ -21,4 +20,34 @@
     账号：{{ object.account_number }}
     </li>
     </ul>
+{% endblock %}
+
+{% block action_btn %}
+    <div class="fixed-action-btn click-to-toggle">
+        <a class="btn-floating btn-large red">
+            <i class="large material-icons">mode_edit</i>
+        </a>
+        <ul>
+
+            <li>
+                <a href="{{ object.get_update_url }}" class="btn-floating red waves-effect waves-light btn"><i
+                        class="material-icons">edit</i></a>
+            </li>
+            <li>
+                <a href="#" onclick="add_item('{{ object.get_create_item_url }}')"
+                   class="btn-floating red waves-effect waves-light btn"><i
+                        class="material-icons">add</i></a>
+            </li>
+
+            <li>
+                <button class="btn-floating yellow darken-1"><i class="material-icons">format_quote</i></button>
+            </li>
+            <li>
+                <button class="btn-floating green"><i class="material-icons">publish</i></button>
+            </li>
+            <li>
+                <button class="btn-floating blue"><i class="material-icons">attach_file</i></button>
+            </li>
+        </ul>
+    </div>
 {% endblock %}

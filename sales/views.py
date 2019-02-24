@@ -14,15 +14,14 @@ from django.views.generic.edit import BaseDeleteView
 from django.contrib import messages
 
 from cart.cart import Cart
-from public.permissions_mixin_views import ViewPermissionRequiredMixin
+from public.permissions_mixin_views import ViewPermissionRequiredMixin, PostPermissionRequiredMixin
 from public.views import OrderFormInitialEntryMixin, OrderItemEditMixin, OrderItemDeleteMixin, StateChangeMixin, \
-    ModalOptionsMixin, FilterListView
+    ModalOptionsMixin, FilterListView, SentWxMsgMixin
 from sales.forms import SalesOrderForm, SalesOrderItemForm, SalesOrderItemQuickForm, CustomerForm, \
     SalesOrderCreateByCustomerForm
 from sales.models import SalesOrder, SalesOrderItem, Customer
 from django.conf import settings
 from .filters import SalesOrderFilter, CustomerFilter
-from wechatpy.enterprise import WeChatClient
 from wkhtmltopdf.views import PDFTemplateView
 
 
@@ -32,7 +31,7 @@ class SalesOrderListView(FilterListView):
     paginate_by = 10
 
 
-class SentWxMsg:
+class SalesSentWxMsg(SentWxMsgMixin):
     app_name = None
     user_ids = '@all'
 
@@ -42,28 +41,21 @@ class SentWxMsg:
         return "%s" % (self.request.build_absolute_uri())
 
     def get_title(self):
-        title = "%s:%s=>%s" % (self.model._meta.verbose_name, self.object.order, self.object.get_state_display())
+        title = "%s:%s=>%s ¥%s" % (
+            self.model._meta.verbose_name, self.object.order, self.object.get_state_display(), self.object.amount)
         return title
 
     def get_description(self):
-        html = "日期:%s" % (datetime.strftime(self.object.date, "%Y/%m/%d"))
+        html = "订单日期:%s" % (datetime.strftime(self.object.date, "%Y/%m/%d"))
+        html += '<br>金额:¥ %s' % (self.object.amount)
         html += '<br>客户:%s' % (self.object.partner)
         html += '<br>销往:%s' % (self.object.get_address())
-        html += '<br>金额:¥ %s' % (self.object.amount)
-        html += '<br>操作:¥ %s' % (self.request.user)
-
+        now = datetime.now()
+        html += '<br>操作:%s \n@%s' % (self.request.user, datetime.strftime(now, '%Y/%m/%d %H:%M'))
         return html
 
-    def sent_msg(self):
-        from action.models import WxConf
-        wx_conf = WxConf(agent_id=self.app_name)
-        client = WeChatClient(wx_conf.corp_id, wx_conf.Secret)
-        client.message.send_text_card(agent_id=wx_conf.AgentId, user_ids=self.user_ids, title=self.get_title(),
-                                      description=self.get_description(),
-                                      url=self.get_url())
 
-
-class SalesOrderDetailView(StateChangeMixin, DetailView):
+class SalesOrderDetailView(StateChangeMixin, DetailView, SalesSentWxMsg):
     model = SalesOrder
     app_name = 'zdzq_main'
 
@@ -75,21 +67,27 @@ class SalesOrderDetailView(StateChangeMixin, DetailView):
 
     def confirm(self):
         is_done, msg = self.object.confirm()
-        # if is_done:
-        # self.sent_msg()
+        if is_done:
+            self.sent_msg()
         return is_done, msg
 
     def draft(self):
         is_done, msg = self.object.draft()
-        # if is_done:
-        #     self.sent_msg()
+        if is_done:
+            self.sent_msg()
         return is_done, msg
 
     def cancel(self):
         is_done, msg = self.object.cancel()
-        # if is_done:
-        #     self.sent_msg()
+        if is_done:
+            self.sent_msg()
         return is_done, msg
+
+    def done(self):
+        is_done, msg = self.object.done()
+        if is_done:
+            self.sent_msg()
+        return True, ''
 
 
 class SalesOrderInvoiceOptionsEditView(ModalOptionsMixin):
@@ -131,8 +129,9 @@ class SalesOrderInvoiceOptionsEditView(ModalOptionsMixin):
         return False, '错误'
 
 
-class SalesOrderDeleteView(ViewPermissionRequiredMixin, BaseDeleteView):
+class SalesOrderDeleteView(PostPermissionRequiredMixin, BaseDeleteView):
     model = SalesOrder
+    model_permission = ['delete']
 
     def get_success_url(self):
         return reverse_lazy('sales_order_list')
@@ -228,6 +227,10 @@ class OrderToPdfView(BaseDetailView, PDFTemplateView):
         'margin-bottom': '0',
         'margin-right': '0',
     }
+
+    def get_filename(self):
+        self.object = self.get_object()
+        return '%s.pdf' % (self.object.order)
 
     def get_context_data(self, **kwargs):
         kwargs['show_account'] = True

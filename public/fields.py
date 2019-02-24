@@ -11,7 +11,7 @@ class LineField(models.PositiveIntegerField):
         # 初始化参数比父类多一个for_fields字段
         self.for_fields = for_fields
         # 调用父类初始化方法进行其他参数的初始化
-        super(LineField, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     # 重写 pre_save()方法
     def pre_save(self, model_instance, add):
@@ -36,7 +36,7 @@ class LineField(models.PositiveIntegerField):
             return value
         else:
             # 如果有值，不做任何处理，直接调用父类的pre_save()方法
-            return super(LineField, self).pre_save(model_instance, add)
+            return super().pre_save(model_instance, add)
 
 
 class OrderField(models.CharField):

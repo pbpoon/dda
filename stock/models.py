@@ -34,12 +34,17 @@ class Warehouse(models.Model):
     created = models.DateTimeField('创建时间', auto_now_add=True)
     updated = models.DateTimeField('更新时间', auto_now=True)
     is_production = models.BooleanField('有生产活动', default=False)
+    _address = models.TextField('地址', blank=True, null=True)
 
     class Meta:
         verbose_name = '仓库信息'
 
     def __str__(self):
-        return '{}@{}'.format(self.partner, self.name)
+        return '{}@{}'.format(self.partner if self.partner else '', self.name)
+
+    @property
+    def address(self):
+        return self._address or self.__str__()
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
@@ -100,6 +105,9 @@ class Location(models.Model):
 
     def __str__(self):
         return self.get_full_name()
+
+    def get_absolute_url(self):
+        return reverse('location_detail', args=[self.id])
 
     def get_main_location(self):
         if self.is_main:
@@ -208,7 +216,7 @@ class Stock(models.Model):
     def get_piece(self, number=None):
         qs = self.items.all()
         if number:
-            qs.filter(part_number=number)
+            qs = qs.filter(part_number=number)
         return qs.count()
 
     def get_part_number(self):
@@ -255,7 +263,7 @@ class Stock(models.Model):
         available_stock = Stock._get_stock(product=product, location=location, slabs=slabs)
         if slabs:
             items = [item for available in available_stock for item in
-                     available.items.filter(is_reserve=False)]
+                     available.items.all()]
             reserve_items = [item for available in available_stock for item in
                              available.items.filter(is_reserve=True)]
             piece = len(items)

@@ -42,10 +42,9 @@ $("#item_form").on('submit', (function (ev) {
     ev.preventDefault();
     $.ajax({
         xhr: function () {
-            // var progress = $('.progress'),
-            var xhr = $.ajaxSettings.xhr();
+            var progress = $('.progress'), xhr = $.ajaxSettings.xhr();
 
-            // progress.show();
+            progress.show();
 
             xhr.upload.onprogress = function (ev) {
                 if (ev.lengthComputable) {
@@ -65,6 +64,13 @@ $("#item_form").on('submit', (function (ev) {
         contentType: false,
         cache: false,
         processData: false,
+        beforeSend: function (XMLHttpRequest) {
+            $('.progress').show;
+            $("#submit").attr({disabled: "disabled"})
+        },
+        complete: function () {
+            $("#submit").removeAttr("disabled");
+        },
         success: function (data, status, xhr) {
             if (data['state'] == 'ok') {
                 console.log('ok');

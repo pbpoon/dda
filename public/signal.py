@@ -114,10 +114,9 @@ def package_list_post_save_update_item_quantity(sender, **kwargs):
 
     inv_items = InventoryOrderItem.objects.filter(now_package_list=instance)
     if inv_items:
-        inv_items[0].not_equal_update_package_list()
-        # inv_items[0].now_piece = instance.get_piece()
-        # inv_items[0].now_quantity = instance.get_quantity()
-        # inv_items[0].save()
+        inv_items[0].now_piece = instance.get_piece()
+        inv_items[0].now_quantity = instance.get_quantity()
+        inv_items[0].save()
         return True
 
     inv_new_items = InventoryOrderNewItem.objects.filter(package_list=instance)

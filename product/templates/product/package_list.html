@@ -122,11 +122,13 @@
         var $btn = $(this);
         if ($btn.text() == '全选') {
             $btn.text('全不选');
-            $(':checkbox').attr("checked", true);
+            $(':checkbox[name=select_part]').attr("checked", true);
+            $(':checkbox[name=select]').attr("checked", true);
 
         } else {
             $btn.text('全选');
-            $(':checkbox').attr("checked", false);
+            $(':checkbox[name=select_part]').attr("checked", false);
+            $(':checkbox[name=select]').attr("checked", false);
         }
         sum()
     });

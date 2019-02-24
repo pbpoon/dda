@@ -1,11 +1,15 @@
 {% extends 'list.html' %}
 {% block content %}
+    <!--这个form的submit在owner.js的代码控制--->
     <div class="card-panel">
         <form enctype="multipart/form-data" action="" method="post">
             {{ form.as_p }}
             <input class="btn" type="submit" value="确定">
             {% csrf_token %}
         </form>
+        <div class="progress" style="display: none">
+            <div class="indeterminate"></div>
+        </div>
     </div>
 {% endblock %}
 {#<script>#}

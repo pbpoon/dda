@@ -60,66 +60,18 @@
 {% endblock %}
 {% block footer %}
     {{ form.media }}
-    {#    <style>#}
-    {#        .select2-search__field {#}
-    {#            width: 100% !important;#}
-    {#            z-index: 215000000 !important;#}
-    {#        }#}
-    {#    </style>#}
     {{ block.super }}
 
-    {#    <script>#}
-    {##}
-    {#        var ajax_url = '{% url 'get_address' %}';#}
-    {#        var DATA;#}
-    {##}
-    {#        function get_address() {#}
-    {#            console.log($('.prov').val())#}
-    {#            $.ajax({#}
-    {#                url: ajax_url,#}
-    {#                method: 'GET',#}
-    {#                data: {#}
-    {#                    'prov': $('.prov').val(),#}
-    {#                },#}
-    {#                success: function (data) {#}
-    {#                    DATA = data;#}
-    {#                    return change_city()#}
-    {##}
-    {#                }#}
-    {#            })#}
-    {#        }#}
-    {##}
-    {#        function change_city() {#}
-    {#            var val = $('.prov').val();#}
-    {#$('.city').children().not(':eq(0)').remove();#}
-    {#            $('.city').html("")#}
-    {#            for (var c  in DATA) {#}
-    {#                $('.city').append("<option value=" + DATA[c]['id'] + ">" + DATA[c]['name'] + "</option>");#}
-    {#            }#}
-    {#            $(".city").formSelect();#}
-    {#        }#}
-    {##}
-    {#        $('.prov').on('change', function () {#}
-    {#            get_address('city');#}
-    {#        });#}
-    {#        $('.checkbox').on('change', function () {#}
-    {#            if ($(this).checked) {#}
-    {#                $('.prov').attr('disable', 'disable');#}
-    {#                $('.city').prop('disable', true);#}
-    {#            }#}
-    {#        })#}
-
-    {#</script>#}
 
 {% endblock %}
 <script>
 
-    {% block domready %}
-        {{ block.super }}
+{#    {% block domready %}#}
+{#        {{ block.super }}#}
         {#$('.select2-selection--single').append("<div style='z-index:999;' class='right' id='add'>添加</div>");#}
         {#$('#add').on('click', function (e) {#}
         {#    md_package_list.modal('open')#}
         {#md_package_list.modal('open');#}
 
-    {% endblock %}
+{#    {% endblock %}#}
 </script>

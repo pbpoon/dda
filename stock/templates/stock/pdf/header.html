@@ -6,8 +6,8 @@
     <meta charset="UTF-8">
     <style>
         header {
-            height: 3cm;
-            margin-bottom: 1cm;
+            height: 2.5cm;
+            margin-bottom: 0.8cm;
             width: 100%;
         }
 
@@ -34,10 +34,8 @@
             bottom: 0;
             font-size: 36pt;
         }
-         li {
-            padding: 3px;
-        }
         .info {
+            padding: 3px;
             font-weight: bold;
             font-size: larger;
         }
@@ -57,9 +55,8 @@
         <div class="col s5">
             <div class="quote">
                 <div class="info">
-
             <ul>
-                <li>产品名称:{{ object.product }}</li>
+                <li>产品名称:{{ object.product.block.category.name }}/{{ object.product }}</li>
                 <li>总计:{{ object.get_part }}夹 / {{ object|call:'get_piece' }} 件 / {{ object.get_quantity }}m2</li>
                 <li>重量估算:{{ object|call:'get_weight' }}</li>
             </ul>
@@ -67,12 +64,11 @@
             </div>
         </div>
         <div class="col s4 text-right right">
-            <div class="title right">浅啡网
+            <div class="title right"><span>{{ object.product.block.category.name }}</span>
                 <div class="black-text float-right">{{ object.product.block.name }}#</div>
             </div>
         </div>
     </div>
-
 </header>
 </body>
 </html>

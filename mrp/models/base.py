@@ -27,7 +27,7 @@ class MrpOrderAbstract(OrderAbstract):
 
     class Meta:
         abstract = True
-        ordering = ('-date', '-created')
+        ordering = ('-created', '-date')
 
     def get_location(self):
         raise ValueError('没有设置get_location')
@@ -124,7 +124,10 @@ class Expenses(models.Model):
 
     @property
     def amount(self):
-        return Decimal('{0:.2f}'.format(self.quantity * self.expense.price))
+        try:
+            return Decimal('{0:.2f}'.format(self.quantity * self.expense.price))
+        except Exception as e:
+            return 0
 
     def __str__(self):
         return '{}: {}*{}/{}'.format(self.expense.name, self.quantity, self.expense.price, self.uom)
@@ -133,7 +136,7 @@ class Expenses(models.Model):
         obj = self.content_type.model_class().objects.get(pk=self.object_id)
         quantity = 0
         if self.expense_by_uom == 'part':
-            quantity = None if not obj.package_list else obj.package_list.get_part()
+            quantity = 0 if not obj.package_list else obj.package_list.get_part()
         elif self.expense_by_uom == 'quantity':
             quantity = obj.quantity
         elif self.expense_by_uom == 'one':

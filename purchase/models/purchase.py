@@ -29,6 +29,7 @@ class PurchaseOrder(OrderAbstract):
     batch = models.CharField('批次', max_length=10, blank=True, null=True, help_text='如果不填，则采取"-"号前或编号前2位作为批次号')
     category = models.ForeignKey('product.Category', on_delete=models.CASCADE, verbose_name='品种分类')
     quarry = models.ForeignKey('product.Quarry', on_delete=models.CASCADE, verbose_name='矿口')
+
     invoices = GenericRelation('invoice.PurchaseInvoice')
 
     class Meta:
@@ -65,7 +66,6 @@ class PurchaseOrder(OrderAbstract):
             a['uom'] = item.uom
             # total.setdefault(item.product.get_type_display(), {}).update(d)
         return total
-
 
     @property
     def amount(self):
@@ -106,10 +106,16 @@ class PurchaseOrder(OrderAbstract):
     def _get_invoice_usage(self):
         return '采购货款'
 
-    def get_invoices(self):
-        invoices = set(self.invoices.all())
-        invoices |= {invoice.order for item in self.items.all() for invoice in item.invoice_items.all().distinct()}
-        return invoices
+    # @property
+    # def invoices(self):
+    #     from invoice.models import PurchaseInvoice
+    #     # invoices = set(self.invoices.all())
+    #     invoices = PurchaseInvoice.objects.none()
+    #     for item in self.items.all():
+    #         for item in item.invoice_items.all():
+    #             invoices |= item.order
+    #     # invoices |= {invoice.order for item in self.items.all() for invoice in item.invoice_items.all().distinct()}
+    #     return invoices
 
     @property
     def can_make_invoice_amount(self):
@@ -143,7 +149,7 @@ class PurchaseOrderItem(models.Model):
 
     class Meta:
         verbose_name = '采购订单行'
-        ordering = ['order']
+        ordering = ['line']
         unique_together = (('order', 'name'), ('order', 'name', 'product'))
 
     def get_quantity(self):

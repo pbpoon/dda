@@ -90,6 +90,9 @@
             padding-bottom: 8px;
             padding-left: 5px;
         }
+        td {
+            font-size: small;
+        }
 
         .text-right {
             text-align: right;
@@ -121,11 +124,11 @@
 <body>
 <div class="container">
     <header>
-        <div class="quote">
+{#        <div class="quote">#}
             <div class="left">
                 <div>
                     客户名称：{{ object.partner }}<br/>
-                    {{ object.phone }}<br>
+                    {{ object.partner.phone }}<br>
                     <div class="divider"></div>
                     发往:{{ object.get_address }}<br/>
                 </div>
@@ -139,12 +142,12 @@
                 </div>
             </div>
             <div class="clear"></div>
-        </div>
+{#        </div>#}
     </header>
 
     <main>
 
-        <div class="quote">
+{#        <div class="quote">#}
 
             <table>
                 <thead>
@@ -192,11 +195,11 @@
                 </tr>
                 </tfoot>
             </table>
-        </div>
+{#        </div>#}
     </main>
 
     <footer>
-        <div class="quote" style="min-height: 50px">
+{#        <div class="quote" style="min-height: 50px">#}
             <div class="left" style="width: 65%">
                 {% if show_account %}
                     <span style="display: block">
@@ -207,7 +210,7 @@
             <div class="right text-right" style="width: 25%">
                 制单人:<br>{{ object.entry }}@{{ object.updated|date:"Y/m/d" }}
             </div>
-        </div>
+{#        </div>#}
     </footer>
 </div>
 </body>
