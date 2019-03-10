@@ -89,18 +89,20 @@ class MoveLocationOrder(MrpOrderAbstract):
         if self.state == 'confirm':
             stock = self.get_stock()
             is_done, msg = stock.reserve_stock(unlock=True)
-            if is_done:
-                self.state = 'cancel'
-                self.save()
-                self.create_comment(**kwargs)
-        # elif self.state == 'done':
-        #     self.state = 'cancel'
-        #     self.save()
-        #     self.create_comment(**kwargs)
-        elif self.state == 'draft':
+            if not is_done:
+                return is_done, msg
             self.state = 'cancel'
             self.save()
             self.create_comment(**kwargs)
+        else:
+            # 来自turn back order
+            self.state = 'cancel'
+            self.save()
+            self.create_comment(**kwargs)
+            comment = '更改 %s <a href="%s">%s</a>状态:%s, 取消本账单' % (
+                self._meta.verbose_name, self.get_absolute_url(), self, self.state)
+            for invoice in self.invoices.all():
+                invoice.cancel(**{'comment': comment})
         for invoice in self.invoices.all():
             comment = '更新 %s <a href="%s">%s</a>状态:%s, 修改本账单' % (
                 self._meta.verbose_name, self.get_absolute_url(), self, self.state)
@@ -110,7 +112,7 @@ class MoveLocationOrder(MrpOrderAbstract):
 
     def make_expenses_invoice(self):
         from partner.models import Partner
-        from invoice.models import Account, CreateInvoice
+        from invoice.models import CreateInvoice
         if self.get_expenses_amount() > 0:
             items_dict = {}
             for item in self.items.all():

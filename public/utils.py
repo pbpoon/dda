@@ -52,6 +52,13 @@ class Package:
             quantity = sum(item.get_quantity() for item in self.items)
         return quantity
 
+class PackageItem:
+    def __init__(self, slab):
+        self.part_number = slab.part_number
+        self.line = slab.line
+        # self. = slab.line
+
+
 
 def obj_to_dict(obj, fields_lst=[]):
     return {q.name: getattr(obj, q.name) for q in obj._meta.fields if q.name in fields_lst}

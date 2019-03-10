@@ -32,6 +32,7 @@ urlpatterns = [
     path('warehouse/create/', views.WarehouseCreateView.as_view(), name='warehouse_create'),
     path('warehouse/<pk>/', views.WarehouseDetailView.as_view(), name='warehouse_detail'),
     path('warehouse/', views.WarehouseListView.as_view(), name='warehouse_list'),
+    path('slabs/<pk>/slab-pdf-package/', views.StockPackageListSlabPdfView.as_view(), name='stock_slabs_slab_pdf'),
     path('slabs/<pk>/pdf-package/', views.StockPackageListPdfView.as_view(), name='stock_slabs_pdf'),
     path('slabs/<pk>/full/', views.StockSlabsFullPageView.as_view(), name='stock_slabs_detail_full'),
     path('slabs/<pk>/', views.StockSlabsView.as_view(), name='stock_slabs_detail'),

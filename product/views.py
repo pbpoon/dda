@@ -1,11 +1,17 @@
+import itertools
+from collections import namedtuple
+
+import xlrd
 from django.apps import apps
+from django.contrib import messages
 from django.core.paginator import Paginator
+from django.db import transaction
 from django.db.models import Count, Sum
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, HttpResponse, redirect
 from django.template.loader import render_to_string
 from django.views import View
-from django.views.generic import ListView, DetailView, CreateView, UpdateView
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, TemplateView
 from django.views.generic.detail import BaseDetailView
 from django.views.generic.list import MultipleObjectMixin
 from wkhtmltopdf.views import PDFTemplateView
@@ -13,8 +19,8 @@ from wkhtmltopdf.views import PDFTemplateView
 from cart.cart import Cart
 from product.filters import BlockFilter, ProductFilter
 from product.forms import DraftPackageListItemForm, PackageListItemForm, PackageListItemEditForm, \
-    PackageListItemMoveForm
-from public.views import OrderItemEditMixin, OrderItemDeleteMixin, ModalOptionsMixin, FilterListView
+    PackageListItemMoveForm, PackageListImportForm
+from public.views import OrderItemEditMixin, OrderItemDeleteMixin, ModalOptionsMixin, FilterListView, ModalEditMixin
 from stock.models import Location, Stock, Warehouse
 from public.utils import qs_to_dict, Package
 
@@ -489,6 +495,79 @@ class PackageListFullPageView(DetailView):
         return super().get_context_data(**kwargs)
 
 
+class PackageListImportView(TemplateView):
+    model = PackageList
+    form_class = PackageListImportForm
+    template_name = 'item_form.html'
+
+    def get_context_data(self, **kwargs):
+        if self.request.method == 'GET':
+            kwargs['form'] = self.form_class()
+        return super().get_context_data(**kwargs)
+
+    def import_data(self, file):
+        wb = xlrd.open_workbook(file_contents=file.read())
+        table = wb.sheets()[0]
+        part_1_2 = (12, 33)
+        part_3_4 = (39, 60)
+        part_5_6 = (66, 87)
+        part_7_8 = (93, 114)
+        left = (0, 7)
+        right = (9, 16)
+        next = (None, None)
+        order_list = [part_1_2, part_3_4, part_5_6, part_7_8]
+        result_lst = []
+        part_number = 0
+        names = ['line', 'long', 'height', 'kl1', 'kh1', 'kl2', 'kh2', 'part_number']
+        for part in order_list:
+            lr_count = 0
+            for lr in [left, right]:
+                part_number += 1
+                # if lr[0] is None:
+                #     continue
+                lr_count += 1
+                start, stop = part
+                start_col, stop_col = lr
+                for row in range(start, stop):
+                    if not table.cell(row, start_col + 1).value:
+                        break
+                    line = table.row_values(row, start_col, stop_col)
+                    line.append(part_number)
+                    slab = {n: l if l else None for n, l in zip(names, line)}
+                    result_lst.append(slab)
+                if lr_count % 2 == 0:
+                    continue
+        slab_id_list = []
+        try:
+            for data in result_lst:
+                slab = Slab(**data)
+                slab.save()
+                slab_id_list.append(slab.id)
+            self.object.update(self.object, slab_id_list)
+            return True, '成功'
+        except Exception as e:
+            return False, '导入码单数据不正确'
+
+    @transaction.atomic()
+    def post(self, *args, **kwargs):
+        form = self.form_class(self.request.POST, self.request.FILES)
+        self.object = PackageList.objects.get(pk=kwargs['pk'])
+        sid = transaction.savepoint()
+        msg = ''
+        if form.is_valid():
+            # 创建数据库事务保存点
+            file = self.request.FILES.get('excel_file')
+            is_done, msg = self.import_data(file)
+            msg += '导入码单'
+            if is_done:
+                messages.success(self.request, msg)
+                return JsonResponse({'state': 'ok', 'msg': msg})
+            # 回滚数据库到保存点
+            transaction.savepoint_rollback(sid)
+            messages.error(self.request, msg)
+        return self.render_to_response({'form': form, 'msg': msg})
+
+
 # 码单item添加
 class PackageListItemCreateView(OrderItemEditMixin):
     model = PackageListItem
@@ -602,7 +681,9 @@ class PackageListPdfView(BaseDetailView, PDFTemplateView):
     header_template = 'product/pdf/header.html'
     template_name = 'product/pdf/package_list_pdf.html'
     footer_template = 'product/pdf/footer.html'
-    # show_content_in_browser = True
+
+    show_content_in_browser = True
+
     # cmd_options = {
     #     'margin-top': '0',
     #     'margin-left': '0',
@@ -612,4 +693,36 @@ class PackageListPdfView(BaseDetailView, PDFTemplateView):
 
     def get_filename(self):
         self.object = self.get_object()
-        return '%s.pdf'%(self.object)
+        return '%s(%s)-%spcs-%spart-%s%s.pdf' % (
+            self.object.product.name, self.object.product.thickness, self.object.get_piece(), self.object.get_part(),
+            self.object.get_quantity(), self.object.product.get_uom())
+
+
+# 打印标签pdf
+class PackageListSlabPdfView(BaseDetailView, PDFTemplateView):
+    model = PackageList
+    # template_name = 'product/package_list_pdf.html'
+    # header_template = 'product/pdf/header.html'
+    template_name = 'product/pdf/package_list_slab_pdf.html'
+    # footer_template = 'product/pdf/footer.html'
+
+    show_content_in_browser = True
+    cmd_options = {
+        'page-height': '15.2cm',
+        'page-width': '10.2cm',
+        'margin-top': '0',
+        'margin-left': '0',
+        'margin-bottom': '0',
+        'margin-right': '0',
+    }
+
+    def get_context_data(self, **kwargs):
+        from public.gen_barcode import GenBarcode
+        self.object = self.get_object()
+        kwargs['barcode'] = GenBarcode(self.object.product.name, barcode_type='code39').value
+        print(kwargs['barcode'])
+        return super().get_context_data(**kwargs)
+
+    def get_filename(self):
+        self.object = self.get_object()
+        return '%s#_tag.pdf' % self.object.product.name

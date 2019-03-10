@@ -27,49 +27,62 @@
         </form>
     {% endif %}
     <!--事务-->
-{#    {% if object.get_stock_trace_all %}#}
-{#        <p class="h3">事务记录</p>#}
-{#        <hr>#}
-{#        <table>#}
-{#            {% for track in object.get_stock_trace_all %}#}
-{#                {% if forloop.first %}#}
-{#                    <thead>#}
-{#                    <tr>#}
-{#                        {% for key in track.keys %}#}
-{#                            <th>{{ key }}</th>#}
-{#                        {% endfor %}#}
-{#                    </tr>#}
-{#                    </thead>#}
-{#                {% endif %}#}
-{#                <tbody>#}
-{#                <tr>#}
-{#                    {% for key,value in track.items %}#}
-{#                        {% if forloop.first %}#}
-{#                            <td><a href="{{ value.1.get_absolute_url }}">{{ value.0 }}</a></td>#}
-{#                        {% else %}#}
-{#                            <td>{{ value }}</td>#}
-{#                        {% endif %}#}
-{#                    {% endfor %}#}
-{#                </tr>#}
-{#                </tbody>#}
-{#            {% endfor %}#}
-{#        </table>#}
-{#    {% endif %}#}
+    {#    {% if object.get_stock_trace_all %}#}
+    {#        <p class="h3">事务记录</p>#}
+    {#        <hr>#}
+    {#        <table>#}
+    {#            {% for track in object.get_stock_trace_all %}#}
+    {#                {% if forloop.first %}#}
+    {#                    <thead>#}
+    {#                    <tr>#}
+    {#                        {% for key in track.keys %}#}
+    {#                            <th>{{ key }}</th>#}
+    {#                        {% endfor %}#}
+    {#                    </tr>#}
+    {#                    </thead>#}
+    {#                {% endif %}#}
+    {#                <tbody>#}
+    {#                <tr>#}
+    {#                    {% for key,value in track.items %}#}
+    {#                        {% if forloop.first %}#}
+    {#                            <td><a href="{{ value.1.get_absolute_url }}">{{ value.0 }}</a></td>#}
+    {#                        {% else %}#}
+    {#                            <td>{{ value }}</td>#}
+    {#                        {% endif %}#}
+    {#                    {% endfor %}#}
+    {#                </tr>#}
+    {#                </tbody>#}
+    {#            {% endfor %}#}
+    {#        </table>#}
+    {#    {% endif %}#}
 {% endblock %}
 {% block headline %}
     {{ object.name }}
 {% endblock %}
 {% block subheadline %}
-    <ul style="display: inline">
-        <li>品种：{{ object.category|default_if_none:"" }}</li>
-        <li>矿口：{{ object.quarry|default_if_none:"" }}</li>
-        <li>批次：{{ object.get_batch }}</li>
-        <li>重量：{{ object.weight }}</li>
-        <li>立方：{{ object.m3 }}</li>
-        <li>计量单位:{{ object.uom }}</li>
-        <li>规格：{{ object.long|default_if_none:"" }} / {{ object.width|default_if_none:"" }}
-            / {{ object.height|default_if_none:"" }}</li>
-    </ul>
+    <div class="row">
+        <div class="col s8">
+
+            <ul style="display: inline">
+                <li>品种：{{ object.category|default_if_none:"" }}</li>
+                <li>矿口：{{ object.quarry|default_if_none:"" }}</li>
+                <li>批次：{{ object.get_batch }}</li>
+                <li>重量：{{ object.weight }}</li>
+                <li>立方：{{ object.m3 }}</li>
+                <li>计量单位:{{ object.uom }}</li>
+                <li>规格：{{ object.long|default_if_none:"" }} / {{ object.width|default_if_none:"" }}
+                    / {{ object.height|default_if_none:"" }}</li>
+            </ul>
+        </div>
+        <div class="col s4">
+            <div style="text-align: right">
+                {% if object.slab_yield %}
+                    <span class="chip orange black-text">出材率:{{ object.slab_yield }}/{{ object.uom }}</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
 {% endblock %}
 {% block operate %}
     {% if object.products.all %}

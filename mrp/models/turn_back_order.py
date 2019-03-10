@@ -64,14 +64,13 @@ class TurnBackOrder(HasChangedMixin, models.Model):
     def done(self):
         is_done, msg = self.get_stock().handle_stock()
         if is_done:
+            comment = '通过 %s <a herf="%s">%s</a>状态:%s, 取消本订单,原因是：%s,库存已逆向操作成功' % (
+                self._meta.verbose_name, self.get_absolute_url(), self, self.state, self.reason)
             form_order = self.get_obj()
-            is_cancel, cancel_msg = form_order.cancel()
+            is_cancel, cancel_msg = form_order.cancel(**{'comment': comment})
             self.state = 'done'
             self.save()
             self.create_comment()
-            comment = '通过 %s <a herf="%s">%s</a>状态:%s, 取消本订单,原因是：%s,库存已逆向操作成功' % (
-                self._meta.verbose_name, self.get_absolute_url(), self, self.state, self.reason)
-            form_order.create_comment(**{'comment': comment})
             if not is_cancel:
                 return is_cancel, cancel_msg
         return is_done, msg

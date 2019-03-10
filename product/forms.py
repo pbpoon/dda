@@ -140,3 +140,13 @@ class PackageListItemEditForm(forms.ModelForm):
 class PackageListItemMoveForm(forms.Form):
     options = forms.ChoiceField(label='选项')
     select_slab_ids = forms.CharField(required=False, widget=forms.HiddenInput)
+
+
+class PackageListImportForm(forms.Form):
+    package_list = forms.HiddenInput()
+    excel_file = forms.FileField(label='导入的表格文件', required=True)
+
+    def clean_excel_file(self):
+        file = self.cleaned_data['excel_file']
+        print(file)
+        return file

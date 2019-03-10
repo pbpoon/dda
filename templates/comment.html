@@ -1,19 +1,23 @@
 {% if object %}
     {% for comment in object.comments.all %}
         <div class="row">
-            <div class="col s2 left">
+            <div class="col s3 m1 left">
                 {#                <a href="#user"><img cl3ass="circle" src="#"></a>#}
                 {#                <img alt="{{  comment.user|slice:'1' }}" class="circle responsive-img">#}
-{#                <img class="material-icons circle">{{ comment.user|slice:'1' }}</img>#}
-                <img src="{{ comment.user.avatar.url }}" alt="{{ comment.user }}" class="circle responsive-img">
+                {#                <img class="material-icons circle">{{ comment.user|slice:'1' }}</img>#}
+                {% if  comment.user.avatar.url %}
+                    <img src="{{ comment.user.avatar.url }}" alt="{{ comment.user }}" class="circle responsive-img">
+                {% else %}
+                    <i>{{ comment.user }}</i>
+                {% endif %}
 
                 {#                <a href="#name"><span class="name">{{ comment.user }}</span></a>#}
             </div>
-            <div class="col s10 right">
+            <div class="col s9 m11 right">
                 {#                <div class="card-panel">#}
                 <span class="grey-text">
-                <span class="right">{{ comment.created }}</span><br>
-                <hr>
+                <span class="right">{{ comment.created|timesince }}前</span><br>
+                <div class="divider"></div>
             {{ comment.content|safe }}
                 </span>
                 {#                </div>#}

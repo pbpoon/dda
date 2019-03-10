@@ -4,6 +4,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css?family=Noto+Sans+SC&amp;subset=chinese-simplified" rel="stylesheet">
     <style>
         header {
             height: 2.5cm;
@@ -34,10 +35,15 @@
             bottom: 0;
             font-size: 36pt;
         }
+
         .info {
             padding: 3px;
             font-weight: bold;
             font-size: larger;
+        }
+
+        .title.right {
+            font-family: 'Noto Sans SC', sans-serif;
         }
     </style>
     <link rel="stylesheet" href="{% static '/css/package_list_pdf.css' %}">
@@ -55,11 +61,12 @@
         <div class="col s5">
             <div class="quote">
                 <div class="info">
-            <ul>
-                <li>产品名称:{{ object.product.block.category.name }}/{{ object.product }}</li>
-                <li>总计:{{ object.get_part }}夹 / {{ object|call:'get_piece' }} 件 / {{ object.get_quantity }}m2</li>
-                <li>重量估算:{{ object|call:'get_weight' }}</li>
-            </ul>
+                    <ul>
+                        <li>产品名称:{{ object.product.block.category.name }}/{{ object.product }}</li>
+                        <li>总计:{{ object.get_part }}夹 / {{ object|call:'get_piece' }} 件 / {{ object.get_quantity }}m2
+                        </li>
+                        <li>重量估算:{{ object|call:'get_weight' }}</li>
+                    </ul>
                 </div>
             </div>
         </div>

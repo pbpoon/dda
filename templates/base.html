@@ -38,24 +38,35 @@
             padding-left: 300px;
         }
 
+        .modal.bottom-sheet {
+            max-width: 800px;
+            position: fixed;
+            left: auto;
+            right: auto;
+            top: auto;
+            bottom: -100%;
+            max-height: 90%;
+            border-radius: 0;
+            will-change: bottom, opacity;
+        }
+
         @media only screen and (max-width: 992px) {
             header, main, footer {
                 padding-left: 0;
             }
 
-            .modal {
-                width: 92%;
-            }
         }
 
-        .modal.bottom-sheet {
-            top: auto;
-            bottom: -100%;
-            margin: 0;
-            width: 100%;
-            max-height: 90%;
-            border-radius: 0;
-            will-change: bottom, opacity;
+        @media (max-width: 992px) {
+            .modal {
+                width: 100%;
+            }
+
+            .modal.bottom-sheet {
+                max-width: 100%;
+                width: 100%;
+                left: 0;
+            }
         }
 
         .modal.modal-fixed-footer {
@@ -140,8 +151,15 @@
         $('#modal1').removeAttr('tabindex');
         $('#modal2').removeAttr('tabindex');
         $('#modal3').removeAttr('tabindex');
+        $('#modal_package_list').removeAttr('tabindex');
+        $('#modal_cart').removeAttr('tabindex');
         $('.sidenav').sidenav({draggable: true});
         $('.fixed-action-btn').floatingActionButton({hoverEnabled: false});
+        $('#item_float_btn').floatingActionButton({
+            direction: 'left',
+            hoverEnabled: false
+        });
+
         $('input[name=date]').datepicker({
             showMonthAfterYear: true,
             selectYears: 10,

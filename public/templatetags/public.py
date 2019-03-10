@@ -3,6 +3,8 @@
 # Created by pbpoon on 2018/11/5
 from django import template
 from django.contrib.humanize.templatetags.humanize import intcomma
+from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 
 register = template.Library()
 
@@ -13,7 +15,8 @@ def format_money(dollars, format=None):
         format = '¥'
     if dollars:
         dollars = round(float(dollars), 2)
-        return "%s%s%s" % (format, intcomma(int(dollars)), ("%0.2f" % dollars)[-3:])
+        html = "<span>%s&nbsp%s%s</span>" % (format, intcomma(int(dollars)), ("%0.2f" % dollars)[-3:])
+        return mark_safe(html)
     else:
         return ''
 
@@ -130,4 +133,3 @@ def check_permission(user, permission):
     if permission in user.get_all_permissions():
         return True
     return False
-

@@ -1,18 +1,22 @@
 {% extends 'list.html' %}
 {% block content %}
-    {% regroup object_list by get_type_display as payment_list %}
-    {% for type in payment_list %}
-        <h4>{{ type.grouper }}</h4>
-        <div class="collection">
-            {% for object in type.list %}
-                <a href="{{ object.get_absolute_url }}" class="collection-item">
+    {#    {% regroup object_list by get_type_display as payment_list %}#}
+    {#    {% for type in payment_list %}#}
+    {#        <h4>{{ type.grouper }}</h4>#}
+    <div class="collection">
+        {% for object in object_list %}
+            <a href="{{ object.get_absolute_url }}" class="collection-item">
                 <span class="new badge {% if object.confirm %}red{% else %}default{% endif %}"
                       data-badge-caption="{{ object.get_state_display }}"></span>{{ object }}<span>@
-                    {{ object.created|date:"SHORT_DATE_FORMAT" }}</span>
-                </a>
-            {% endfor %}
-        </div>
-    {% endfor %}
+                {{ object.created|date:"SHORT_DATE_FORMAT" }}-({{ object.created|timesince }}前)</span>
+            </a>
+        {% endfor %}
+    </div>
+    {% include 'paginatior.html' %}
+    {% if not object_list %}
+        <p>还未有内容</p>
+    {% endif %}
+    {#    {% endfor %}#}
     {% block action_btn %}
         <div class="fixed-action-btn">
             <a href="{% block add_url %}{% endblock %}" class="btn-floating btn-large red">
@@ -20,4 +24,16 @@
             </a>
         </div>
     {% endblock %}
+{% endblock %}
+{% block sidebar %}
+    <div class="card-panel white">
+        <span>按条件筛选</span>
+        <div class="divider"></div>
+        <form action="" method="GET">
+            <ul>
+                {{ filter.form.as_ul }}
+            </ul>
+            <button class="btn waves-effect" type="submit">确定</button>
+        </form>
+    </div>
 {% endblock %}

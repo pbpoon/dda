@@ -1,13 +1,21 @@
 {% extends "detail.html" %}
 {% load public %}
-{% block headline %}{{ object.usage }}<br>
+{% block headline %}
+    <div class="row">
+    <div class="left">
+
+    <span class="chip">{{ object.usage }}</span><br>
 [{{ object.get_state_display }}]{{ object.get_type_display }}{{ object.order }}
+    </div>
+    <div class="right orange-text">
+        <h5 style="font-weight: bold">{{ object.amount|format_money }}</h5>
+    </div>
+    </div>
 {% endblock %}
 {% block subheadline %}
     对应订单：<a href="{{ object.get_obj.get_absolute_url }}">{{ object.get_obj|verbose_name }} {{ object.get_obj }}</a><br>
     对方名称：<a href="{{ object.partner.get_absolute_url }}">{{ object.partner }}</a> / 总金额：{{ object.amount }}<br>
     账单日期：{{ object.date }} / 到期日期： {{ object.due_date }}
-
 {% endblock %}
 {% block state-right %}
 {% if object.state != 'cancel' %}

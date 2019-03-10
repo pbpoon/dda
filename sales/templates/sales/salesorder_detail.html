@@ -34,12 +34,12 @@
                         <td>
                             {% if item.package_list %}
                                 <a
-                                   onclick="open_package_list('{% url 'sales_order_package_list' item.package_list.id item.location.id %}','{{ object.state }}')">
+                                        onclick="open_package_list('{% url 'sales_order_package_list' item.package_list.id item.location.id %}','{{ object.state }}')">
                                     {{ item.package_list.get_part }}夹/ {{ item.piece }}件/
                                     {{ item.quantity }}{{ item.product.get_uom }}</a>
                             {% elif item.product.type == 'slab' %}
                                 <a
-                                   onclick="open_package_list('{% url 'order_item_package_create' item|label_name item.id item.product.id item.location.id %}')">挑选货品</a>
+                                        onclick="open_package_list('{% url 'order_item_package_create' item|label_name item.id item.product.id item.location.id %}')">挑选货品</a>
                             {% else %}
                                 {{ item.piece }}件/
                                 {{ item.quantity }}{{ item.product.get_uom }}
@@ -79,7 +79,7 @@
                                 {% endif %}
                             </ul>
                         {% endif %}</td>
-                    <td></td>
+                        <td></td>
                     </tr>
                 {% endfor %}
                 </tbody>
@@ -97,16 +97,16 @@
                     <th></th>
                 </tr>
                 {% if object.confirm_amount %}
-                <tr>
-                    <th class="right-align" colspan="4">确认收到货款</th>
-                    <th class="right-align">{{ object.confirm_amount|format_money }}</th>
-                </tr>
+                    <tr>
+                        <th class="right-align" colspan="4">确认收到货款</th>
+                        <th class="right-align">{{ object.confirm_amount|format_money }}</th>
+                    </tr>
                 {% endif %}
                 {% if  object.due_amount %}
-                <tr class=" red-text">
-                    <th class="right-align" colspan="4">未收余款</th>
-                    <th class="right-align">{{ object.due_amount|format_money }}</th>
-                </tr>
+                    <tr class=" red-text">
+                        <th class="right-align" colspan="4">未收余款</th>
+                        <th class="right-align">{{ object.due_amount|format_money }}</th>
+                    </tr>
                 {% endif %}
                 </tfoot>
             </table>
@@ -137,7 +137,7 @@
                             </td>
                             <td>{{ invoice.usage }}({{ invoice.get_type_display }})</td>
                             <td>{{ invoice.amount }}</td>
-                            <td>{{ invoice.due_amount }}</td>
+                            <td class="{% if invoice.due_amount > 0 %}red-text{% endif %}">{{ invoice.due_amount }}</td>
                             <td>{{ invoice.date|date:"Y/m/d" }}</td>
                         {% endif %}
                     {% endfor %}
@@ -183,7 +183,15 @@
 {% endblock %}
 
 {% block headline %}
-    {{ object.get_state_display }}{{ object.order }}
+    <div class="row">
+        <div class="left">
+    <span class="chip {% if object.state == 'cancel' %}grey{% elif object.state == 'confirm' %}blue{% elif object.state == 'done' %} yellow{% endif %}">
+        {{ object.get_state_display }}
+        {{ object.order }}</span>
+        </div>
+        <div class="right orange-text" style="font-weight: bold">{{ object.amount|format_money }}
+        </div>
+    </div>
     {% if object.in_out_order.all %}
         <div class="progress">
             <div class="determinate" style="width: {{ object.get_out_order_percentage|format_percentage }}"></div>
@@ -202,14 +210,15 @@
             <a class="btn waves-effect orange" href="{% url 'sales_order_out_order' object.id %}">提货</a>
         {% endif %}
     {% endif %}
+    <span class="chip right">{{ object.progress }}</span>
 {% endblock %}
 {% block operate %}
     {% if object.state not in  'cancel,done' %}
-    <a class="btn waves-effect green" href="#"
-       onclick="confirm_option('{% url 'sales_order_invoice_options' object.id %}')">自动创建账单</a>
-    <a class="btn default" href="{% url 'sales_invoice_create' object|label_name object.id %}">手动创建账单</a>
+        <a class="btn waves-effect green" href="#"
+           onclick="confirm_option('{% url 'sales_order_invoice_options' object.id %}')">自动创建账单</a>
+        <a class="btn default" href="{% url 'sales_invoice_create' object|label_name object.id %}">手动创建账单</a>
     {% endif %}
-    <a class="btn waves-effect default" href="{% url 'sales_order_pdf' object.id %}"><i class="material-icons">picture_as_pdf</i>打印</a>
+    <a class="btn waves-effect default" href="{% url 'sales_order_pdf' object.id %}" target="_blank"><i class="material-icons">picture_as_pdf</i>打印</a>
 {% endblock %}
 {% block sidebar %}
     {#    {% if object.in_out_order.all %}#}

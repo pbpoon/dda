@@ -18,7 +18,7 @@ class CommentEditMixin(ContentTypeEditMixin):
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
         form.fields['user'].widget = forms.HiddenInput()
-        form.fields['content'].widget.attrs = {'rows': '10'}
+        form.fields['content'].widget.attrs = {'class': 'materialize-textarea','rows': '10'}
         return form
 
 

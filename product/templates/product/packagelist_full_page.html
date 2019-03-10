@@ -4,7 +4,11 @@
     <a href="{{ object.product.get_absolute_url }}">{{ object.product }}</a>
 {% endblock %}
 {% block operate %}
-    <a class="btn waves-effect" href="{% url 'package_pdf' object.id %}">打印PDF</a>
+    <a class="btn waves-effect" href="{% url 'package_pdf' object.id %}" target="_blank">打印</a>
+    <a class="btn waves-effect" href="{% url 'package_slab_pdf' object.id %}" target="_blank">打印便签</a>
+    {% if add_new == 'True' %}
+        <a class="btn waves-effect yellow black-text" onclick='add_item("{% url 'package_import_data' object.id %}")' target="_blank">导入excel文件</a>
+    {% endif %}
 {% endblock %}
 {% block subheadline %}
     <span>
@@ -106,11 +110,11 @@
                                     {% if item.get_slab_id not in now_slabs_ids %}
                                         <s>{% endif %}
                                     {{ item }}
-                                {% if state == 'draft' %}
-                                    <a  onclick="edit_item('{% url 'package_list_item_edit' item.id %}')">
-                                        修改
-                                    </a>
-                                {% endif %}
+                                    {% if state == 'draft' %}
+                                        <a onclick="edit_item('{% url 'package_list_item_edit' item.id %}')">
+                                            修改
+                                        </a>
+                                    {% endif %}
                                     {% if item.get_slab_id not in now_slabs_ids %}
                                         </s>
                                     {% endif %}
@@ -172,15 +176,17 @@
                 {% if user|check_permission:'comment.add_comment' %}
                     <li>
                         <button class="btn-floating yellow darken-1"
-                                onclick="add_item('{% url 'comment_create'  object.product|label_name object.product.id %}')"><i
-                                class="material-icons">format_quote</i></button>
+                                onclick="add_item('{% url 'comment_create'  object.product|label_name object.product.id %}')">
+                            <i
+                                    class="material-icons">format_quote</i></button>
                     </li>
                 {% endif %}
                 {% if user|check_permission:'files.add_files' %}
                     <li>
                         <button class="btn-floating blue"
-                                onclick="add_item('{% url 'files_create'  object.product|label_name object.product.id %}')"><i
-                                class="material-icons">attach_file</i></button>
+                                onclick="add_item('{% url 'files_create'  object.product|label_name object.product.id %}')">
+                            <i
+                                    class="material-icons">attach_file</i></button>
                     </li>
                 {% endif %}
             {% endif %}

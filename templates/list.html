@@ -2,25 +2,27 @@
 {% load static %}
 <!--标题块相关-->
 {% block header %}
-    <div  class="section s12 m12 l12">
-        <h5 style="margin-left: 20px">{% block headline %}{% endblock %}</h5>
+    <div class="section s12 m12 l12">
+        <h5 style="padding-left: 20px">{% block headline %}{% endblock %}</h5>
         <div class="divider"></div>
 
-        <p>{% block subheadline %}
-            {% if filter.form %}
-    <div class="card-panel">
-    <h6>
-        <form action="" method="GET">
-            {% for f in filter.form %}
-                {% if f.name == 'state' %}
-                    {{ f }}
+        <p>
+            {% block subheadline %}
+                {% if filter.form %}
+                    <div class="card-panel">
+                        <h6>
+                            <form action="" method="GET">
+                                {% for f in filter.form %}
+                                    {% if f.name == 'state' %}
+                                        {{ f }}
+                                    {% endif %}
+                                {% endfor %}
+                            </form>
+                        </h6>
+                    </div>
                 {% endif %}
-            {% endfor %}
-        </form>
-    </h6>
-    </div>
-    {% endif %}
-        {% endblock %}</p>
+            {% endblock %}
+        </p>
     </div>
 {% endblock %}
 
@@ -30,7 +32,7 @@
         <div class="col s12 m8 l8">
             {% block content %}
             {% endblock %}
-{#            {% include 'comment.html' %}#}
+            {#            {% include 'comment.html' %}#}
         </div>
         <div class="col s12 m4 l4">
             {% block sidebar %}

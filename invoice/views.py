@@ -11,7 +11,7 @@ from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
 from django.contrib import messages
 
-from invoice.filters import InvoiceFilter
+from invoice.filters import InvoiceFilter, PaymentFilter
 from invoice.form import AssignInvoiceForm, InvoiceForm, PaymentForm
 from partner.models import Partner
 from public.permissions_mixin_views import DynamicPermissionRequiredMixin
@@ -174,7 +174,28 @@ class AccountUpdateView(DynamicPermissionRequiredMixin, UpdateView):
         return form
 
 
-class PaymentDetailView(StateChangeMixin, DetailView):
+class PaymentSentWxMixin(SentWxMsgMixin):
+    app_name = 'payment'  # 发微信
+
+    def get_url(self):
+        return "%s" % (self.request.build_absolute_uri(self.object.get_absolute_url()))
+
+    def get_title(self):
+        return '[%s %s] ¥ %.2f [%s %s]' % (
+            self.object.account, self.object.get_type_display(), self.object.amount, self.request.user,
+            '确认收款' if self.object.confirm else '设成草稿')
+
+    def get_description(self):
+        html = '\n[%s]金额:¥%.2f\n' % (self.object.get_type_display(), self.object.amount)
+        html += '\n账户:%s' % self.object.account
+        html += '\n对方:%s' % self.object.partner
+        html += '\n日期:%s' % self.object.date
+        now = datetime.now()
+        html += '\n登记人:%s @%s' % (self.object.entry, datetime.strftime(now, '%Y/%m/%d %H:%M'))
+        return html
+
+
+class PaymentDetailView(StateChangeMixin, PaymentSentWxMixin, DetailView):
     model = Payment
 
     def get_btn_visible(self, state):
@@ -184,19 +205,24 @@ class PaymentDetailView(StateChangeMixin, DetailView):
 
     def confirm(self):
         self.object.done()
+        self.sent_msg()
         return True, ''
 
     def draft(self):
+        self.sent_msg()
         return self.object.draft()
 
 
-class PaymentListView(DynamicPermissionRequiredMixin, ListView):
+class PaymentListView(FilterListView):
     model = Payment
+    ordering = ('type', 'confirm', '-date')
+    filter_class = PaymentFilter
+    # def get_queryset(self):
+    #     qs = super().get_queryset()
+    #     qs = qs.annotate('type')
 
 
-class PaymentEditView(SentWxMsgMixin, DynamicPermissionRequiredMixin, ModelFormMixin, View):
-    app_name = 'payment'  # 发微信
-
+class PaymentEditView(PaymentSentWxMixin, DynamicPermissionRequiredMixin, ModelFormMixin, View):
     model_permission = ('add',)
 
     model = Payment
@@ -204,20 +230,8 @@ class PaymentEditView(SentWxMsgMixin, DynamicPermissionRequiredMixin, ModelFormM
     form_class = PaymentForm
     template_name = 'item_form.html'
 
-    def get_url(self):
-        return "%s" % (self.request.build_absolute_uri(self.object.get_absolute_url()))
-
     def get_title(self):
         return '[%s %s] ¥ %.2f' % (self.object.account, self.object.get_type_display(), self.object.amount)
-
-    def get_description(self):
-        html = '\n金额:¥ %s  [%.2f]\n' % (self.object.amount, self.object.get_type_display())
-        html += '\n账户:%s' % self.object.account
-        html += '\n对方:%s' % self.object.partner
-        html += '\n日期:%s' % self.object.date
-        now = datetime.now()
-        html += '\n登记人:%s @%s' % (self.object.entry, datetime.strftime(now, '%Y/%m/%d %H:%M'))
-        return html
 
     def get_invoice(self):
         if self.kwargs.get('invoice_id'):
@@ -288,8 +302,12 @@ class PaymentEditView(SentWxMsgMixin, DynamicPermissionRequiredMixin, ModelFormM
         return HttpResponse(render_to_string(self.template_name, {'form': form, 'error': msg}))
 
 
-class PaymentDeleteView(OrderItemDeleteMixin):
+class PaymentDeleteView(OrderItemDeleteMixin, PaymentSentWxMixin):
     model = Payment
+
+    def get_title(self):
+        return '[%s %s] ¥ %.2f [%s 删除]' % (
+            self.object.account, self.object.get_type_display(), self.object.amount, self.request.user)
 
     def get_success_url(self):
         invoice = None
@@ -300,6 +318,9 @@ class PaymentDeleteView(OrderItemDeleteMixin):
             return invoice.get_absolute_url()
         return self.object.partner.get_absolute_url()
         # return self.request.META.get('HTTP_REFERER')
+
+    def delete_after(self):
+        return self.sent_msg()
 
 
 class AssignDeleteView(View):

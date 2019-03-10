@@ -18,12 +18,14 @@ from django.urls import include
 from . import views
 
 urlpatterns = [
+    path('package_list/<pk>/import_data/', views.PackageListImportView.as_view(), name='package_import_data'),
+    path('package_list/<pk>/pdf/slab/', views.PackageListSlabPdfView.as_view(), name='package_slab_pdf'),
+    path('package_list/<pk>/pdf/', views.PackageListPdfView.as_view(), name='package_pdf'),
     path('block_list', views.get_block_list, name='get_block_list'),
     path('block-autocomplete/', views.BlockAutocompleteView.as_view(), name='block_autocomplete'),
     path('sales_order_product_list/', views.ProductAutocomplete.as_view(), name='get_product_list'),
     # path('sales_order_product_list/', views.SalesOrderProductAutocomplete.as_view(), name='get_sales_order_product_list'),
     path('product_info/', views.get_product_info, name='get_product_info'),
-    path('package_list/<pk>/pdf/', views.PackageListPdfView.as_view(), name='package_pdf'),
 
 ]
 urlpatterns += [

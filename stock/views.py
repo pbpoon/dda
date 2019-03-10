@@ -210,7 +210,7 @@ class StockPackageListPdfView(BaseDetailView, PDFTemplateView):
     header_template = 'stock/pdf/header.html'
     footer_template = 'stock/pdf/footer.html'
 
-    # show_content_in_browser = True
+    show_content_in_browser = True
 
     # cmd_options = {
     #     'margin-top': '0',
@@ -225,4 +225,34 @@ class StockPackageListPdfView(BaseDetailView, PDFTemplateView):
 
     def get_filename(self):
         self.object = self.get_object()
-        return '%s.pdf'%(self.object.product)
+        return '%s.pdf' % (self.object.product)
+
+
+# 打印标签pdf
+class StockPackageListSlabPdfView(BaseDetailView, PDFTemplateView):
+    model = Stock
+    context_object_name = 'object'
+    template_name = 'stock/pdf/package_list_slab_pdf.html'
+
+    show_content_in_browser = True
+    cmd_options = {
+        'page-height': '15.2cm',
+        'page-width': '10.2cm',
+        'margin-top': '0',
+        'margin-left': '0',
+        'margin-bottom': '0',
+        'margin-right': '0',
+    }
+
+    def get_context_data(self, **kwargs):
+        from public.gen_barcode import GenBarcode
+        kwargs['barcode'] = GenBarcode('%s' % self.object.product.name, barcode_type='code39').value
+        product = self.object.product
+        slabs = self.object.items.all()
+        package = Package(product, slabs)
+        kwargs['package'] = package
+        return super().get_context_data(**kwargs)
+
+    def get_filename(self):
+        self.object = self.get_object()
+        return '%s#_tag.pdf' % self.object.product.name

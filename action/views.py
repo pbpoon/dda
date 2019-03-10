@@ -73,15 +73,84 @@ class WechatBaseView(View):
             # reply = self.reply_text.do_reply(msg)
             reply = self.reply_text()
         elif msg.type == 'event':
-            # reply = self.reply_event.do_reply(msg)
-            pass
+            reply = self.reply_event()
+            # pass
         else:
             pass
-        if not reply or not isinstance(reply, BaseReply):
-            reply = create_reply('暂不支持您所发送的消息类型哟~ 回复“帮助”查看使用说明。', msg)
+        # if not reply or not isinstance(reply, BaseReply):
+        #     reply = create_reply('暂不支持您所发送的消息类型哟~ 回复“帮助”查看使用说明。', msg)
 
-        response = self.crypto.encrypt_message(reply.render(), self.wx_data['nonce'], self.wx_data['timestamp'])
+        response = self.crypto.encrypt_message(reply, self.wx_data['nonce'], self.wx_data['timestamp'])
         return HttpResponse(response)
+
+    # def get_url(self,so):
+    #     return "%s" % (self.request.build_absolute_uri(so.get_absolute_url()))
+
+    # def get_title(self):
+    #     title = "%s/金额：¥%s    [%s]" % (
+    #         self.model._meta.verbose_name, self.object.amount, self.object.get_state_display())
+    #     return title
+
+    def get_items(self, so):
+        print('get_items')
+        html = '\n---------------------------------'
+        for item in so.items.all():
+            if html:
+                html += '\n'
+            html += '(%s) %s /%s夹/%s件/%s%s *¥%s' % (
+                item.line, item.product, str(item.package_list.get_part()) if item.package_list else '',
+                item.piece, item.quantity, item.uom, item.price)
+        html += '\n---------------------------------\n'
+        html += '合计：'
+        print('item html', html)
+        for key, item in so.get_total().items():
+            html += '%s:%s %s件/%s%s\n' % (
+                key, item['part'] if item.get('part') else '', item['piece'],
+                item['quantity'], item['uom'])
+        html += '\n金额：¥ %s' % so.amount
+        return html
+
+    def get_description(self, so):
+        print('desc')
+        html = '单号:%s\n' % so.order
+        html += '\n客户:%s' % so.partner
+        html += '\n销往:%s' % so.get_address()
+        html += "\n订单日期:%s" % (datetime.strftime(so.date, "%Y/%m/%d"))
+        html += "\n销售:%s" % so.handler
+        now = datetime.now()
+        print('ready get_items')
+        html += '%s' % self.get_items(so)
+        html += '\n操作:%s \n@%s' % (self.request.user, datetime.strftime(now, '%Y/%m/%d %H:%M'))
+        return html
+
+    def reply_event(self):
+        msg = self.orign_msg
+        print('msg:%s' % msg)
+        # print('msg_key:%s' % msg.key)
+        print('msg_scan_result:%s' % msg.scan_result)
+        if msg.key == 'so_code':
+            # TODO: 增加搜索编号的方法
+            so_num = msg.scan_result
+            print(so_num[:9])
+            from sales.models import SalesOrder
+            try:
+                so = SalesOrder.objects.get(order=so_num[:9])
+                print(so)
+                massage = ({
+                               'title': '%s' % so,
+                               'description': self.get_description(so),
+                               'url': '%s' % self.request.build_absolute_uri(so.get_absolute_url()),
+                               # 'image': '%s' % (image.content.url if image else '')
+                           },)
+                print(massage)
+                # massages.append(massage)
+            except Exception as e:
+                massage = '没有查找到单号：%s' % so_num[:9]
+            content = create_reply(massage, msg)
+            # print(content)
+        else:
+            content = create_reply('该条形码没有信息', msg)
+        return content.render()
 
 
 class WechatAuthView(View):
@@ -172,7 +241,7 @@ class WxBlockSearchView(WechatBaseView):
                 massages = '没有查找到编号：%s' % text
             content = create_reply(massages, msg)
             # print(content)
-        return content
+        return content.render()
 
 
 class WxPaymentView(WechatBaseView):

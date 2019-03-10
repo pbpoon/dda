@@ -9,10 +9,13 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Document</title>
     {#    <link rel="stylesheet" href="{% static '/css/package_list_pdf.css' %}">#}
-
+   <link href="https://fonts.googleapis.com/css?family=Noto+Sans+SC&amp;subset=chinese-simplified" rel="stylesheet">
     <style>
         body, html {
-            font-family: Arial;
+            font-family: 'Noto Sans SC', sans-serif;
+            {#font-family: 'Noto Sans SC', 'Arial Black','Xingkai SC',sans-serif,'Roboto';#}
+            {#font-family: 'Noto Sans TC', sans-serif;#}
+            {#font-family: 'Roboto', sans-serif;#}
         }
 
         .paper {
@@ -135,7 +138,6 @@
                         </tr>
                     {% endfor %}
                     </tbody>
-
                 </table>
             </div>
 

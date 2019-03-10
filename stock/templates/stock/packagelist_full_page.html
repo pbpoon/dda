@@ -4,7 +4,8 @@
     <a href="{{ object.product.get_absolute_url }}">{{ object.product }}</a>
 {% endblock %}
 {% block operate %}
-    <a class="btn waves-effect" href="{% url 'stock_slabs_pdf' object.id %}">打印PDF</a>
+    <a class="btn waves-effect" href="{% url 'stock_slabs_pdf' object.id %}" target="_blank">打印</a>
+    <a class="btn waves-effect orange" href="{% url 'stock_slabs_slab_pdf' object.id %}" target="_blank">打印标签</a>
 {% endblock %}
 {% block subheadline %}
     <span>

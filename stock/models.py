@@ -1,3 +1,5 @@
+from collections import Counter
+
 from django.db import models
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
@@ -199,6 +201,9 @@ class Stock(models.Model):
                                  related_name='stock', db_index=True)
     created = models.DateTimeField('创建时间', auto_now_add=True)
     updated = models.DateTimeField('更新时间', auto_now=True)
+    main_long = models.SmallIntegerField('长', blank=True, null=True)
+    main_height = models.SmallIntegerField('高', blank=True, null=True)
+    main_width = models.SmallIntegerField('宽', blank=True, null=True)
 
     class Meta:
         verbose_name = '库存'
@@ -227,6 +232,9 @@ class Stock(models.Model):
         if number:
             qs = qs.filter(part_number=number)
         return '约 {:.2f}t'.format(sum(item.get_weight() for item in qs))
+
+    # def get_main_size(self):
+    #
 
     def __str__(self):
         return "{}@{}:{}件/{}{}".format(self.product, self.location, self.piece, self.quantity, self.uom)
@@ -276,3 +284,19 @@ class Stock(models.Model):
             quantity = sum(available.quantity for available in available_stock)
             reserve_quantity = sum(available.reserve_quantity for available in available_stock)
         return (piece - reserve_piece), (quantity - reserve_quantity)
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.product.type == 'slab':
+            size = []
+            for slab in self.items.all():
+                size.append('%s*%s' % (slab.long, slab.height))
+            c = Counter(size)
+            max_size, count = c.most_common()[0]
+            print(c.most_common()[0])
+            long, height = max_size.split('*')
+            width = 0
+        else:
+            block = self.product.block
+            long, height, width = sorted([block.long, block.width, block.height], reverse=True)
+        Stock.objects.filter(pk=self.id).update(main_long=long, main_height=height, main_width=width)

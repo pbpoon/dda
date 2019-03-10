@@ -159,6 +159,7 @@ class StockOperate:
                     # 解库
                     max_piece, max_quantity = min(a.reserve_piece, abs(piece)), \
                                               min(a.reserve_quantity, abs(quantity))
+                    # print('reserve_piece=%s' % a.reserve_piece, 'piece=%s' % piece, 'quant_piece=%s' % a.piece)
                     a.reserve_piece -= max_piece
                     a.reserve_quantity -= max_quantity
                     piece += max_piece
@@ -241,6 +242,12 @@ class StockOperate:
                                                  piece=item.piece,
                                                  quantity=item.quantity, slabs=slabs):
                         break
+                    else:
+                        if item.product.type == 'slab':
+                            block = item.product.block
+                            block._slab_yield = block.computation_slab_yield(item.quantity)
+                            block.save()
+
                 self.trace_model.objects.create(item=item, product=item.product, location=item.location,
                                                 location_dest=item.location_dest)
             else:

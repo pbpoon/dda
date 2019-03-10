@@ -99,6 +99,9 @@ class Block(models.Model):
     uom = models.CharField('荒料计量单位', null=False, choices=UOM_CHOICES, max_length=10, default='t')
     updated = models.DateTimeField('更新日期', auto_now=True)
     created = models.DateTimeField('创建日期', auto_now_add=True)
+    _slab_yield = models.DecimalField(decimal_places=2, max_digits=5, null=True, blank=True, verbose_name='出材率')
+    old_system_slab_yield = models.DecimalField(decimal_places=2, max_digits=5, null=True, blank=True,
+                                                verbose_name='旧系统出材率')
 
     _files = GenericRelation('files.Files')
     comments = GenericRelation('comment.Comment')
@@ -133,11 +136,33 @@ class Block(models.Model):
         files = Files.objects.none()
         files |= self._files.all()
         for p in self.products.all():
-            if p.files.all():
-                files |= p.files.all()
+            files |= p.files.all()
         if files.count() > 10:
             files = files[:10]
         return files
+
+    def get_lock_state_orders(self):
+        orders = []
+        for order in self.sales_order_item.filter(order__state='confirm'):
+            orders.append(order)
+        return orders
+
+    # 计算出材率
+    @property
+    def slab_yield(self):
+        if self.products.filter(type='slab').exists():
+            if self.old_system_slab_yield:
+                return self.old_system_slab_yield
+            return self._slab_yield
+        return False
+
+    def computation_slab_yield(self, quantity=0):
+        for slab_product in self.products.filter(type='slab'):
+            for produce_item in slab_product.productionorderproduceitem_set.filter(order__state='done'):
+                quantity += produce_item.quantity
+        uom_qty = self.weight if self.uom == 't' else self.get_m3()
+        _yield = '%.2f' % (quantity / uom_qty)
+        return _yield
 
     @property
     def files(self):
@@ -152,14 +177,15 @@ class Block(models.Model):
     def get_stock_trace_all(self):
         original_stock_trace_list = [{'事务': (item.stock_trace, None), '状态': '完成', '形态': '旧数据', '件': item.piece,
                                       '数量': str(item.quantity) + str(item.uom), '原库位': '', '目标库位': item.address,
-                                      '日期': item.date} for item in self.original_stock_trace.all()]
+                                      '日期': item.date,
+                                      'created': item.date, 'id': 1} for item in self.original_stock_trace.all()]
         stock_traces = [trace for p in self.products.prefetch_related('product_stock_trace') for trace in
                         p.product_stock_trace.all()]
         stock_trace_list = []
         for t in stock_traces:
             obj = t.get_obj()
-            if obj.order.state in ('draft', 'cancel'):
-                continue
+            # if obj.order.state in ('draft', 'cancel'):
+            #     continue
             stock_trace_list.append({'事务': (obj.order._meta.verbose_name, obj.order),
                                      '状态': obj.order.get_state_display(),
                                      '形态': obj.product.get_type_display(),
@@ -168,9 +194,11 @@ class Block(models.Model):
                                      '原库位': obj.location,
                                      '目标库位': obj.location_dest,
                                      '日期': obj.order.date,
+                                     'created': obj.order.created,
+                                     'id': obj.id,
                                      })
         stock_trace_list.extend(original_stock_trace_list)
-        return sorted(stock_trace_list, key=lambda x: x['日期'])
+        return sorted(stock_trace_list, key=lambda x: (x['created'], x['日期'], x['id']))
 
     @property
     def stock(self):
@@ -232,6 +260,10 @@ class Product(models.Model):
     @property
     def name(self):
         return self.block.name
+
+    @property
+    def category(self):
+        return self.block.category.name
 
     def __str__(self):
         thickness = '({})'.format(self.thickness) if self.thickness else ''

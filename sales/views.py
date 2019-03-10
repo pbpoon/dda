@@ -14,7 +14,8 @@ from django.views.generic.edit import BaseDeleteView
 from django.contrib import messages
 
 from cart.cart import Cart
-from public.permissions_mixin_views import ViewPermissionRequiredMixin, PostPermissionRequiredMixin
+from public.permissions_mixin_views import ViewPermissionRequiredMixin, PostPermissionRequiredMixin, \
+    DynamicPermissionRequiredMixin
 from public.views import OrderFormInitialEntryMixin, OrderItemEditMixin, OrderItemDeleteMixin, StateChangeMixin, \
     ModalOptionsMixin, FilterListView, SentWxMsgMixin
 from sales.forms import SalesOrderForm, SalesOrderItemForm, SalesOrderItemQuickForm, CustomerForm, \
@@ -32,7 +33,7 @@ class SalesOrderListView(FilterListView):
 
 
 class SalesSentWxMsg(SentWxMsgMixin):
-    app_name = None
+    app_name = 'zdzq_main'
     user_ids = '@all'
 
     # SECRET = 'la8maluNMN_imtic0Jp0ECmE71ca2iQ80n3-a8HFFv4'
@@ -41,23 +42,42 @@ class SalesSentWxMsg(SentWxMsgMixin):
         return "%s" % (self.request.build_absolute_uri())
 
     def get_title(self):
-        title = "%s:%s=>%s ¥%s" % (
-            self.model._meta.verbose_name, self.object.order, self.object.get_state_display(), self.object.amount)
+        title = "%s/金额：¥%s    [%s]" % (
+            self.model._meta.verbose_name, self.object.amount, self.object.get_state_display())
         return title
 
+    def get_items(self):
+        html = '\n---------------------------------'
+        for item in self.object.items.all():
+            if html:
+                html += '\n'
+            html += '(%s) %s /%s夹/%s件/%s%s *¥%s' % (
+                item.line, item.product, str(item.package_list.get_part()) if item.package_list else '',
+                item.piece, item.quantity, item.uom, item.price)
+        html += '\n---------------------------------\n'
+        html += '合计：'
+        print('item html', html)
+        for key, item in self.object.get_total().items():
+            html += '%s:%s %s件/%s%s\n' % (
+                key, item['part'] if item.get('part') else '', item['piece'],
+                item['quantity'], item['uom'])
+        html += '\n金额：¥ %s' % self.object.amount
+        return html
+
     def get_description(self):
-        html = "订单日期:%s" % (datetime.strftime(self.object.date, "%Y/%m/%d"))
-        html += '<br>金额:¥ %s' % (self.object.amount)
-        html += '<br>客户:%s' % (self.object.partner)
-        html += '<br>销往:%s' % (self.object.get_address())
+        html = '单号:%s\n' % self.object.order
+        html += '\n客户:%s' % self.object.partner
+        html += '\n销往:%s' % self.object.get_address()
+        html += "\n订单日期:%s" % (datetime.strftime(self.object.date, "%Y/%m/%d"))
+        html += "\n销售:%s" % self.object.handler
         now = datetime.now()
-        html += '<br>操作:%s \n@%s' % (self.request.user, datetime.strftime(now, '%Y/%m/%d %H:%M'))
+        html += '%s' % self.get_items()
+        html += '\n操作:%s \n@%s' % (self.request.user, datetime.strftime(now, '%Y/%m/%d %H:%M'))
         return html
 
 
-class SalesOrderDetailView(StateChangeMixin, DetailView, SalesSentWxMsg):
+class SalesOrderDetailView(StateChangeMixin, SalesSentWxMsg, DetailView):
     model = SalesOrder
-    app_name = 'zdzq_main'
 
     def get_btn_visible(self, state):
         return {'draft': {'cancel': True, 'confirm': True},
@@ -137,7 +157,8 @@ class SalesOrderDeleteView(PostPermissionRequiredMixin, BaseDeleteView):
         return reverse_lazy('sales_order_list')
 
 
-class SalesOrderEditMixin(OrderFormInitialEntryMixin):
+class SalesOrderEditMixin(OrderFormInitialEntryMixin, DynamicPermissionRequiredMixin):
+    model_permission = ('add', 'change')
     model = SalesOrder
     form_class = SalesOrderForm
     template_name = 'sales/form.html'
@@ -214,26 +235,29 @@ def admin_order_pdf(request, pk):
 
 
 class OrderToPdfView(BaseDetailView, PDFTemplateView):
-    # show_content_in_browser = True
+    show_content_in_browser = True
     model = SalesOrder
-    # header_template = 'sales/header.html'
-    template_name = 'sales/salesorder_pdf.html'
-    # footer_template = 'sales/footer.html'
-    cmd_options = {
-        'page-height': '19cm',
-        'page-width': '13cm',
-        'margin-top': '0',
-        'margin-left': '0',
-        'margin-bottom': '0',
-        'margin-right': '0',
-    }
+    header_template = 'sales/pdf/header.html'
+    template_name = 'sales/pdf/salesorder_pdf.html'
+    footer_template = 'sales/pdf/footer.html'
+
+    # cmd_options = {
+    #     'page-height': '19cm',
+    #     'page-width': '13cm',
+    #     'margin-top': '0',
+    # 'margin-left': '0',
+    # 'margin-bottom': '0',
+    # 'margin-right': '0',
+    # }
 
     def get_filename(self):
         self.object = self.get_object()
-        return '%s.pdf' % (self.object.order)
+        return '%s.pdf' % self.object.order
 
     def get_context_data(self, **kwargs):
+        from public.gen_barcode import GenBarcode
         kwargs['show_account'] = True
+        kwargs['barcode'] = GenBarcode(self.object.order, barcode_type='code39').value
         return super().get_context_data(**kwargs)
 
 

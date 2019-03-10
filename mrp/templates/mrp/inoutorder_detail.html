@@ -1,7 +1,7 @@
 {% extends "mrp/detail.html" %}
 {% load public %}
-{% block headline %}<span class="h6">[{{ object.get_state_display }}]{{ object }}</span>
-{% endblock %}
+{#{% block headline %}<span class="chip">[{{ object.get_state_display }}]{{ object }}</span>#}
+{#{% endblock %}#}
 {% block subheadline %}
     对应订单:
     <a href="{{ object.from_order.get_absolute_url }}">{{ object.from_order|verbose_name }}{{ object.from_order }}</a>
@@ -91,6 +91,7 @@
                         </td>
                     </tr>
                 {% endfor %}
+
                 </tbody>
                 <tfoot>
                 <tr>

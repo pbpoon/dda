@@ -102,6 +102,7 @@ class MoveLocationOrderItemForm(FormUniqueTogetherMixin, forms.ModelForm):
 
 
 class ProductionOrderForm(forms.ModelForm):
+    # production_type = forms.Mo
     class Meta:
         model = ProductionOrder
         fields = ('production_type', 'partner', 'warehouse', 'handler', 'date', 'entry')
@@ -109,8 +110,12 @@ class ProductionOrderForm(forms.ModelForm):
         widgets = {
             'entry': forms.HiddenInput,
             # 'handler': forms.HiddenInput,
+            'production_type': RadioWidget(attrs={'class': 'inline-ul'}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['production_type'].empty_label = None
 
 class ProductionOrderRawItemForm(FormUniqueTogetherMixin, forms.ModelForm):
     type = forms.CharField(widget=forms.HiddenInput)

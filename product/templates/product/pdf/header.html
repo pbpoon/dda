@@ -4,7 +4,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css?family=Noto+Sans+SC&amp;subset=chinese-simplified" rel="stylesheet">
     <style>
+        body, html {
+        {#font-family: 'Noto Sans SC', sans-serif;#}{#font-family: 'Noto Sans SC', 'Arial Black','Xingkai SC',sans-serif,'Roboto';#}{#font-family: 'Noto Sans TC', sans-serif;#}{#font-family: 'Roboto', sans-serif;#}
+        }
+
         header {
             height: 3cm;
             margin-bottom: 1cm;
@@ -43,9 +48,13 @@
 
         .info {
             position: absolute;
-            top:0;
+            top: 0;
             font-weight: bold;
             font-size: large;
+        }
+
+        .title.right {
+            font-family: 'Noto Sans SC', sans-serif;
         }
     </style>
     <link rel="stylesheet" href="{% static '/css/package_list_pdf.css' %}">
@@ -73,7 +82,7 @@
             </div>
         </div>
         <div class="col s4 text-right right">
-            <div class="title right">浅啡网
+            <div class="title right">{{ object.product.block.category.name }}
                 <div class="black-text float-right">{{ object.product.block.name }}#</div>
             </div>
         </div>

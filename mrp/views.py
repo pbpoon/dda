@@ -1,4 +1,6 @@
 import time
+
+from datetime import datetime
 from django.apps import apps
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
@@ -26,7 +28,8 @@ from partner.models import Partner
 from product.models import PackageList
 from public.permissions_mixin_views import ViewPermissionRequiredMixin, DynamicPermissionRequiredMixin
 from public.utils import Package, StockOperateItem
-from public.views import OrderItemEditMixin, OrderItemDeleteMixin, OrderFormInitialEntryMixin, FilterListView
+from public.views import OrderItemEditMixin, OrderItemDeleteMixin, OrderFormInitialEntryMixin, FilterListView, \
+    SentWxMsgMixin
 from public.widgets import SwitchesWidget
 from purchase.models import PurchaseOrder
 from public.views import GetItemsMixin, StateChangeMixin
@@ -37,6 +40,44 @@ from .models import MoveLocationOrder, MoveLocationOrderItem
 from .forms import MoveLocationOrderItemForm, MoveLocationOrderForm, ProductionOrderForm, \
     ProductionOrderRawItemForm, ProductionOrderProduceItemForm, InOutOrderForm, MrpItemExpensesForm, TurnBackOrderForm, \
     TurnBackOrderItemForm, InventoryOrderForm, InventoryOrderItemForm, InventoryOrderNewItemForm, SupplierForm
+
+
+class ChangeStateSentWx(SentWxMsgMixin):
+    app_name = 'zdzq_main'
+
+    def get_title(self):
+        title = "%s[销售提货]    [%s]" % (
+            self.object.order, self.object.get_state_display())
+        return title
+
+    def get_items(self):
+        html = '\n---------------------------------'
+        for item in self.object.items.all():
+            if html:
+                html += '\n'
+            html += '(%s) %s /%s夹/%s件/%s%s' % (
+                item.line, item.product, str(item.package_list.get_part()) if item.package_list else '',
+                item.piece, item.quantity, item.uom)
+        html += '\n---------------------------------\n'
+        html += '合计：'
+        print('item html', html)
+        for key, item in self.object.get_total().items():
+            html += '%s:%s %s件/%s%s\n' % (
+                key, item['part'] if item.get('part') else '', item['piece'],
+                item['quantity'], item['uom'])
+        return html
+
+    def get_description(self):
+        html = '单号:%s\n' % self.object.from_order.order
+        html += '\n--%s--\n' % self.object.from_order.progress
+        html += '\n客户:%s' % self.object.from_order.partner
+        html += '\n销往:%s' % self.object.from_order.get_address()
+        html += "\n订单日期:%s" % (datetime.strftime(self.object.date, "%Y/%m/%d"))
+        html += "\n经办人:%s" % self.object.from_order.handler
+        now = datetime.now()
+        html += '%s' % self.get_items()
+        html += '\n操作:%s \n@%s' % (self.request.user, datetime.strftime(now, '%Y/%m/%d %H:%M'))
+        return html
 
 
 class MoveLocationOrderListView(FilterListView):
@@ -229,8 +270,22 @@ class InOutOrderListView(FilterListView):
     filter_class = InOutOrderFilter
 
 
-class InOutOrderDetailView(StateChangeMixin, DetailView):
+class InOutOrderDetailView(StateChangeMixin, ChangeStateSentWx, DetailView):
     model = InOutOrder
+
+    def done(self):
+        is_done, msg = self.object.done()
+        if not is_done:
+            print('error')
+        if is_done:
+            self.sent_msg()
+        return True, ''
+
+    def cancel(self):
+        is_done, msg = self.object.cancel()
+        if is_done:
+            self.sent_msg()
+        return True, ''
 
     def get_btn_visible(self, state):
         btn_visible = {}
@@ -239,12 +294,6 @@ class InOutOrderDetailView(StateChangeMixin, DetailView):
         elif state == 'done':
             btn_visible.update({'turn_back': True})
         return btn_visible
-
-    def done(self):
-        return self.object.done()
-
-    def cancel(self):
-        return self.object.cancel()
 
 
 class InOutOrderDeleteView(BaseDeleteView):

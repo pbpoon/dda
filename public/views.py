@@ -7,7 +7,7 @@ from django.apps import apps
 from django.contrib import messages
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, HttpResponseRedirect
 from django.shortcuts import render_to_response, redirect
 from django.template import RequestContext
 from django.template.loader import render_to_string
@@ -55,15 +55,18 @@ class ModalEditMixin(DynamicPermissionRequiredMixin, OrderFormInitialEntryMixin,
         form = self.get_form()
         return HttpResponse(render_to_string(self.template_name, {'form': form}))
 
+    def form_save(self, form):
+        form.save()
+
     def post(self, *args, **kwargs):
-        path = self.request.META.get('HTTP_REFERER')
         form = self.get_form()
         msg = '修改' if self.object else '添加'
         if form.is_valid():
-            form.save()
+            self.form_save(form)
             msg += '成功'
             messages.success(self.request, msg)
             # return redirect(path)
+            path = self.request.META.get('HTTP_REFERER')
             return JsonResponse({'state': 'ok', 'url': path})
         msg += '失败'
         return HttpResponse(render_to_string(self.template_name, {'form': form, 'error': msg}))
@@ -105,6 +108,23 @@ class OrderItemDeleteMixin(DynamicPermissionRequiredMixin, BaseDeleteView):
 
     def get_success_url(self):
         return self.request.META.get('HTTP_REFERER')
+
+    def delete_after(self):
+        """
+        删除对象后接口
+        """
+        pass
+
+    def delete(self, request, *args, **kwargs):
+        """
+        Call the delete() method on the fetched object and then redirect to the
+        success URL.
+        """
+        self.object = self.get_object()
+        success_url = self.get_success_url()
+        self.object.delete()
+        self.delete_after()
+        return HttpResponseRedirect(success_url)
 
 
 # 状态流程
@@ -172,7 +192,6 @@ class StateChangeMixin(DynamicPermissionRequiredMixin):
 
     def draft(self):
         raise ValueError('define draft')
-
 
 
 # 前端modal form 选项
@@ -283,10 +302,9 @@ class SentWxMsgMixin:
     app_name = None
     user_ids = '@all'
 
-
     def get_url(self):
         print(self.request)
-        return "%s" % (self.request.build_absolute_uri())
+        return "%s" % (self.request.build_absolute_uri(self.object.get_absolute_url()))
 
     def get_title(self):
         raise ValueError('define get_title')
@@ -300,14 +318,14 @@ class SentWxMsgMixin:
             return False
         try:
             wx_conf = WxConf(app_name=self.app_name)
-            print(wx_conf,'in')
+            # print(wx_conf,'in')
             client = WeChatClient(wx_conf.corp_id, wx_conf.Secret)
-            print(client, '222')
-            print(self.get_title(),'title')
+            # print(client, '222')
+            print(self.get_title(), 'title')
             client.message.send_text_card(agent_id=wx_conf.AgentId, user_ids=self.user_ids, title=self.get_title(),
                                           description=self.get_description(),
                                           url=self.get_url())
-            print('out')
+            # print('out')
         except Exception as e:
             pass
         return True

@@ -13,3 +13,8 @@
         <a class="btn default" href="{% url 'invoice_create' object|label_name object.id %}">创建账单</a>
     {% endif %}
 {% endblock %}
+{% block headline %}
+    <span class="chip {% if object.state == 'cancel' %}grey{% elif object.state == 'confirm' %}blue{% elif object.state == 'done' %} yellow{% endif %}">
+        {{ object.get_state_display }}
+        {{ object.order }}</span>
+{% endblock %}

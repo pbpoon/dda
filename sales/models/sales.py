@@ -27,10 +27,31 @@ class SalesOrder(OrderAbstract):
     class Meta:
         verbose_name = '销售订单'
         permissions = (('can_audit', '审核'),)
-        ordering = ['-date', '-created']
+        ordering = ['-date', '-id', '-created']
 
     def __str__(self):
         return self.order
+
+    @property
+    def progress(self):
+        status = ''
+        # if self.state == 'confirm':
+        out_order_percentage = self.get_out_order_percentage()
+        if self.due_amount > 0:
+            if self.confirm_amount:
+                status += '有付款，未付清,'
+            else:
+                status += '未付款,'
+        elif self.due_amount <= 0 and self.confirm_amount:
+            status += '已付款,'
+        if out_order_percentage == 0:
+            status += '未提货'
+        elif out_order_percentage == 1 or out_order_percentage > 0.99:
+            status += '已提货'
+        elif out_order_percentage > 0 or out_order_percentage <= 0.99:
+            status += '有提货，未提完'
+
+        return status
 
     def get_address(self):
         if self.province:
@@ -64,9 +85,16 @@ class SalesOrder(OrderAbstract):
 
     @property
     def confirm_amount(self):
-        return sum(invoice.confirm_amount for invoice in self.invoices.all())
+        return sum(
+            invoice.confirm_amount for invoice in self.invoices.filter(state__in=('confirm', 'done'), type='1'))
         # return sum(invoice.amount for item in self.items.all() for invoice in
         #            item.invoice_items.filter(order__state='done').distinct())
+
+    # @property
+    # def assign_amounts(self):
+    #     # return sum(invoice.confirm_amount for invoice in self.invoices.all())
+    #     return sum(invoice.amount for item in self.items.all() for invoice in
+    #                item.invoice_items.filter(order__state='confirm').distinct())
 
     def get_piece(self):
         return sum(item.piece for item in self.items.all() if item.piece)
@@ -186,14 +214,13 @@ class SalesOrder(OrderAbstract):
     def _get_invoice_usage(self):
         return '销售货款'
 
-    # @property
-    # def invoices(self):
-    #     from invoice.models import SalesInvoice
-    #     invoices = SalesInvoice.objects.none()
-    #     for item in self.items.all():
-    #         for invoice in item.invoice_items.all():
-    #             invoices |= invoice.order
-    #     return invoices
+    @property
+    def assigns(self):
+        from invoice.models import Assign
+        assigns = Assign.objects.none()
+        for invoice in self.invoices.filter(state__in=('confirm', 'done')):
+            assigns |= invoice.assign_payments.all()
+        return assigns
 
     @property
     def can_make_invoice_amount(self):
@@ -253,7 +280,9 @@ class SalesOrderItem(OrderItemSaveCreateCommentMixin, models.Model):
         return (item for item in self.in_out_order_items.all() if item.state in ('confirm', 'done'))
 
     def can_delete(self):
-        if list(self.get_out_order_items()):
+        if self.order.state not in ('draft', 'cancel'):
+            return False
+        elif list(self.get_out_order_items()):
             return False
         return True
 

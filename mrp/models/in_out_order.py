@@ -85,15 +85,21 @@ class InOutOrder(MrpOrderAbstract):
 
     def done(self, **kwargs):
         stock = self.get_stock()
+        pieces = 0
+        for item in self.items.all():
+            pieces += item.piece
+
         if self.sales_order:
             # 如果是对应的是销售订单
             unlock, unlock_msg = stock.reserve_stock(unlock=True)
             # 如果解库成功就操作库存移动
             # 否则就把不能解库的状态及msg返回
+            print('unlock=%s,msg=%s' % (unlock, unlock_msg))
             if unlock:
                 is_done, msg = stock.handle_stock()
                 # 如果库存移动成功就更改状态并create comment
                 # 否则就把不能库存移动的状态及msg返回
+                print('handle_stock=%s,msg=%s' % (is_done, msg))
                 if is_done:
                     self.make_invoice()
                     self.state = 'done'

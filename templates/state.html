@@ -5,20 +5,20 @@
             <input type="hidden" value="" name="state">
         </form>
         {% if btn_visible.draft %}
-            <button class="btn default" onclick="state_confirm('draft')">设成草稿</button>
+            <button class="btn white black-text" onclick="state_confirm('draft')">设成草稿</button>
         {% endif %}
         {% if btn_visible.confirm %}
-            <button class="btn blue" onclick="state_confirm('confirm')">确定</button>
+            <button id="#state_confirm_btn" class="btn blue" onclick="state_confirm('confirm')">确定</button>
         {% endif %}
         {% if btn_visible.done %}
-            <button class="btn green" onclick="state_confirm('done')">完成</button>
+            <button class="btn yellow black-text" onclick="state_confirm('done')">完成</button>
         {% endif %}
         {% if btn_visible.cancel %}
             <button class="btn grey" onclick="state_confirm('cancel')">取消</button>
         {% endif %}
 {#        {% if btn_visible.delete or not object.items.all %}#}
         {% if btn_visible.delete %}
-            <button class="btn grey" onclick="item_remove('{{ object.get_delete_url }}')">删除</button>
+            <button class="btn red" onclick="item_remove('{{ object.get_delete_url }}')">删除</button>
         {% endif %}
     {% endif %}
 <script>

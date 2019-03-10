@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+{% load static %}
+{% load public %}
+<html lang="zh-hans">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css?family=Noto+Sans+SC&amp;subset=chinese-simplified" rel="stylesheet">
+    <style>
+        body, html {
+            font-family: 'Noto Sans SC', sans-serif;
+        {#font-family: 'Noto Sans SC', 'Arial Black','Xingkai SC',sans-serif,'Roboto';#}{#font-family: 'Noto Sans TC', sans-serif;#}{#font-family: 'Roboto', sans-serif;#}
+        }
+
+        .container {
+            padding: 12px;
+            width: 92%;
+            margin-left: auto;
+            margin-right: 25px;
+            margin-bottom: 30px;
+        }
+
+        .divider {
+            width: 90%;
+            border-bottom: #5a5a5a 1px solid;
+            margin: 5px auto;
+        }
+
+        .title {
+            font-weight: bold;
+            font-size: 130%;
+        }
+
+        .subtitle {
+            border-left: grey 6px solid;
+            padding-top: 10px;
+            padding-bottom: 10px;
+            padding-left: 26px;
+        }
+
+        .left {
+            float: left;
+        }
+
+        .right {
+            float: right;
+        }
+
+        .clear {
+            clear: both;
+        }
+
+        .logo {
+            top: 1.5cm;
+            height: 1.5cm;
+        }
+
+        table {
+            width: 100%;
+            min-height: 200px;
+            margin-left: auto;
+            margin-right: auto;
+            border-collapse: collapse;
+        }
+
+        th, tr, td {
+            border-top: gray 1px solid;
+            padding-top: 8px;
+            padding-bottom: 8px;
+            padding-left: 5px;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-bottom {
+            vertical-align: bottom;
+        }
+
+        .total th {
+            padding-top: 20px;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
+        .quote {
+            padding-top: 10px;
+            padding-left: 25px;
+            border-left: lightgrey 8px solid;
+        }
+
+        .logo-font {
+            background-image: url('{% static '/image/logo-font.png' %}');
+            background-size: 100%;
+            height: 2cm;
+            width: 5cm;
+            margin-left: auto;
+            margin-right: auto;
+            background-position: right top;
+            background-repeat: no-repeat;
+            border-bottom: #5a5a5a 1px double;
+        }
+        .customer tr, td {
+            border: none;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <div style="text-align: right;position: absolute;right: 0;">
+        <img src="data:image/png;base64,{{ barcode }}" alt="{{ object.order }}" height="100">
+    </div>
+    <div class="container">
+        <div style="text-align: center ;width:100%;height: 4cm; font-weight:bold">
+            <div class="logo-font"></div>
+            <div>{{ object.order }}</div>
+        </div>
+        <div class="quote">
+            <div class="left customer" style="font-weight:bold; font-size: large">
+                <table>
+                    <tbody>
+                    <tr style="border: none">
+                        <td class="text-right">客户名称：</td>
+                        <td colspan="2">{{ object.partner }}</td>
+                    </tr>
+                    {% if object.partner.phone %}
+                    <tr>
+                        <td class="text-right">电话：</td>
+                        <td colspan="2">{{ object.partner.phone }}</td>
+                    </tr>
+                    {% endif %}
+                    <tr>
+                        <td class="text-right">发往：</td>
+                        <td colspan="2"> {{ object.get_address }}</td>
+                    </tr>
+                    </tbody>
+                    {#                    客户名称：{{ object.partner }}<br/>#}
+                    {#                    {{ object.partner.phone }}<br>#}
+                    {#                    <div class="divider"></div>#}
+                    {#                    发往:{{ object.get_address }}<br/>#}
+                </table>
+            </div>
+            <div class="right">
+                <div class="text-right">
+                    <div>经办人:{{ object.handler }}</div>
+                </div>
+            </div>
+            <div class="clear"></div>
+        </div>
+    </div>
+</header>
+</body>
+</html>

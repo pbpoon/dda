@@ -1,90 +1,66 @@
-<table class="table">
-    <thead>
-    <tr>
-        <th></th>
-        <th>编号</th>
-        <th>数量</th>
-        <th>单价</th>
-        <th>金额</th>
-        <th>编辑</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    {% for item in object.items.all %}
-        <tr id="block_list_tr">
-            <td>原料</td>
-            <td><a href="{{ item.product.block.get_absolute_url }}">{{ item.product }}</a>
-            </td>
-            <td>
-                {{ item.piece }}件 | {% if item.product.block.uom == 't' %}
+{% for item in object.items.all %}
+    <tr id="block_list_tr">
+        <td>原料</td>
+        <td><a href="{{ item.product.block.get_absolute_url }}">{{ item.product }}</a>
+        </td>
+        <td>
+            {{ item.piece }}件 | {% if item.product.block.uom == 't' %}
             {{ item.product.block.weight }}t<br>{% endif %}
-                {{ item.quantity }}{{ item.uom }}
-                </td>
-            <td>{{ item.price }}</td>
-            <td>{{ item.get_amount }}</td>
-            <td>{% if object.state == 'draft' %}
-                <!-- Dropdown Trigger -->
+            {{ item.quantity }}{{ item.uom }}
+        </td>
+        <td>{{ item.price }}</td>
+        <td>{{ item.get_amount }}</td>
+        <td>{% if object.state == 'draft' %}
+            <!-- Dropdown Trigger -->
 
-                <a class='dropdown-trigger btn-floating grey' href='#' data-target='dropdown{{ forloop.counter }}'> <i
-                        class="material-icons">more_vert</i></a>
+            <a class='dropdown-trigger btn-floating grey' href='#' data-target='dropdown{{ forloop.counter }}'> <i
+                    class="material-icons">more_vert</i></a>
 
-                <!-- Dropdown Structure -->
-                <ul id='dropdown{{ forloop.counter }}' class='dropdown-content'>
-                    <li>
-                        <a onclick="edit_item('{% url 'production_raw_item_edit' item.id %}')">修改
-                        </a>
-                    </li>
-                    <li>
-                        <a onclick="item_remove('{% url 'production_raw_item_delete' item.id %}')">
-                            删除
-                        </a>
-                    </li>
-                    <li>
-                        <a onclick="add_produce_item('{% url 'production_produce_item_create' object.id item.id %}','{{ object.production_type.produce_item_type }}')">
-                            添加成品
-                        </a>
-                    </li>
-                </ul>
-            {% endif %}</td>
-        </tr>
-        {% if item.produces.all %}
-            {% for produce in item.produces.all %}
-                <tr>
-                    <td></td>
-                    <td>{{ produce.thickness }}厚度</td>
-                    <td>{{ produce.piece }}件 | {{ produce.quantity }}</td>
-                    <td></td>
-                    <td></td>
-                    <td>{% if object.state == 'draft' %}
-
-                        <a class='dropdown-trigger btn-floating grey' href='#'
-                           data-target='dropdown-{{ forloop.parentloop.counter }}-{{ produce.id }}-produce'> <i
-                                class="material-icons">more_vert</i></a>
-                        <!-- Dropdown Structure -->
-                        <ul id='dropdown-{{ forloop.parentloop.counter }}-{{ produce.id }}-produce' class='dropdown-content'>
-                            <li>
-                                <a onclick="edit_item( '{% url 'production_produce_item_edit' produce.id %}')">
-                                    修改</a></li>
-                            <li>
-                                <a onclick="item_remove('{% url 'production_produce_item_delete'  produce.id %}')">
-                                    删除</a></li>
-                        </ul>
-                    {% endif %}
-                    </td>
-                </tr>
-            {% endfor %}
-        {% endif %}
-    {% endfor %}
-    </tbody>
-    <tfoot>
-    <tr>
-        <td></td>
-        <td></td>
-        <td>{{ object.get_quantity }}</td>
-        <td></td>
-        <td>{{ object.get_amount }}</td>
-        <td></td>
+            <!-- Dropdown Structure -->
+            <ul id='dropdown{{ forloop.counter }}' class='dropdown-content'>
+                <li>
+                    <a onclick="edit_item('{% url 'production_raw_item_edit' item.id %}')">修改
+                    </a>
+                </li>
+                <li>
+                    <a onclick="item_remove('{% url 'production_raw_item_delete' item.id %}')">
+                        删除
+                    </a>
+                </li>
+                <li>
+                    <a onclick="add_produce_item('{% url 'production_produce_item_create' object.id item.id %}','{{ object.production_type.produce_item_type }}')">
+                        添加成品
+                    </a>
+                </li>
+            </ul>
+        {% endif %}</td>
     </tr>
-    </tfoot>
-</table>
+    {% if item.produces.all %}
+        {% for produce in item.produces.all %}
+            <tr>
+                <td></td>
+                <td>{{ produce.thickness }}厚度</td>
+                <td>{{ produce.piece }}件 | {{ produce.quantity }}</td>
+                <td></td>
+                <td></td>
+                <td>{% if object.state == 'draft' %}
+
+                    <a class='dropdown-trigger btn-floating grey' href='#'
+                       data-target='dropdown-{{ forloop.parentloop.counter }}-{{ produce.id }}-produce'> <i
+                            class="material-icons">more_vert</i></a>
+                    <!-- Dropdown Structure -->
+                    <ul id='dropdown-{{ forloop.parentloop.counter }}-{{ produce.id }}-produce'
+                        class='dropdown-content'>
+                        <li>
+                            <a onclick="edit_item( '{% url 'production_produce_item_edit' produce.id %}')">
+                                修改</a></li>
+                        <li>
+                            <a onclick="item_remove('{% url 'production_produce_item_delete'  produce.id %}')">
+                                删除</a></li>
+                    </ul>
+                {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+    {% endif %}
+{% endfor %}

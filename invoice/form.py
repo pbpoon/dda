@@ -76,7 +76,7 @@ class InvoiceForm(forms.ModelForm):
 
 class PaymentForm(forms.ModelForm):
     files = forms.FileField(required=False, label='附件', widget=forms.FileInput(attrs={'multiple': True}))
-    desc = forms.CharField(required=False, label='附件说明')
+    desc = forms.CharField(required=False, label='附件说明' )
 
     class Meta:
         model = Payment
