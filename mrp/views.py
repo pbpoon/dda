@@ -39,7 +39,8 @@ from stock.models import Stock, Location
 from .models import MoveLocationOrder, MoveLocationOrderItem
 from .forms import MoveLocationOrderItemForm, MoveLocationOrderForm, ProductionOrderForm, \
     ProductionOrderRawItemForm, ProductionOrderProduceItemForm, InOutOrderForm, MrpItemExpensesForm, TurnBackOrderForm, \
-    TurnBackOrderItemForm, InventoryOrderForm, InventoryOrderItemForm, InventoryOrderNewItemForm, SupplierForm
+    TurnBackOrderItemForm, InventoryOrderForm, InventoryOrderItemForm, InventoryOrderNewItemForm, SupplierForm, \
+    MoveWarehouseOrderForm
 
 
 class ChangeStateSentWx(SentWxMsgMixin):
@@ -84,6 +85,20 @@ class MoveLocationOrderListView(FilterListView):
     model = MoveLocationOrder
     filter_class = MoveLocationOrderFilter
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        return qs.filter(partner__isnull=True)
+
+
+class MoveWarehouseOrderListView(FilterListView):
+    model = MoveLocationOrder
+    filter_class = MoveLocationOrderFilter
+    template_name = 'mrp/movewarehouseorder_list.html'
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        return qs.filter(partner__isnull=False)
+
 
 class MoveLocationOrderDetailView(StateChangeMixin, GetItemsMixin, DetailView):
     model = MoveLocationOrder
@@ -127,6 +142,17 @@ class MoveLocationOrderEditMixin(OrderFormInitialEntryMixin):
     model = MoveLocationOrder
     form_class = MoveLocationOrderForm
     template_name = 'mrp/form.html'
+    type = None
+
+    def get_form_class(self):
+        if self.type == 'wh':
+            return MoveWarehouseOrderForm
+        return self.form_class
+
+    def dispatch(self, request, *args, **kwargs):
+        if kwargs.get('type'):
+            self.type = kwargs['type']
+        return super().dispatch(request, *args, **kwargs)
 
 
 class MoveLocationOrderCreateView(MoveLocationOrderEditMixin, CreateView):

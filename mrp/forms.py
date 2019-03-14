@@ -18,16 +18,43 @@ from dal import autocomplete
 class MoveLocationOrderForm(forms.ModelForm):
     class Meta:
         model = MoveLocationOrder
+        exclude = ('order', 'location', 'location_dest', 'state', 'partner', 'warehouse_dest')
+        widgets = {
+            'entry': forms.HiddenInput,
+        }
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        instance.warehouse_dest = instance.warehouse
+        if commit:
+            instance.save()
+        return instance
+
+
+class MoveWarehouseOrderForm(forms.ModelForm):
+    # 仓库调拨单
+    class Meta:
+        model = MoveLocationOrder
         exclude = ('order', 'location', 'location_dest', 'state')
         widgets = {
             'entry': forms.HiddenInput,
         }
-    #
-    # def clean(self):
-    #     cd = self.cleaned_data
-    #     if cd['warehouse'] == cd['warehouse_dest']:
-    #         raise forms.ValidationError('移出仓库 与 目标仓库 不能相同')
-    #     return cd
+
+    def clean_partner(self):
+        cd = self.cleaned_data
+        if not cd.get('partner'):
+            raise forms.ValidationError('请选择运输单位')
+        return cd.get('partner')
+
+    def clean(self):
+        cd = self.cleaned_data
+        if cd['warehouse'] == cd['warehouse_dest']:
+            raise forms.ValidationError('移出仓库 与 目标仓库 不能相同')
+        return cd
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['partner'].widget.attrs = {'required': True}
 
 
 class MoveLocationOrderItemForm(FormUniqueTogetherMixin, forms.ModelForm):
@@ -116,6 +143,7 @@ class ProductionOrderForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['production_type'].empty_label = None
+
 
 class ProductionOrderRawItemForm(FormUniqueTogetherMixin, forms.ModelForm):
     type = forms.CharField(widget=forms.HiddenInput)

@@ -5,3 +5,8 @@
 {% block headline %}
     销售订单
 {% endblock %}
+{% block content %}
+    <a href="{% url 'sales_order_month_list' %}?year={% now 'Y' %}&month={% now 'm' %}">按月查看</a>
+    <a href="{% url 'sales_order_charts_list' %}?year={% now 'Y' %}">查看图表</a>
+{{ block.super }}
+{% endblock %}

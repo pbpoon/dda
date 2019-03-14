@@ -1,0 +1,204 @@
+{% extends 'list.html' %}
+{% block fixed-action-btn %}
+{% endblock %}
+{% block sidebar %}
+    <div class="filter-pc">
+        <div class="card-panel white">
+            <h4>筛选条件
+                <button class="btn grey waves-effect waves-light right clear">清除条件</button>
+            </h4>
+            <div class="divider"></div>
+            <form action="" method="GET" id="choose-form-sidebar">
+                {{ filter.form.as_p }}
+                <button class="btn waves-effect" type="submit">按条件筛选</button>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+{% block head %}
+    <script src="http://code.highcharts.com/highcharts.js"></script>
+{% endblock %}
+{% block content %}
+    <a href="{% url 'stock_list' %}">按列表查看</a>
+
+    <style>
+        @media (max-width: 992px) {
+            .filter-pc {
+                display: none;
+            }
+        }
+
+        @media (min-width: 992px) {
+            #choose-modal-btn {
+                display: none;
+            }
+        }
+
+        .charts {
+            margin-bottom: 30px;
+        }
+    </style>
+
+
+    <!-- Modal Trigger -->
+    <a id="choose-modal-btn" class="waves-effect waves-light btn modal-trigger" href="#choose-modal">按条件筛选</a>
+    <!-- Modal Structure -->
+    <div id="choose-modal" class="modal bottom-sheet">
+        <div class="modal-content">
+            <h4>筛选条件
+                <button class="btn grey waves-effect waves-light right clear">清除条件</button>
+            </h4>
+            <div class="divider"></div>
+            <form action="" method="GET" id="choose-stock-form">
+                {{ filter.form.as_p }}
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn modal-close waves-effect waves-green" style="width: 100%" form="choose-stock-form"
+                    type="submit">
+                按条件筛选
+            </button>
+
+            {#                <a href="#!" class="modal-close waves-effect waves-green btn-flat">Agree</a>#}
+        </div>
+    </div>
+    <div id="container" class="charts"></div>
+    <div id="container2" class="charts"></div>
+    <div id="container3" class="charts"></div>
+
+    {#    <div class="card-panel white">#}
+    {#        <table>#}
+    {#            <thead>#}
+    {#            <tr>#}
+    {#                <th>产品</th>#}
+    {#                <th>数量</th>#}
+    {#                <th>位置</th>#}
+    {#                <th></th>#}
+    {#            </tr>#}
+    {#            </thead>#}
+    {#            <tbody>#}
+    {#            {% for object in object_list %}#}
+    {#                <tr>#}
+    {#                    <td><a href="{{ object.product.block.get_absolute_url }}">{{ object.product }}</a></td>#}
+    {#                    <td><a onclick="open_package_list_by_stock('{% url 'stock_slabs_detail' object.id %}')">#}
+    {#                        {% if object.product.type == 'slab' %}{{ object.get_part }} 夹/ {% endif %}#}
+    {#                        {{ object.piece }} 件/ {{ object.quantity }}{{ object.uom }}</a></td>#}
+    {#                    <td>{{ object.location }}</td>#}
+    {#                    <td></td>#}
+    {#                </tr>#}
+    {#            {% endfor %}#}
+    {#            </tbody>#}
+    {#        </table>#}
+    {% include 'modal.html' %}
+
+    {#        {% include 'paginatior.html' %}#}
+    {#    </div>#}
+{% endblock %}
+
+{% block subheadline %}
+    <div class="card-panel">
+
+        <span>产品编号:{{ count_total }}</span><br>
+        <span>件数:{{ piece_total }}</span><br>
+        <span>数量:{{ quantity_total }}</span>
+    </div>
+{% endblock %}
+<script>
+    {% block domready %}
+        {{ block.super }}
+        $('.modal').modal();
+        $('.clear').on('click', function (e) {
+            $('#choose-stock-form').find('input[type=text],select,input[type=hidden]').each(function () {
+                $(this).val('');
+            });
+            $('#choose-form-sidebar').find('input[type=text],select,input[type=hidden]').each(function () {
+                $(this).val('');
+            });
+        });
+        Highcharts.chart('container', {
+            chart: {
+                plotBackgroundColor: null,
+                plotBorderWidth: null,
+                plotShadow: false,
+                type: 'pie'
+            },
+            title: {
+                text: '厚度规格占比'
+            },
+            tooltip: {
+                pointFormat: '{series.name}: <b>{point.y}/{point.percentage:.1f}%</b>'
+            },
+            plotOptions: {
+                pie: {
+                    allowPointSelect: true,
+                    cursor: 'pointer',
+                    dataLabels: {
+                        enabled: true,
+                        format: '<b>{point.name}</b>: {point.y}//{point.percentage:.1f} %',
+                        style: {
+                            color: (Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black'
+                        }
+                    }
+                }
+            },
+            series: {{ series|safe }}
+        });
+        Highcharts.chart('container2', {
+            chart: {
+                plotBackgroundColor: null,
+                plotBorderWidth: null,
+                plotShadow: false,
+                type: 'pie'
+            },
+            title: {
+                text: '仓库数量占比'
+            },
+            tooltip: {
+                pointFormat: '{series.name}: <b>{point.y}/{point.percentage:.1f}%</b>'
+            },
+            plotOptions: {
+                pie: {
+                    allowPointSelect: true,
+                    cursor: 'pointer',
+                    dataLabels: {
+                        enabled: true,
+                        format: '<b>{point.name}</b>: {point.y}/{point.percentage:.1f} %',
+                        style: {
+                            color: (Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black'
+                        }
+                    }
+                }
+            },
+            series: {{ series2|safe }}
+        });
+        Highcharts.chart('container3', {
+            chart: {
+                plotBackgroundColor: null,
+                plotBorderWidth: null,
+                plotShadow: false,
+                type: 'pie'
+            },
+            title: {
+                text: '类型占比'
+            },
+            tooltip: {
+                pointFormat: '{series.name}: <b>{point.y}/{point.percentage:.1f}%</b>'
+            },
+            plotOptions: {
+                pie: {
+                    allowPointSelect: true,
+                    cursor: 'pointer',
+                    dataLabels: {
+                        enabled: true,
+                        format: '<b>{point.name}</b>: {point.y}/{point.percentage:.1f} %',
+                        style: {
+                            color: (Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black'
+                        }
+                    }
+                }
+            },
+            series: {{ series3|safe }}
+        });
+    {% endblock %}
+</script>
+

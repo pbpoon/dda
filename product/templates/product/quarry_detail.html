@@ -1,7 +1,8 @@
 {% extends 'detail.html' %}
 {% load public %}
 {% block content %}
-
+    共:{{ object.block_set.count }}颗/
+    <a href="{% url 'block_list' %}?quarry={{ object.id }}">荒料列表</a>
 {% endblock %}
 {% block headline %}
     {{ object.name }}

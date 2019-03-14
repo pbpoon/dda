@@ -95,6 +95,7 @@ class Invoice(HasChangedMixin, models.Model):
     class Meta:
         verbose_name = '账单'
         ordering = ('-created',)
+        permissions = (('can_draft', '设为草稿'), ('can_cancel', '设为取消'))
 
     def get_obj(self):
         return self.content_type.model_class().objects.get(pk=self.object_id)

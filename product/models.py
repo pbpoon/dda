@@ -1,6 +1,6 @@
 import collections
 from decimal import Decimal
-
+from itertools import chain
 import decimal
 
 from django.contrib.contenttypes.fields import GenericRelation
@@ -142,10 +142,17 @@ class Block(models.Model):
         return files
 
     def get_lock_state_orders(self):
-        orders = []
-        for order in self.sales_order_item.filter(order__state='confirm'):
-            orders.append(order)
-        return orders
+        # sales_orders = self.sales_order_item.filter(order__state='confirm')
+        # move_orders = self.move_order_item.filter(order__state='confirm')
+        items = chain(self.sales_order_item.filter(order__state='confirm'),
+                      self.move_order_item.filter(order__state='confirm'))
+        if items:
+            return [
+                {'订单类型': '销售单', '单号': item.order,
+                 '锁货数量': '%s件/%s%s' % (item.piece, item.quantity, item.uom),
+                 '日期': item.order.date, '经办人': item.order.handler} for item in
+                items]
+        return []
 
     # 计算出材率
     @property
@@ -153,7 +160,7 @@ class Block(models.Model):
         if self.products.filter(type='slab').exists():
             if self.old_system_slab_yield:
                 return self.old_system_slab_yield
-            return self._slab_yield
+            return self.computation_slab_yield()
         return False
 
     def computation_slab_yield(self, quantity=0):
@@ -228,6 +235,14 @@ class Block(models.Model):
             items |= item.sales_order_item.all()
         return items.order_by('-order__date')
         # return sorted(items, key=lambda x: x.order.date)
+
+    @property
+    def move_order_item(self):
+        from mrp.models import MoveLocationOrderItem
+        items = SalesOrderItem.objects.none()
+        for item in self.products.all():
+            items |= item.movelocationorderitem_set.all()
+        return items.order_by('-order__date')
 
     def __str__(self):
         return self.name

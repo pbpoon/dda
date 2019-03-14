@@ -1,0 +1,149 @@
+{% extends "sales/list.html" %}
+{% block add_url %}
+    {% url "sales_order_create" %}
+{% endblock %}
+{% block headline %}
+    销售订单
+{% endblock %}
+{% block content %}
+    <style>
+    .charts{
+        margin-bottom: 30px;
+    }
+    </style>
+    <div id="container" class="charts"></div>
+    <div id="container2" class="charts"></div>
+
+    {#    <p>#}
+    {#        {% if previous_month %}#}
+    {#            上月:#}
+    {#            <a href="{% url 'sales_order_month_list' %}?year={{ previous_month|date:"Y" }}&month={{ previous_month|date:"m" }}">{{ previous_month|date:"Y年m月" }}</a>#}
+    {#        {% endif %}#}
+    {#        {% if next_month %}#}
+    {#            下月:#}
+    {#            <a href="{% url 'sales_order_month_list' %}?year={{ next_month|date:"Y" }}&month={{ next_month|date:"m" }}">{{ next_month|date:"Y年m月" }}</a>#}
+    {#        {% endif %}#}
+    {#    </p>#}
+{% endblock %}
+{% block sidebar %}
+    <ul>
+        <li>当前年份:{{ year|date:"Y年" }}
+            <ul>
+                {% for date in date_list %}
+                    <li><a href="{% url 'sales_order_month_list' %}?year={{ date|date:"Y" }}&month={{ date|date:"m" }}">{{ date|date:"Y年m月" }}</a></li>
+                {% endfor %}
+            </ul>
+        </li>
+    </ul>
+{% endblock %}
+{% block head %}
+    <script src="http://code.highcharts.com/highcharts.js"></script>
+{% endblock %}
+<script>
+    {% block domready %}
+        {{ block.super }}
+        var chart = Highcharts.chart('container', {
+            chart: {
+                zoomType: 'xy'
+            },
+            plotOptions: {
+                series: {
+                    stacking: 'normal'
+                }
+            },
+            title: {
+                text: '{{ title }}',
+            },
+            xAxis: [{
+                categories: {{ categories|safe }},
+                crosshair: true
+            }],
+            yAxis: [{ // Primary yAxis
+                labels: {
+                    format: '{value}m2',
+                    style: {
+                        color: Highcharts.getOptions().colors[1]
+                    }
+                },
+                title: {
+                    text: '数量',
+                    style: {
+                        color: Highcharts.getOptions().colors[1]
+                    }
+                }
+            }, { // Secondary yAxis
+                title: {
+                    text: '金额',
+                    style: {
+                        color: Highcharts.getOptions().colors[0]
+                    }
+                },
+                labels: {
+                    format: '¥{value}',
+                    style: {
+                        color: Highcharts.getOptions().colors[0]
+                    }
+                },
+                opposite: true
+            }],
+            tooltip: {
+                shared: true
+            },
+            legend: {
+                {#layout: 'vertical',#}
+                align: 'center',
+                {#x: 120,#}
+                verticalAlign: 'bottom',
+                {#y: 100,#}
+                floating: false,
+                backgroundColor: (Highcharts.theme && Highcharts.theme.legendBackgroundColor) || '#FFFFFF'
+            },
+            series: {{ series|safe }}
+        }
+        );
+        var chart2 = Highcharts.chart('container2', {
+            chart: {
+                zoomType: 'xy'
+            },
+            plotOptions: {
+                series: {
+                    stacking: 'normal'
+                }
+            },
+            title: {
+                text: '各规格销量走势',
+            },
+            xAxis: [{
+                categories: {{ categories|safe }},
+                crosshair: true
+            }],
+            yAxis: { // Primary yAxis
+                labels: {
+                    format: '{value}m2',
+                    style: {
+                        color: Highcharts.getOptions().colors[1]
+                    }
+                },
+                title: {
+                    text: '数量',
+                    style: {
+                        color: Highcharts.getOptions().colors[1]
+                    }
+                }
+            },
+            tooltip: {
+                shared: true
+            },
+            legend: {
+                {#layout: 'vertical',#}
+                align: 'center',
+                {#x: 120,#}
+                verticalAlign: 'bottom',
+                {#y: 100,#}
+                floating: false,
+                backgroundColor: (Highcharts.theme && Highcharts.theme.legendBackgroundColor) || '#FFFFFF'
+            },
+            series: {{ series2|safe }}
+        });
+    {% endblock %}
+</script>

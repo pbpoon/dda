@@ -1,0 +1,7 @@
+{% extends "mrp/movelocationorder_list.html" %}
+{% block add_url %}
+    {% url "move_location_order_create" type='wh' %}
+{% endblock %}
+{% block headline %}
+    仓库调拨(运输)单列表
+{% endblock %}

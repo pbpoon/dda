@@ -36,10 +36,10 @@
             </tr>
             </tfoot>
         </table>
-    {% include 'paginatior.html' %}
-    {% if not object_list %}
-        <p>还未有内容</p>
-    {% endif %}
+        {% include 'paginatior.html' %}
+        {% if not object_list %}
+            <p>还未有内容</p>
+        {% endif %}
     </div>
 
 {% endblock %}
@@ -54,4 +54,11 @@
             <button class="btn waves-effect" type="submit">确定</button>
         </form>
     </div>
+{% endblock %}
+{% block subheadline %}
+    {% now "Y" as year %}
+    {% now "m" as month %}
+    {{ block.super }}
+    <a href="{% url 'invoice_month_list' %}?year={{ year }}&month={{ month }}
+">按到期月份查看</a>
 {% endblock %}

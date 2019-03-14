@@ -2,16 +2,58 @@
 {% block fixed-action-btn %}
 {% endblock %}
 {% block sidebar %}
-    <div class="card-panel white">
-        <span>按条件筛选</span>
-        <div class="divider"></div>
-        <form action="" method="GET">
-            {{ filter.form.as_p }}
-            <button class="btn waves-effect" type="submit">选择</button>
-        </form>
+    <div class="filter-pc">
+        <div class="card-panel white">
+            <h4>筛选条件
+                <button class="btn grey waves-effect waves-light right clear">清除条件</button>
+            </h4>
+            <div class="divider"></div>
+            <form action="" method="GET" id="choose-form-sidebar">
+                {{ filter.form.as_p }}
+                <button class="btn waves-effect" type="submit">按条件筛选</button>
+            </form>
+        </div>
     </div>
 {% endblock %}
 {% block content %}
+    <style>
+        @media (max-width: 992px) {
+            .filter-pc {
+                display: none;
+            }
+        }
+
+        @media (min-width: 992px) {
+            #choose-modal-btn {
+                display: none;
+            }
+        }
+    </style>
+    <a href="{% url 'stock_charts_list' %}">图表查看</a>
+    <!-- Modal Trigger -->
+    <a id="choose-modal-btn" class="waves-effect waves-light btn modal-trigger" href="#choose-modal">按条件筛选</a>
+    <!-- Modal Structure -->
+    <div id="choose-modal" class="modal bottom-sheet">
+        <div class="modal-content">
+            <h4>筛选条件
+                <button class="btn grey waves-effect waves-light right clear">清除条件</button>
+            </h4>
+            <div class="divider"></div>
+            <form action="" method="GET" id="choose-stock-form">
+                {{ filter.form.as_p }}
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn modal-close waves-effect waves-green" style="width: 100%" form="choose-stock-form"
+                    type="submit">
+                按条件筛选
+            </button>
+
+            {#                <a href="#!" class="modal-close waves-effect waves-green btn-flat">Agree</a>#}
+        </div>
+    </div>
+
+
     <div class="card-panel white">
         <table>
             <thead>
@@ -26,7 +68,7 @@
             {% for object in object_list %}
                 <tr>
                     <td><a href="{{ object.product.block.get_absolute_url }}">{{ object.product }}</a></td>
-                    <td><a  onclick="open_package_list_by_stock('{% url 'stock_slabs_detail' object.id %}')">
+                    <td><a onclick="open_package_list_by_stock('{% url 'stock_slabs_detail' object.id %}')">
                         {% if object.product.type == 'slab' %}{{ object.get_part }} 夹/ {% endif %}
                         {{ object.piece }} 件/ {{ object.quantity }}{{ object.uom }}</a></td>
                     <td>{{ object.location }}</td>
@@ -44,8 +86,23 @@
 {% block subheadline %}
     <div class="card-panel">
 
-    <span>产品编号:{{ count_total }}</span><br>
-    <span>件数:{{ piece_total }}</span><br>
-    <span>数量:{{ quantity_total }}</span>
+        <span>产品编号:{{ count_total }}</span><br>
+        <span>件数:{{ piece_total }}</span><br>
+        <span>数量:{{ quantity_total }}</span>
     </div>
 {% endblock %}
+<script>
+
+    {% block domready %}
+        {{ block.super }}
+        $('.modal').modal();
+        $('.clear').on('click', function (e) {
+            $('#choose-stock-form').find('input[type=text],select,input[type=hidden]').each(function () {
+                $(this).val('');
+            });
+            $('#choose-form-sidebar').find('input[type=text],select,input[type=hidden]').each(function () {
+                $(this).val('');
+            });
+        });
+    {% endblock %}
+</script>

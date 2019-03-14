@@ -3,7 +3,6 @@
     <li class="logo"><img class="responsive-img" src="{% static '/image/logo.jpg' %}"
                           alt="{{ user.get_company.company.name }}" style="width: 100%; height:auto"></li>
 <li class="no-padding">
-
         <ul class="collapsible">
             <li class="bold{% if request.path|slice:'8' == '/account/' %} active {% endif %}">
 
@@ -85,12 +84,14 @@
                 <div class="collapsible-header">出入库管理</div>
                 <div class="collapsible-body">
                     <ul>
-                        <li{% if 'in_out_order/' in request.path %} class="active" {% endif %}><a
-                                href="{% url 'in_out_order_list' %}">出入库</a></li>
-                        <li{% if 'move_order/' in request.path %} class="active" {% endif %}><a
-                                href="{% url 'move_location_order_list' %}">移库单</a></li>
                         <li{% if 'production/' in request.path %} class="active" {% endif %}><a
                                 href="{% url 'production_list' %}">生产订单</a></li>
+                        <li{% if 'move_wh_order/' in request.path %} class="active" {% endif %}><a
+                                href="{% url 'move_warehouse_order_list' %}">仓库调拨单(运输单)</a></li>
+                        <li{% if 'move_order/' in request.path %} class="active" {% endif %}><a
+                                href="{% url 'move_location_order_list' %}">移库单</a></li>
+                        <li{% if 'in_out_order/' in request.path %} class="active" {% endif %}><a
+                                href="{% url 'in_out_order_list' %}">出入库</a></li>
                         <li{% if 'inventory_order/' in request.path %} class="active" {% endif %}><a
                                 href="{% url 'inventory_order_list' %}">库存盘点</a></li>
                         <li>

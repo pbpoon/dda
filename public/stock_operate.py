@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Created by pbpoon on 2018/11/7
+from collections import Counter
 
 from stock.models import Stock, StockTrace
 
@@ -250,6 +251,7 @@ class StockOperate:
 
                 self.trace_model.objects.create(item=item, product=item.product, location=item.location,
                                                 location_dest=item.location_dest)
+                self.update_stock_main_size(item)
             else:
                 # 更新数据库
                 # transaction.savepoint_commit(sid)
@@ -258,3 +260,22 @@ class StockOperate:
             # transaction.rollback(sid)
             return False, '更新库存失败'
         return False, error
+
+    def update_stock_main_size(self, item):
+        stocks = Stock.objects.filter(product=item.product)
+        for stock in stocks:
+            if stock.product.type == 'slab':
+                size = []
+                for slab in stock.items.all():
+                    size.append('%s*%s' % (slab.long, slab.height))
+                c = Counter(size)
+                max_size, count = c.most_common()[0]
+                long, height = max_size.split('*')
+                width = 0
+            else:
+                block = stock.product.block
+                long, height, width = sorted([block.long, block.width, block.height], reverse=True)
+            stock.main_long = long
+            stock.main_height = height
+            stock.main_width = width
+            stock.save()

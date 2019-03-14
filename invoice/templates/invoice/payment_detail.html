@@ -1,10 +1,11 @@
 {% extends 'detail.html' %}
 {% load public %}
 {% block headline %}
-    金额:{{ object.amount }}<br>
-    {{ object.get_type_display }} / 对方：{{ object.partner }}
+    [{{ object.get_type_display }}]金额:{{ object.amount|format_money }}<br>
+    账户:{{ object.account }}
 {% endblock %}
 {% block subheadline %}
+    对方:{{ object.partner }}<br>
     登记人：{{ object.entry }} / 时间: {{ object.updated }}
 {% endblock %}
 {% block content %}
@@ -53,7 +54,7 @@
     {% endif %}
 {% endblock %}
 {% block sidebar %}
-{% if object.get_files %}
+    {% if object.get_files %}
         <div class="collection">
             <a class="collection-item" href="{% url 'object_files_list' object|label_name object.id %}">
                 <span>文件档案({{ object.get_files.count }})</span>
@@ -61,4 +62,40 @@
             </a>
         </div>
     {% endif %}
+{% endblock %}
+{% block state %}
+    {% if state_form %}
+        <form action="" method="post" id="state_form">
+            {% csrf_token %}
+            <input type="hidden" value="" name="state">
+        </form>
+            {% if btn_visible.draft %}
+                <button class="btn white black-text" onclick="state_confirm('draft')">设成草稿</button>
+            {% endif %}
+        {#    {% if object.items.all %}#}
+        {% if btn_visible.confirm %}
+            <button id="#state_confirm_btn" class="btn blue" onclick="state_confirm('confirm')">确定</button>
+        {% endif %}
+        {% if btn_visible.done %}
+            <button class="btn yellow black-text" onclick="state_confirm('done')">完成</button>
+            {#        {% endif %}#}
+        {% endif %}
+            {% if btn_visible.cancel %}
+                <button class="btn grey" onclick="state_confirm('cancel')">取消</button>
+            {% endif %}
+        {#        {% if btn_visible.delete or not object.items.all %}#}
+        {% if btn_visible.delete %}
+            <button class="btn red" onclick="item_remove('{{ object.get_delete_url }}')">删除</button>
+        {% endif %}
+    {% endif %}
+    <script>
+        function state_confirm(state_str) {
+            $('#modal2 p').text('确定要把本单状态设置为：' + state_str);
+            $('#state_form input[name=state]').val(state_str);
+            $('#confirm_btn').on('click', function (e) {
+                $('#state_form').submit()
+            });
+            md2.modal('open');
+        }
+    </script>
 {% endblock %}

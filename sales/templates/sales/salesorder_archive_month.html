@@ -1,0 +1,102 @@
+{% extends "sales/list.html" %}
+{% block add_url %}
+    {% url "sales_order_create" %}
+{% endblock %}
+{% block headline %}
+    销售订单
+{% endblock %}
+{% block content %}
+     <style>
+    .charts{
+        margin-bottom: 30px;
+    }
+    </style>
+    <div id="container" class="charts"></div>
+    <div id="container2" class="charts"></div>
+    <p>
+        {% if previous_month %}
+            上月:
+            <a href="{% url 'sales_order_month_list' %}?year={{ previous_month|date:"Y" }}&month={{ previous_month|date:"m" }}">{{ previous_month|date:"Y年m月" }}</a>
+        {% endif %}
+        {% if next_month %}
+            下月:
+            <a href="{% url 'sales_order_month_list' %}?year={{ next_month|date:"Y" }}&month={{ next_month|date:"m" }}">{{ next_month|date:"Y年m月" }}</a>
+        {% endif %}
+    </p>
+    {{ block.super }}
+{% endblock %}
+{% block sidebar %}
+    <ul>
+        <li>当前月份:{{ month|date:"Y年m月" }}
+            <ul>
+                {% for date in date_list %}
+                    <li>{{ date }}</li>
+                {% endfor %}
+            </ul>
+        </li>
+    </ul>
+{% endblock %}
+{% block head %}
+    <script src="http://code.highcharts.com/highcharts.js"></script>
+{% endblock %}
+<script>
+    {% block domready %}
+        {{ block.super }}
+        Highcharts.chart('container', {
+            chart: {
+                plotBackgroundColor: null,
+                plotBorderWidth: null,
+                plotShadow: false,
+                type: 'pie'
+            },
+            title: {
+                text: '{{ month|date:"Y年m月" }}订单状态占比'
+            },
+            tooltip: {
+                pointFormat: '{series.name}: <b>{point.y}m2/{point.percentage:.1f}%</b>'
+            },
+            plotOptions: {
+                pie: {
+                    allowPointSelect: true,
+                    cursor: 'pointer',
+                    dataLabels: {
+                        enabled: true,
+                        format: '<b>{point.name}</b>: {point.y}m2//{point.percentage:.1f} %',
+                        style: {
+                            color: (Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black'
+                        }
+                    }
+                }
+            },
+            series: {{ series|safe }}
+        });
+        Highcharts.chart('container2', {
+            chart: {
+                plotBackgroundColor: null,
+                plotBorderWidth: null,
+                plotShadow: false,
+                type: 'pie'
+            },
+            title: {
+                text: '{{ month|date:"Y年m月" }}规格销量占比'
+            },
+            tooltip: {
+                pointFormat: '{series.name}: <b>{point.y}m2/{point.percentage:.1f}%</b>'
+            },
+            plotOptions: {
+                pie: {
+                    allowPointSelect: true,
+                    cursor: 'pointer',
+                    dataLabels: {
+                        enabled: true,
+                        format: '<b>{point.name}</b>: {point.y}m2/{point.percentage:.1f} %',
+                        style: {
+                            color: (Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black'
+                        }
+                    }
+                }
+            },
+            series: {{ series2|safe }}
+        });
+    {% endblock %}
+</script>

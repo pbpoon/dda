@@ -58,7 +58,9 @@ urlpatterns = [
     path('move_order/<pk>/pdf/', views.MoveOrderToPdfView.as_view(), name='move_order_pdf'),
     path('move_order/<pk>/delete/', views.MoveLocationOrderDeleteView.as_view(), name='move_location_order_delete'),
     path('move_order/create/', views.MoveLocationOrderCreateView.as_view(), name='move_location_order_create'),
+    path('move_wh_order/create/<type>/', views.MoveLocationOrderCreateView.as_view(), name='move_location_order_create'),
     path('move_order/<pk>/', views.MoveLocationOrderDetailView.as_view(), name='move_location_order_detail'),
+    path('move_wh_order/', views.MoveWarehouseOrderListView.as_view(), name='move_warehouse_order_list'),
     path('move_order/', views.MoveLocationOrderListView.as_view(), name='move_location_order_list'),
 
     # ------------------------------------------------production order

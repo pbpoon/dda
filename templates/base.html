@@ -1,6 +1,9 @@
 {% load static %}
 {% load i18n %}
+{% load static %}
+
 <!DOCTYPE html>
+
 <html lang="zh-hans">
 <head>
     <meta charset="UTF-8">
@@ -15,7 +18,10 @@
     {#        <link href="https://cdn.bootcss.com/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">#}
     {#    <link rel="stylesheet" href="{% static 'select2-materialize/select2-materialize.css' %}">#}
     {#    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-rc.2/css/materialize.min.css">#}
-
+    <link rel="stylesheet" href="{% static 'star-ratings/css/star-ratings.css' %}">
+    <script type="text/javascript" src="{% static 'star-ratings/js/dist/star-ratings.min.js' %}"></script>
+    {% block head %}
+    {% endblock %}
     <style>
         {#.ui-autocomplete {#}
         {#    z-index: 215000000 !important;#}
@@ -108,6 +114,12 @@
 
 <!--标题块相关-->
 <header>
+    <h5 style="padding-left: 20px">
+        {% block detail_title %}
+        {% endblock %}
+    </h5>
+
+    <div class="divider"></div>
     {% block header %}
     {% endblock %}
 </header>

@@ -9,14 +9,16 @@
 {% block content %}
     <ul class="collection">
         {% for object in object_list %}
-            <li class="collection-item avatar grey-text">
-                <div class="right"><span>{{ object.created|date:"Y-m-d" }}</span><a onclick="item_remove('{% url 'file_delete' object.id %}')">删除</a></div>
-                {% if object.entry.profile.avatar %}
-                    <img src="{{ object.entry.profile.avatar.url }}" alt="{{ object.entry }}"
-                         class="circle responsive-img">
-                {% else %}
-                    <i class="material-icons circle">{{ object.entry.user.name }}</i>
-                {% endif %}
+            <li class="collection-item grey-text">
+                <div class="left black-text">{{ object.entry }}:<span>{{ object.created|date:"Y-m-d" }}<small>({{ object.created|timesince }}前)</small></span><div class="right"><a onclick="item_remove('{% url 'file_delete' object.id %}')">删除</a></div></div>
+{#                {% if object.entry.profile.avatar %}#}
+{#                    <img src="{{ object.entry.profile.avatar.url }}" alt="{{ object.entry }}"#}
+{#                         class="circle responsive-img">#}
+{#                {% else %}#}
+{#                    <i class="material-icons circle">{{ object.entry.user.name }}</i>#}
+{#                {% endif %}#}
+                <br>
+                <hr>
                 {{ object.render|safe }}
             </li>
         {% endfor %}

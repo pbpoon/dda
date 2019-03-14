@@ -1,3 +1,5 @@
+import collections
+
 from django import forms
 from django.contrib import messages
 from django.core.paginator import Paginator
@@ -122,6 +124,47 @@ class StockListView(FilterListView):
         qs = super().get_queryset()
         context.update(
             qs.aggregate(count_total=Count('product'), piece_total=Sum('piece'), quantity_total=Sum('quantity')))
+        return context
+
+
+class StockChartsListView(FilterListView):
+    model = Stock
+    # paginate_by = 20
+    filter_class = StockFilter
+    template_name = 'stock/stock_charts_list.html'
+
+    def get_charts_data(self, object_list):
+        """
+        按厚度 pie
+        按仓位 pie
+        按类型 clomn
+
+        """
+        loc = collections.defaultdict(lambda: 0)
+        thick = collections.defaultdict(lambda: 0)
+        type = collections.defaultdict(lambda: 0)
+        for obj in object_list:
+            loc[obj.location.warehouse] += int(obj.quantity)
+            thick[obj.product.thickness] += int(obj.quantity)
+            type[obj.product.get_type_display()] += int(obj.quantity)
+        series = [{'name': '厚度规格占比',
+                   'data': [{'name': str(thickness), 'y': thick[thickness]} for thickness in thick]}]
+        series2 = [{'name': '仓库数量占比',
+                    'data': [{'name': str(l), 'y': loc[l]} for l in loc]}]
+        series3 = [{'name': '类型占比',
+                    'data': [{'name': str(t), 'y': type[t]} for t in type]}]
+
+        data = {'series': series,
+                'series2': series2,
+                'series3': series3}
+        return data
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        qs = super().get_queryset()
+        context.update(
+            qs.aggregate(count_total=Count('product'), piece_total=Sum('piece'), quantity_total=Sum('quantity')))
+        context.update(self.get_charts_data(qs))
         return context
 
 

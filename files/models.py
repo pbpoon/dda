@@ -152,7 +152,7 @@ class Files(models.Model):
                 if p_size == 'long':
                     new_width, new_height = 3072, int(3072 / (width * 1.0 / height))
                 else:
-                    new_width, new_height = int(3072 / (width * 1.0 / height)), 3072
+                    new_width, new_height = int(3072 / (height * 1.0 / width)), 3072
                 im = im.resize((new_width, new_height))
             output = BytesIO()
             obj = self.get_obj()

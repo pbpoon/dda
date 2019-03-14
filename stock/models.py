@@ -285,18 +285,21 @@ class Stock(models.Model):
             reserve_quantity = sum(available.reserve_quantity for available in available_stock)
         return (piece - reserve_piece), (quantity - reserve_quantity)
 
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        if self.product.type == 'slab':
-            size = []
-            for slab in self.items.all():
-                size.append('%s*%s' % (slab.long, slab.height))
-            c = Counter(size)
-            max_size, count = c.most_common()[0]
-            print(c.most_common()[0])
-            long, height = max_size.split('*')
-            width = 0
-        else:
-            block = self.product.block
-            long, height, width = sorted([block.long, block.width, block.height], reverse=True)
-        Stock.objects.filter(pk=self.id).update(main_long=long, main_height=height, main_width=width)
+    @classmethod
+    def update_stock_main_size(cls):
+        for stock in cls.objects.all():
+            if stock.product.type == 'slab':
+                size = []
+                for slab in stock.items.all():
+                    size.append('%s*%s' % (slab.long, slab.height))
+                c = Counter(size)
+                max_size, count = c.most_common()[0]
+                long, height = max_size.split('*')
+                width = 0
+            else:
+                block = stock.product.block
+                long, height, width = sorted([block.long, block.width, block.height], reverse=True)
+            stock.main_long = long
+            stock.main_height = height
+            stock.main_width = width
+            stock.save()

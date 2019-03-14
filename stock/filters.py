@@ -5,7 +5,10 @@ import operator
 from functools import reduce
 
 import django_filters
+from django import forms
 from django.db.models import Q, F, Count
+from django_filters.widgets import RangeWidget
+
 from .models import Stock, Warehouse, Location
 
 
@@ -33,14 +36,17 @@ class StockFilter(django_filters.FilterSet):
                                                       method='filter_by_quarry')
     batch = django_filters.ModelMultipleChoiceFilter(label='批次', queryset=Batch.objects.all().order_by('name'),
                                                      method='filter_by_batch')
-    main_long = django_filters.RangeFilter(label='长')
-    main_height = django_filters.RangeFilter(label='高')
-    main_width = django_filters.RangeFilter(label='宽(荒料)')
+    quantity = django_filters.RangeFilter(label='数量范围')
+    piece = django_filters.RangeFilter(label='件数范围')
+    main_long = django_filters.RangeFilter(label='长度范围')
+    main_height = django_filters.RangeFilter(label='高度范围')
+    main_width = django_filters.RangeFilter(label='宽度范围(荒料)')
 
     class Meta:
         model = Stock
         fields = (
-        'block', 'warehouse', 'quarry', 'batch', 'type', 'thickness', 'main_long', 'main_height', 'main_width')
+            'block', 'warehouse', 'quarry', 'batch', 'type', 'thickness', 'piece', 'quantity', 'main_long',
+            'main_height', 'main_width')
 
     def filter_by_warehouse(self, queryset, name, value):
         lst = []

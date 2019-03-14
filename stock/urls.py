@@ -37,8 +37,9 @@ urlpatterns = [
     path('slabs/<pk>/full/', views.StockSlabsFullPageView.as_view(), name='stock_slabs_detail_full'),
     path('slabs/<pk>/', views.StockSlabsView.as_view(), name='stock_slabs_detail'),
     path('slab/<pk>/edit/', views.SlabsEditView.as_view(), name='stock_slab_edit'),
-    path('available/<pk>/slabs/move/', views.StockSlabMoveView.as_view(), name='stock_slabs_move'),
-    path('available/<pk>/update_line/', views.StockSlabsLineUpdateView.as_view(), name='stock_slabs_update_line'),
-    path('available/<pk>/', views.StockDetailView.as_view(), name='stock_detail'),
+    path('available/<int:pk>/slabs/move/', views.StockSlabMoveView.as_view(), name='stock_slabs_move'),
+    path('available/<int:pk>/update_line/', views.StockSlabsLineUpdateView.as_view(), name='stock_slabs_update_line'),
+    path('available/<int:pk>/', views.StockDetailView.as_view(), name='stock_detail'),
+    path('available/chart/', views.StockChartsListView.as_view(), name='stock_charts_list'),
     path('available/', views.StockListView.as_view(), name='stock_list'),
 ]

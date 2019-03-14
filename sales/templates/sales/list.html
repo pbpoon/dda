@@ -21,8 +21,6 @@
         {% for object in object_list %}
             <a class="collection-item avatar grey-text" href="{{ object.get_absolute_url }}">
                 <div class="row">
-
-
                     <div class="right right-align">
                         <span class=" right small {% if object.state == 'draft' %}default{% elif object.state == 'cancel' %}grey{% elif object.state == 'done' %}yellow{% else %}blue{% endif %}-text"
                 >{{ object.get_state_display }}

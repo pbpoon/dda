@@ -6,6 +6,7 @@ from functools import reduce
 
 import django_filters
 from django.db.models import Q
+from django_filters.widgets import LinkWidget
 
 from mrp.models import InOutOrder, MoveLocationOrder, ProductionOrder, InventoryOrder
 from product.models import Quarry, Batch, Product
@@ -30,9 +31,15 @@ class MoveLocationOrderFilter(StateOrderFilter):
 
 
 class ProductionOrderFilter(StateOrderFilter):
+    from mrp.models import ProductionType
+    production_type = django_filters.ModelChoiceFilter(label='状态',queryset=ProductionType.objects.all(),
+                                        widget=LinkWidget(attrs={'class': 'inline-ul'}))
     class Meta:
         model = ProductionOrder
         fields = ('state', 'production_type', 'partner')
+        # widgets = {
+        #     'production_type': LinkWidget(attrs={'class': 'inline-ul'})
+        # }
 
 
 class InventoryOrderFilter(StateOrderFilter):
@@ -42,9 +49,7 @@ class InventoryOrderFilter(StateOrderFilter):
 
 
 class ProductFilter(django_filters.FilterSet):
-
     name = django_filters.CharFilter(label='编号', method='filter_by_block')
-
 
     class Meta:
         model = Product

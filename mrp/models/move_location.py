@@ -11,7 +11,7 @@ UOM_CHOICES = (('t', '吨'), ('m3', '立方'), ('m2', '平方'))
 class MoveLocationOrder(MrpOrderAbstract):
     partner = models.ForeignKey('partner.Partner', on_delete=models.SET_NULL, null=True, blank=True,
                                 limit_choices_to={'type': 'service'},
-                                verbose_name='运输单位', help_text='账单[对方]对应本项。如果为空，则不会生产账单')
+                                verbose_name='运输单位')
     order = OrderField(order_str='MO', blank=True, verbose_name='单号', default='New', max_length=20)
     warehouse = models.ForeignKey('stock.Warehouse', on_delete=models.CASCADE, verbose_name='移出仓库',
                                   related_name='move_out_warehouse')
@@ -21,6 +21,12 @@ class MoveLocationOrder(MrpOrderAbstract):
     class Meta:
         verbose_name = '移库单'
         ordering = ('-date', '-created')
+
+    @property
+    def type(self):
+        if self.partner:
+            return '仓库调拨单'
+        return self._meta.verbose_name
 
     def _get_invoice_usage(self):
         return '运输费'

@@ -1,8 +1,11 @@
+import collections
 from _decimal import Decimal
 import weasyprint
 from datetime import datetime
+
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, Sum
+from django.db.models.functions import TruncMonth
 from django.forms import inlineformset_factory
 from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render, get_object_or_404
@@ -11,6 +14,7 @@ from django.urls import reverse, reverse_lazy
 from django.views.generic import DetailView, CreateView, UpdateView, DeleteView
 from django.views.generic.detail import BaseDetailView
 from django.views.generic.edit import BaseDeleteView
+from django.views.generic.dates import MonthArchiveView, BaseYearArchiveView, YearArchiveView
 from django.contrib import messages
 
 from cart.cart import Cart
@@ -29,7 +33,106 @@ from wkhtmltopdf.views import PDFTemplateView
 class SalesOrderListView(FilterListView):
     model = SalesOrder
     filter_class = SalesOrderFilter
-    paginate_by = 10
+
+
+class SalesOrderMonthListView(ViewPermissionRequiredMixin, MonthArchiveView):
+    model = SalesOrder
+    date_field = 'date'
+    month_format = '%m'
+
+    # year_format = '%Y'
+    # template_name = 'sales/salesorder_archive_month.html'
+
+    def get_charts_data(self, object_list):
+        data = collections.OrderedDict()
+        thick = collections.defaultdict(lambda: 0)
+        for obj in object_list.filter(state__in=('confirm', 'done')).order_by('date'):
+            state = obj.get_state_display()
+            if state not in data:
+                d = collections.defaultdict(lambda: 0)
+                data[state] = d
+            data[state]['quantity'] += int(obj.quantity)
+            for item in obj.items.all():
+                thickness = item.product.thickness if item.product.type == 'slab' else '荒料'
+                thick[thickness] += int(item.quantity)
+        series = [{'name': '状态占比',
+                  'data': [{'name': str(state), 'y': data[state]['quantity']} for state in data]}]
+        series2 = [{'name': '规格占比',
+                   'data': [{'name': str(thickness), 'y': thick[thickness]} for thickness in thick]}]
+
+        data = {'series': series,
+                'series2': series2}
+        return data
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        object_list = context.get('object_list')
+        data = self.get_charts_data(object_list)
+        context.update(data)
+        context['title'] = '%s月销量' % context['month']
+        return context
+
+
+class SalesOrderChrtsView(ViewPermissionRequiredMixin, YearArchiveView):
+    model = SalesOrder
+    date_field = 'date'
+    year_format = '%Y'
+    make_object_list = True
+    template_name = 'sales/salesorder_chart.html'
+
+    def get_charts_data(self, object_list):
+        data = collections.OrderedDict()
+        for obj in object_list.filter(state__in=('confirm', 'done')).order_by('date'):
+            month = obj.date.strftime("%Y-%m")
+            if month not in data:
+                d = collections.defaultdict(lambda: 0)
+                data[month] = d
+            data[month]['quantity'] += int(obj.quantity)
+            if obj.state == 'confirm':
+                data[month]['confirm_quantity'] += int(obj.quantity)
+                data[month]['confirm_amount'] += int(obj.amount)
+            elif obj.state == 'done':
+                data[month]['done_quantity'] += int(obj.quantity)
+                data[month]['done_amount'] += int(obj.amount)
+            for item in obj.items.all():
+                thickness = item.product.thickness if item.product.type == 'slab' else '荒料'
+                data[month][thickness] += int(item.quantity)
+        categories = [str(i) for i in data.keys()]
+        quantity = {'type': 'spline', 'name': '总数量',
+                    'data': [data[month]['quantity'] for month in data]}
+        confirm_quantity = {'type': 'spline', 'name': '确认数量',
+                            'data': [data[month]['confirm_quantity'] for month in data]}
+        confirm_amount = {'type': 'column', 'yAxis': 1, 'name': '确认金额',
+                          'data': [data[month]['confirm_amount'] for month in data]}
+        done_quantity = {'type': 'spline', 'name': '完成数量',
+                         'data': [data[month]['done_quantity'] for month in data]}
+        done_amount = {'type': 'column', 'yAxis': 1, 'name': '完成金额',
+                       'data': [data[month]['done_amount'] for month in data]}
+        thickness_names = {thickness for month in data for thickness in data[month] if
+                           thickness not in (
+                               'quantity', 'confirm_quantity', 'confirm_amount', 'done_quantity', 'done_amount')}
+        series2 = []
+        for thickness in thickness_names:
+            _lst = []
+            for month in data:
+                i = data[month][thickness] or 0
+                _lst.append(i)
+            d = {'type': 'spline', 'name': str(thickness),
+                 'data': _lst}
+            series2.append(d)
+        series2 = sorted(series2, key=lambda x: x['name'])
+        series = [confirm_amount, done_amount, quantity, confirm_quantity, done_quantity]
+        data = {'series': series, 'categories': categories,
+                'series2': series2}
+        return data
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        object_list = context.get('object_list')
+        data = self.get_charts_data(object_list)
+        context.update(data)
+        context['title'] = '%s年销量' % context['year']
+        return context
 
 
 class SalesSentWxMsg(SentWxMsgMixin):

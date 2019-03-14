@@ -9,6 +9,7 @@ from django.shortcuts import render, get_object_or_404, redirect, reverse
 from django.template.loader import render_to_string
 from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
+from django.views.generic.dates import BaseMonthArchiveView, MonthArchiveView, BaseDateDetailView
 from django.contrib import messages
 
 from invoice.filters import InvoiceFilter, PaymentFilter
@@ -52,6 +53,15 @@ class InvoiceListView(FilterListView):
     model = Invoice
     filter_class = InvoiceFilter
     template_name = 'invoice/list.html'
+
+
+class InvoiceMonthListView(MonthArchiveView):
+    model = Invoice
+    filter_class = InvoiceFilter
+    date_field = 'due_date'
+    month_format = '%m'
+    allow_future = True
+    paginate_by = 20
 
 
 class ExpensesInvoiceListView(InvoiceListView):

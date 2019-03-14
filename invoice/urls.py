@@ -36,6 +36,7 @@ urlpatterns = [
     path('purchase/<pk>/', views.PurchaseInvoiceDetailView.as_view(), name='purchase_invoice_detail'),
     path('expenses/<pk>/', views.ExpensesInvoiceDetailView.as_view(), name='expenses_invoice_detail'),
     path('sales/<pk>/', views.SalesInvoiceDetailView.as_view(), name='sales_invoice_detail'),
-    path('<pk>/', views.InvoiceDetailView.as_view(), name='invoice_detail'),
+    path('<int:pk>/', views.InvoiceDetailView.as_view(), name='invoice_detail'),
+    path('month/', views.InvoiceMonthListView.as_view(), name='invoice_month_list'),
     path('', views.InvoiceListView.as_view(), name='invoice_list'),
 ]

@@ -43,21 +43,22 @@ urlpatterns = [
     path('files/', include('files.urls')),
     path('comment/', include('comment.urls')),
     path('wechat/', include('action.urls')),
-    path('', RedirectView.as_view(url='stock/available/'))
-
+    path('', RedirectView.as_view(url='stock/available/')),
+    path('ratings/', include('star_ratings.urls', namespace='ratings')),
     # selectable
 
 ]
+
 # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 # if settings.DEBUG:
 #     urlpatterns += staticfiles_urlpatterns()
 #     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-    # import debug_toolbar
-    # urlpatterns += [
-    #     url(r'^__debug__/', include(debug_toolbar.urls)),
-    # ]
+# import debug_toolbar
+# urlpatterns += [
+#     url(r'^__debug__/', include(debug_toolbar.urls)),
+# ]
 
 # if settings.DEBUG is False:
 #     # urlpatterns += patterns('',

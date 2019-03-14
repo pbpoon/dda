@@ -1,11 +1,13 @@
 {% extends 'detail.html' %}
 {% load public %}
+{% load ratings %}
 {% block bnaner-title %}
     {{ object.name }}
 {% endblock %}
 {% block content %}
 
     {% if object.stock.all %}
+
         <p class="h3">可用库存：</p>
         <hr>
         <form action="" method="post" id="stock_form">
@@ -25,6 +27,34 @@
                 {% csrf_token %}
             </ul>
         </form>
+    {% endif %}
+    {% if object.get_lock_state_orders %}
+        <h6>锁货订单:</h6>
+        <div class="divider"></div>
+        {% for item in object.get_lock_state_orders %}
+            <table>
+                <thead>
+                <tr>
+                    {% if forloop.first %}
+                        {% for key in item.keys %}
+                            <th>{{ key }}</th>
+                        {% endfor %}
+                    {% endif %}
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    {% for key, value in item.items %}
+                        {% if key == '单号' %}
+                            <td><a href="{{ value.get_absolute_url }}">{{ value.order }}</a></td>
+                        {% else %}
+                            <td>{{ value }}</td>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+                </tbody>
+            </table>
+        {% endfor %}
     {% endif %}
     <!--事务-->
     {#    {% if object.get_stock_trace_all %}#}
@@ -61,7 +91,7 @@
 {% endblock %}
 {% block subheadline %}
     <div class="row">
-        <div class="col s8">
+        <div class="col s7">
 
             <ul style="display: inline">
                 <li>品种：{{ object.category|default_if_none:"" }}</li>
@@ -74,7 +104,7 @@
                     / {{ object.height|default_if_none:"" }}</li>
             </ul>
         </div>
-        <div class="col s4">
+        <div class="col s5">
             <div style="text-align: right">
                 {% if object.slab_yield %}
                     <span class="chip orange black-text">出材率:{{ object.slab_yield }}/{{ object.uom }}</span>
@@ -94,6 +124,9 @@
     {% endif %}
 {% endblock %}
 {% block sidebar %}
+    <div class="card-panel white">
+        {% ratings object %}
+    </div>
     {% if object.original_stock_trace.all %}
         <div class="collection">
             <a class="collection-item" href="{% url 'block_original_stock_trace' object.id %}">

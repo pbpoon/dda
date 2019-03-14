@@ -2,14 +2,14 @@
 {% load public %}
 {% block headline %}
     <div class="row">
-    <div class="left">
+        <div class="left">
 
-    <span class="chip">{{ object.usage }}</span><br>
-[{{ object.get_state_display }}]{{ object.get_type_display }}{{ object.order }}
-    </div>
-    <div class="right orange-text">
-        <h5 style="font-weight: bold">{{ object.amount|format_money }}</h5>
-    </div>
+            <span class="chip">{{ object.usage }}</span><br>
+            [{{ object.get_state_display }}]{{ object.get_type_display }}{{ object.order }}
+        </div>
+        <div class="right orange-text">
+            <h5 style="font-weight: bold">{{ object.amount|format_money }}</h5>
+        </div>
     </div>
 {% endblock %}
 {% block subheadline %}
@@ -18,7 +18,7 @@
     账单日期：{{ object.date }} / 到期日期： {{ object.due_date }}
 {% endblock %}
 {% block state-right %}
-{% if object.state != 'cancel' %}
+    {% if object.state != 'cancel' %}
         {% if object.due_amount %}
             <a onclick="add_item('{% url 'payment_create_from_invoice' object.id object.partner.id %}')"
                class="btn right">登记款项
@@ -153,4 +153,47 @@
 {% block domready %}
     {{ block.super }}
     $('.dropdown-trigger').dropdown();
+{% endblock %}
+{% block state %}
+    {% if state_form %}
+        <form action="" method="post" id="state_form">
+            {% csrf_token %}
+            <input type="hidden" value="" name="state">
+        </form>
+        {% if user|check_permission:'invoice.can_draft' %}
+
+            {% if btn_visible.draft %}
+                <button class="btn white black-text" onclick="state_confirm('draft')">设成草稿</button>
+            {% endif %}
+        {% endif %}
+
+        {% if object.items.all %}
+            {% if btn_visible.confirm %}
+                <button id="#state_confirm_btn" class="btn blue" onclick="state_confirm('confirm')">确定</button>
+            {% endif %}
+            {% if btn_visible.done %}
+                <button class="btn yellow black-text" onclick="state_confirm('done')">完成</button>
+            {% endif %}
+        {% endif %}
+        {% if user|check_permission:'invoice.can_cancel' %}
+            {% if btn_visible.cancel %}
+                <button class="btn grey" onclick="state_confirm('cancel')">取消</button>
+            {% endif %}
+        {% endif %}
+        {#        {% if btn_visible.delete or not object.items.all %}#}
+        {% if btn_visible.delete %}
+            <button class="btn red" onclick="item_remove('{{ object.get_delete_url }}')">删除</button>
+        {% endif %}
+    {% endif %}
+    <script>
+        function state_confirm(state_str) {
+            $('#modal2 p').text('确定要把本单状态设置为：' + state_str);
+            $('#state_form input[name=state]').val(state_str);
+            $('#confirm_btn').on('click', function (e) {
+                $('#state_form').submit()
+            });
+            md2.modal('open');
+        }
+    </script>
+
 {% endblock %}
