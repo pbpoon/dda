@@ -7,7 +7,7 @@ from django.db import transaction
 from django.db.models import Q, Sum
 from django.db.models.functions import TruncMonth
 from django.forms import inlineformset_factory
-from django.http import HttpResponseRedirect, HttpResponse
+from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
 from django.shortcuts import render, get_object_or_404
 from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
@@ -21,10 +21,10 @@ from cart.cart import Cart
 from public.permissions_mixin_views import ViewPermissionRequiredMixin, PostPermissionRequiredMixin, \
     DynamicPermissionRequiredMixin
 from public.views import OrderFormInitialEntryMixin, OrderItemEditMixin, OrderItemDeleteMixin, StateChangeMixin, \
-    ModalOptionsMixin, FilterListView, SentWxMsgMixin
+    ModalOptionsMixin, FilterListView, SentWxMsgMixin, ModalEditMixin
 from sales.forms import SalesOrderForm, SalesOrderItemForm, SalesOrderItemQuickForm, CustomerForm, \
-    SalesOrderCreateByCustomerForm
-from sales.models import SalesOrder, SalesOrderItem, Customer
+    SalesOrderCreateByCustomerForm, SalesLeadsForm, SalesLeadsDetailForm
+from sales.models import SalesOrder, SalesOrderItem, Customer, SalesLeads
 from django.conf import settings
 from .filters import SalesOrderFilter, CustomerFilter
 from wkhtmltopdf.views import PDFTemplateView
@@ -56,9 +56,9 @@ class SalesOrderMonthListView(ViewPermissionRequiredMixin, MonthArchiveView):
                 thickness = item.product.thickness if item.product.type == 'slab' else '荒料'
                 thick[thickness] += int(item.quantity)
         series = [{'name': '状态占比',
-                  'data': [{'name': str(state), 'y': data[state]['quantity']} for state in data]}]
+                   'data': [{'name': str(state), 'y': data[state]['quantity']} for state in data]}]
         series2 = [{'name': '规格占比',
-                   'data': [{'name': str(thickness), 'y': thick[thickness]} for thickness in thick]}]
+                    'data': [{'name': str(thickness), 'y': thick[thickness]} for thickness in thick]}]
 
         data = {'series': series,
                 'series2': series2}
@@ -98,13 +98,13 @@ class SalesOrderChrtsView(ViewPermissionRequiredMixin, YearArchiveView):
                 thickness = item.product.thickness if item.product.type == 'slab' else '荒料'
                 data[month][thickness] += int(item.quantity)
         categories = [str(i) for i in data.keys()]
-        quantity = {'type': 'spline', 'name': '总数量',
+        quantity = {'type': 'line', 'name': '总数量',
                     'data': [data[month]['quantity'] for month in data]}
-        confirm_quantity = {'type': 'spline', 'name': '确认数量',
+        confirm_quantity = {'type': 'line', 'name': '确认数量',
                             'data': [data[month]['confirm_quantity'] for month in data]}
         confirm_amount = {'type': 'column', 'yAxis': 1, 'name': '确认金额',
                           'data': [data[month]['confirm_amount'] for month in data]}
-        done_quantity = {'type': 'spline', 'name': '完成数量',
+        done_quantity = {'type': 'line', 'name': '完成数量',
                          'data': [data[month]['done_quantity'] for month in data]}
         done_amount = {'type': 'column', 'yAxis': 1, 'name': '完成金额',
                        'data': [data[month]['done_amount'] for month in data]}
@@ -117,7 +117,7 @@ class SalesOrderChrtsView(ViewPermissionRequiredMixin, YearArchiveView):
             for month in data:
                 i = data[month][thickness] or 0
                 _lst.append(i)
-            d = {'type': 'spline', 'name': str(thickness),
+            d = {'type': 'line', 'name': str(thickness),
                  'data': _lst}
             series2.append(d)
         series2 = sorted(series2, key=lambda x: x['name'])
@@ -406,6 +406,29 @@ class CustomerCreateView(CustomerEditMixin, CreateView):
     pass
 
 
+class CustomerCreateModalView(CustomerEditMixin, CreateView):
+    template_name = 'sales/modal_form.html'
+
+    def form_valid(self, form):
+        self.object = form.save(commit=False)
+        self.object.province = form.cleaned_data.get('partner_province')
+        self.object.save()
+        partner_id = self.object.id
+        partner_text = '%s:%s:%s' % (self.object, self.object.get_address(), self.object.phone)
+        province_id = self.object.province.code
+        province_text = str(self.object.province)
+        city_id = self.object.city.id
+        city_text = str(self.object.city)
+        return JsonResponse({'state': 'ok',
+                             'partner_id': partner_id,
+                             'partner_text': partner_text,
+                             'province_id': province_id,
+                             'province_text': province_text,
+                             'city_id': city_id,
+                             'city_text': city_text,
+                             })
+
+
 class CustomerUpdateView(CustomerEditMixin, UpdateView):
     pass
 
@@ -417,3 +440,78 @@ class SalesOrderCreateByCustomerView(SalesOrderCreateView):
         initial = super().get_initial()
         initial['partner'] = self.kwargs['customer_id']
         return initial
+
+
+class SalesLeadsListView(FilterListView):
+    model = SalesLeads
+
+
+class SalesLeadsDetailView(DetailView):
+    model = SalesLeads
+
+
+class SalesLeadsEditMixin(OrderFormInitialEntryMixin):
+    model = SalesLeads
+    form_class = SalesLeadsForm
+    detail_form_class = SalesLeadsDetailForm
+    template_name = 'sales/form.html'
+
+    def get_prefix(self):
+        return 'main'
+
+    def get_context_data(self, **kwargs):
+        if self.request.method == 'POST':
+            kwargs['detail_form'] = self.detail_form_class(self.request.POST, self.request.FILES, prefix='detail_form')
+        else:
+            detail_initial = {}
+            if self.object:
+                detail_initial = {
+                    'start_time': self.object.start_time,
+                    'due_time': self.object.due_time,
+                    'category': self.object.category,
+                    'type': self.object.type,
+                    'thickness': self.object.thickness,
+                    'quantity': self.object.quantity,
+                    'long_lt': self.object.long_lt,
+                    'long_gt': self.object.long_gt,
+                    'height_lt': self.object.height_lt,
+                    'height_gt': self.object.height_gt,
+                }
+            kwargs['detail_form'] = self.detail_form_class(prefix='detail_form', initial=detail_initial)
+        return super().get_context_data(**kwargs)
+
+    def post(self, request, *args, **kwargs):
+        if not kwargs.get('pk'):
+            self.object = None
+        else:
+            self.object = self.get_object()
+        context = self.get_context_data(**kwargs)
+        form = context['form']
+        detail_form = context['detail_form']
+        if form.is_valid() and detail_form.is_valid():
+            self.object = form.save(commit=False)
+            cd = detail_form.cleaned_data
+            self.object.start_time = cd.get('start_time', None)
+            self.object.due_time = cd.get('due_time', None)
+            self.object.category = cd.get('category', None)
+            self.object.type = cd.get('type', None)
+            self.object.thickness = cd.get('thickness', None)
+            self.object.quantity = cd.get('quantity', None)
+            self.object.long_lt = cd.get('long_lt', None)
+            self.object.long_gt = cd.get('long_gt', None)
+            self.object.price_lt = cd.get('price_lt', None)
+            self.object.price_gt = cd.get('price_gt', None)
+            self.object.height_lt = cd.get('height_lt', None)
+            self.object.height_gt = cd.get('height_gt', None)
+            self.object.save()
+            form.save_m2m()
+            return HttpResponseRedirect(self.get_success_url())
+        return render(self.request, self.template_name, context)
+
+
+class SalesLeadsCreateView(SalesLeadsEditMixin, CreateView):
+    pass
+
+
+class SalesLeadsUpdateView(SalesLeadsEditMixin, UpdateView):
+    pass

@@ -1,7 +1,41 @@
 {% extends 'detail.html' %}
 {% load public %}
 {% block content %}
-
+    <h6>出材率预警设置</h6>
+    <div class="divider"></div>
+    <table>
+        <thead>
+        <tr>
+            <th>厚度</th>
+            <th>最低出材率预警值</th>
+            <th>设置日期</th>
+            <th>编辑</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for yield in object.slab_yield_set.all %}
+            <tr>
+                <td>{{ yield.thickness }}</td>
+                <td>{{ yield.min_yield }}</td>
+                <td>
+                    <small>{{ yield.updated|timesince }}前</small>
+                </td>
+                <td>
+                    <button class="btn btn-floating default btn-small"
+                            onclick="edit_item('{% url "slab_yield_update" yield.id %}')"><i
+                            class="material-icons small">edit</i>
+                    </button>
+                </td>
+            </tr>
+        {% endfor %}
+        <tr>
+            <td colspan="4"><a class="btn btn-floating default btn-small right"
+                               onclick="add_item('{% url "slab_yield_create" object.id %}')"> <i
+                    class="material-icons">add</i>
+            </a></td>
+        </tr>
+        </tbody>
+    </table>
 {% endblock %}
 {% block headline %}
     {{ object.name }}

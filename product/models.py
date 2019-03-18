@@ -172,6 +172,15 @@ class Block(models.Model):
         return _yield
 
     @property
+    def has_yield_warning(self):
+        for slab_product in self.products.filter(type='slab'):
+            for _yield in self.category.slab_yield_set.all():
+                if slab_product.thickness == _yield.thickness:
+                    if Decimal(self.slab_yield) < _yield.min_yield:
+                        return True
+        return False
+
+    @property
     def files(self):
         return self.get_files()
 
@@ -238,7 +247,7 @@ class Block(models.Model):
 
     @property
     def move_order_item(self):
-        from mrp.models import MoveLocationOrderItem
+        # from mrp.models import MoveLocationOrderItem
         items = SalesOrderItem.objects.none()
         for item in self.products.all():
             items |= item.movelocationorderitem_set.all()
@@ -608,3 +617,18 @@ class DraftPackageListItem(SlabAbstract):
 
     class Meta:
         verbose_name = "草稿码单行"
+
+
+class SlabYieldSet(models.Model):
+    category = models.ForeignKey('Category', verbose_name='品种名称', on_delete=models.SET_NULL, blank=True, null=True,
+                                 related_name='slab_yield_set')
+    thickness = models.DecimalField('厚度规格', max_digits=5, decimal_places=2)
+    min_yield = models.DecimalField('最低出材率', max_digits=5, decimal_places=2, help_text='低于此值，会提示')
+    updated = models.DateField(auto_now=True, verbose_name=u'更新日期')
+
+    class Meta:
+        verbose_name = '出材率标准值设置表'
+        unique_together = ('category', 'thickness')
+
+    def __str__(self):
+        return '%s:最低出材率:%s' % (self.thickness, self.min_yield)

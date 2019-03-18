@@ -29,7 +29,7 @@ from product.models import PackageList
 from public.permissions_mixin_views import ViewPermissionRequiredMixin, DynamicPermissionRequiredMixin
 from public.utils import Package, StockOperateItem
 from public.views import OrderItemEditMixin, OrderItemDeleteMixin, OrderFormInitialEntryMixin, FilterListView, \
-    SentWxMsgMixin
+    SentWxMsgMixin, ItemSentWxMsgMixin
 from public.widgets import SwitchesWidget
 from purchase.models import PurchaseOrder
 from public.views import GetItemsMixin, StateChangeMixin
@@ -212,8 +212,28 @@ class ProductionOrderListView(FilterListView):
     filter_class = ProductionOrderFilter
 
 
-class ProductionOrderDetailView(StateChangeMixin, DetailView):
+class ProductionOrderDetailView(StateChangeMixin, DetailView, ItemSentWxMsgMixin):
     model = ProductionOrder
+    app_name = 'zdzq_main'
+
+    def get_title(self, obj=None):
+        title = "出材率警告：%s%s#:[%s]" % (
+            obj.category.name, obj.name, obj.slab_yield)
+        return title
+
+    def get_description(self, obj=None):
+        html = '触发订单为：%s:%s\n' % (self.object._meta.verbose_name, self.object.order)
+        html += '经办人：%s\n' % self.object.handler
+        html += '日期：%s ' % self.object.date
+        return html
+
+    def sent_wx(self):
+        self.object = self.get_object()
+        if self.object.production_type.produce_item_type != 'slab':
+            return False
+        for item in self.object.produce_items.all():
+            if item.product.block.has_yield_warning:
+                self.sent_msg(item.product.block)
 
     def get_btn_visible(self, state):
         return {'draft': {'done': True, 'cancel': True},
@@ -221,7 +241,10 @@ class ProductionOrderDetailView(StateChangeMixin, DetailView):
                 'done': {'turn_back': True}}[state]
 
     def done(self):
-        return self.object.done()
+        is_done, msg = self.object.done()
+        if is_done:
+            self.sent_wx()
+        return is_done, msg
 
     def cancel(self):
         return self.object.cancel()

@@ -46,6 +46,19 @@ class CityAutocomplete(autocomplete.Select2QuerySetView):
         return qs
 
 
+class PartnerCityAutocomplete(autocomplete.Select2QuerySetView):
+    model = City
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        prov = self.forwarded.get('partner_province', None)
+        if prov:
+            qs = qs.filter(code=prov)
+        if self.q:
+            qs = qs.filter(name__contains=self.q)
+        return qs
+
+
 class MainInfoEditMixin(DynamicPermissionRequiredMixin):
     model = MainInfo
     form_class = MainInfoForm

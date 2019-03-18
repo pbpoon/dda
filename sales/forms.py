@@ -8,9 +8,10 @@ from partner.models import City
 from product.models import Product, PackageList
 from public.forms import FormUniqueTogetherMixin
 from public.widgets import SwitchesWidget, AutocompleteWidget, RadioWidget
-from sales.models import SalesOrder, SalesOrderItem, Customer
+from sales.models import SalesOrder, SalesOrderItem, Customer, SalesLeads
 from stock.models import Warehouse
 from dal import autocomplete
+from django.contrib.postgres.forms import SimpleArrayField
 
 
 class SalesOrderForm(forms.ModelForm):
@@ -18,6 +19,7 @@ class SalesOrderForm(forms.ModelForm):
                                             help_text='此项开启后，下面地址所选无效。发货地址将会用客户默认地址')
 
     class Meta:
+        customer_create = reverse_lazy('customer_modal_create')
         model = SalesOrder
         fields = (
             'date', 'partner', 'is_default_address', 'province', 'city', 'handler', 'entry')
@@ -26,7 +28,7 @@ class SalesOrderForm(forms.ModelForm):
             'entry': forms.HiddenInput,
             'partner': autocomplete.ModelSelect2(url='customer_autocomplete',
                                                  attrs={'class': ' browser-default', 'data-minimum-input-length': 1,
-                                                        'data-html': True, 'data-create-url':''}),
+                                                        'data-html': True, 'data-create-url': customer_create}),
             'province': autocomplete.ModelSelect2(url='get_province',
                                                   attrs={'class': 'browser-default'}),
             'city': autocomplete.ModelSelect2(url='get_city',
@@ -142,18 +144,23 @@ class SalesOrderItemQuickForm(FormUniqueTogetherMixin, forms.ModelForm):
 
 
 class CustomerForm(forms.ModelForm):
+    from partner.models import Province
+    partner_province = forms.ModelChoiceField(label='省份', queryset=Province.objects.all(),
+                                              widget=autocomplete.ModelSelect2(url='get_province',
+                                                                               attrs={'class': 'browser-default'}))
+
     class Meta:
         model = Customer
-        fields = ('is_company', 'sex', 'name', 'phone', 'province', 'city', 'entry', 'is_activate', 'company')
+        fields = ('is_company', 'sex', 'name', 'phone', 'partner_province', 'city', 'entry', 'is_activate', 'company')
         widgets = {
             'sex': RadioWidget(),
             'is_company': SwitchesWidget,
             'is_activate': SwitchesWidget,
             'entry': forms.HiddenInput(),
-            'province': autocomplete.ModelSelect2(url='get_province',
-                                                  attrs={'class': 'browser-default'}),
-            'city': autocomplete.ModelSelect2(url='get_city',
-                                              forward=['province'],
+            # 'partner_province': autocomplete.ModelSelect2(url='get_province',
+            #                                               attrs={'class': 'browser-default'}),
+            'city': autocomplete.ModelSelect2(url='get_partner_city',
+                                              forward=['partner_province'],
                                               attrs={'class': ' browser-default'}),
             'company': autocomplete.ModelSelect2(url='customer_company_autocomplete',
                                                  attrs={'class': 'browser-default'})
@@ -171,6 +178,7 @@ class SalesOrderCreateByCustomerForm(SalesOrderForm):
             # 'partner': autocomplete.ModelSelect2(url='customer_autocomplete',
             #                                      attrs={'class': ' browser-default', 'data-minimum-input-length': 1,
             #                                             'data-html': True, }),
+
             'province': autocomplete.ModelSelect2(url='get_province',
                                                   attrs={'class': 'browser-default'}),
             'city': autocomplete.ModelSelect2(url='get_city',
@@ -179,3 +187,41 @@ class SalesOrderCreateByCustomerForm(SalesOrderForm):
 
             # 非常重要'class': 'browser-default'
         }
+
+
+class SalesLeadsForm(forms.ModelForm):
+    class Meta:
+        customer_create = reverse_lazy('customer_modal_create')
+        model = SalesLeads
+        fields = ('is_vital', 'name', 'partner', 'state', 'handlers', 'desc', 'entry')
+        widgets = {
+            'partner': autocomplete.ModelSelect2(url='customer_autocomplete',
+                                                 attrs={'class': ' browser-default', 'data-minimum-input-length': 1,
+                                                        'data-html': True, 'data-create-url': customer_create}),
+            'is_vital': SwitchesWidget(),
+            'state': forms.HiddenInput(),
+            'entry': forms.HiddenInput(),
+            # 'handlers': autocomplete.TaggitSelect2()
+
+        }
+
+
+class SalesLeadsDetailForm(forms.Form):
+    # 需求详细
+    from product.models import Category
+    from .models.leads import TYPE_CHOICES
+    start_time = forms.DateTimeField(label='开始时间', required=False,
+                                     widget=forms.DateTimeInput(attrs={'class': 'datepicker'}))
+    due_time = forms.DateTimeField(label='截至时间', required=False,
+                                   widget=forms.DateTimeInput(attrs={'class': 'datepicker'}))
+    category = forms.ModelChoiceField(label='品种名称', required=False, queryset=Category.objects.all())
+    type = forms.MultipleChoiceField(label='类型', choices=TYPE_CHOICES, required=False)
+    thickness = SimpleArrayField(label='厚度', base_field=forms.DecimalField(max_digits=4, decimal_places=2),
+                                 required=False)
+    quantity = forms.IntegerField(label='数量', required=False)
+    long_lt = forms.IntegerField(label='长度(最低)', required=False)
+    long_gt = forms.IntegerField(label='长度(最高)', required=False)
+    height_lt = forms.IntegerField(label='高度(最低)', required=False)
+    height_gt = forms.IntegerField(label='高度(最高)', required=False)
+    price_lt = forms.IntegerField(label='价格(起)', required=False)
+    price_gt = forms.IntegerField(label='价格(止)', required=False)

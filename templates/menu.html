@@ -68,6 +68,8 @@
                 <div class="collapsible-header">销售</div>
                 <div class="collapsible-body">
                     <ul>
+                    <li{% if '/sales/leads/' in request.path %} class="active" {% endif %}><a
+                                href="{% url 'sales_leads_list' %}">线索</a></li>
                         <li{% if '/sales/order/' in request.path %} class="active" {% endif %}><a
                                 href="{% url 'sales_order_list' %}">销售订单</a></li>
                         <li{% if '/sales/customer/' in request.path %} class="active" {% endif %}><a

@@ -1,9 +1,24 @@
+var form_md = $('#form_modal').modal();
 var md = $('#modal1').modal();//表单框
 var md2 = $('#modal2').modal();//删除提示框
 var md3 = $('#modal3').modal();//下面弹窗提示框
 var md_package_list = $('#modal_package_list').modal();//码单弹窗提示框
 var md_cart = $('#modal_cart').modal();
 
+function add_item_modal_form(url) {
+    $('#form_modal h6').text('添加明细行');
+    $.ajax({
+        url: url,
+        method: 'GET',
+        success: function (data) {
+            $('#form_modal .container').html(data);
+            $('#modal_form').attr('action', url);
+            // when modal is open
+            form_md.modal('open');
+            // $('#modal1').removeAttr('tabindex');
+        }
+    })
+}
 
 //item的添加方法
 function add_item(url) {

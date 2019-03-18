@@ -1,7 +1,5 @@
 {% load static %}
-{% load i18n %}
-{% load static %}
-
+{#{% load i18n %}#}
 <!DOCTYPE html>
 
 <html lang="zh-hans">
@@ -10,7 +8,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}stone system{% endblock %}</title>
     <!--Import Google Icon Font-->
-    <link href="https://cdn.bootcss.com/material-design-icons/3.0.1/iconfont/material-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
+          rel="stylesheet">
+    {#    <link href="https://cdn.bootcss.com/material-design-icons/3.0.1/iconfont/material-icons.css" rel="stylesheet">#}
     {#    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">#}
     {#        <link href="http://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">#}
     <!--Import materialize.css-->
@@ -42,6 +42,12 @@
 
         header, main, footer {
             padding-left: 300px;
+        }
+
+        @media only screen and (min-width: 601px) {
+            .container {
+                width: 92%;
+            }
         }
 
         .modal.bottom-sheet {
@@ -110,7 +116,9 @@
 
 </head>
 <body class="grey lighten-4">
-{% include 'menu.html' %}
+{% block menu %}
+    {% include 'menu.html' %}
+{% endblock %}
 
 <!--标题块相关-->
 <header>
@@ -131,7 +139,8 @@
 </main>
 {% include 'cart_detail.html' %}
 {% block footer %}
-    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+{#    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>#}
+    <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
     {#    <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>#}
     {#    <script type="text/javascript" src="{% static 'admin/js/vendor/jquery/jquery.js' %}"></script>#}
     <script src="{% static 'js/materialize.min.js' %}"></script>
@@ -165,6 +174,7 @@
         $('#modal3').removeAttr('tabindex');
         $('#modal_package_list').removeAttr('tabindex');
         $('#modal_cart').removeAttr('tabindex');
+        $('#form_modal').removeAttr('tabindex');
         $('.sidenav').sidenav({draggable: true});
         $('.fixed-action-btn').floatingActionButton({hoverEnabled: false});
         $('#item_float_btn').floatingActionButton({

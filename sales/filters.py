@@ -26,6 +26,7 @@ class CustomerAutocomplete(autocomplete.Select2QuerySetView):
             pass
         data = {self.create_field: text}
         if phone:
+            phone = ''.join(phone.split())
             data.update({'phone': phone})
         """Create an object given a text."""
         return self.get_queryset().get_or_create(**data)[0]

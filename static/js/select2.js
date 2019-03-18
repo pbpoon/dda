@@ -99,7 +99,7 @@
         // );
 
         $(this).on('select2:selecting', function (e) {
-            console.log(this)
+            console.log(this);
             var data = e.params.args.data;
             if (data.create_id !== true)
                 return;
@@ -109,27 +109,27 @@
             var select = $(this);
             md_package_list.modal('open');
 
-            // $.ajax({
-            //     url: $(this).attr('data-create-url'),
-            //     type: 'GET',
-            //     // dataType: 'json',
-            //     // data: {
-            //     //     text: data.id,
-            //     //     forward: yl.getForwards($(this))
-            //     // },
-            //     data: $(this).val(),
-            //     beforeSend: function (xhr, settings) {
-            //         xhr.setRequestHeader("X-CSRFToken", document.csrftoken);
-            //     },
-            //     success: function (data, textStatus, jqXHR) {
-            //         md_package_list.modal('open');
-            //         // select.append(
-            //         //     $('<option>', {value: data.id, text: data.text, selected: true})
-            //         // );
-            //         // select.trigger('change');
-            //         // select.select2('close');
-            //     }
-            // });
+            $.ajax({
+                url: $(this).attr('data-create-url'),
+                type: 'GET',
+                // dataType: 'json',
+                // data: {
+                //     text: data.id,
+                //     forward: yl.getForwards($(this))
+                // },
+                data: $(this).val(),
+                beforeSend: function (xhr, settings) {
+                    xhr.setRequestHeader("X-CSRFToken", document.csrftoken);
+                },
+                success: function (data, textStatus, jqXHR) {
+                    md_package_list.modal('open');
+                    select.append(
+                        $('<option>', {value: data.id, text: data.text, selected: true})
+                    );
+                    select.trigger('change');
+                    select.select2('close');
+                }
+            });
         });
 
     });

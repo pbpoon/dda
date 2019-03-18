@@ -16,7 +16,13 @@ Including another URLconf
 from django.urls import path
 from . import views
 from .filters import CustomerAutocomplete
+
 urlpatterns = [
+    path('leads/<pk>/update/', views.SalesLeadsUpdateView.as_view(), name='sales_leads_update'),
+    path('leads/create/', views.SalesLeadsCreateView.as_view(), name='sales_leads_create'),
+    path('leads/<pk>/', views.SalesLeadsDetailView.as_view(), name='sales_leads_detail'),
+    path('leads/', views.SalesLeadsListView.as_view(), name='sales_leads_list'),
+    # ——————————————————————————————————————————————————leads
     path('order/pdf/<pk>/', views.OrderToPdfView.as_view(), name='sales_order_pdf'),
     path('order/item/delete/<pk>/', views.SalesOrderItemDeleteView.as_view(), name='sales_order_item_delete'),
     path('order/item/edit/<pk>/', views.SalesOrderItemEditView.as_view(), name='sales_order_item_edit'),
@@ -24,7 +30,8 @@ urlpatterns = [
     path('order/<pk>/update/', views.SalesOrderUpdateView.as_view(), name='sales_order_update'),
     path('order/<pk>/delete/', views.SalesOrderDeleteView.as_view(), name='sales_order_delete'),
     path('order/quick/create/', views.SalesOrderQuickCreateView.as_view(), name='sales_order_quick_create'),
-    path('order/create/<customer_id>', views.SalesOrderCreateByCustomerView.as_view(), name='sales_order_create_by_customer'),
+    path('order/create/<customer_id>', views.SalesOrderCreateByCustomerView.as_view(),
+         name='sales_order_create_by_customer'),
     path('order/create/', views.SalesOrderCreateView.as_view(), name='sales_order_create'),
     path('order/invoice/options/<pk>/', views.SalesOrderInvoiceOptionsEditView.as_view(),
          name='sales_order_invoice_options'),
@@ -32,6 +39,7 @@ urlpatterns = [
     path('order/month/', views.SalesOrderMonthListView.as_view(), name='sales_order_month_list'),
     path('order/<int:pk>/', views.SalesOrderDetailView.as_view(), name='sales_order_detail'),
     path('order/', views.SalesOrderListView.as_view(), name='sales_order_list'),
+    path('customer/create/modal/', views.CustomerCreateModalView.as_view(), name='customer_modal_create'),
     path('customer/create/', views.CustomerCreateView.as_view(), name='customer_create'),
     path('customer/<pk>/delete/', views.CustomerDeleteView.as_view(), name='customer_delete'),
     path('customer/<pk>/update/', views.CustomerUpdateView.as_view(), name='customer_update'),

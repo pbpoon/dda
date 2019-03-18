@@ -10,6 +10,7 @@ urlpatterns = [
     path('get_partner_list/', views.get_partner_list, name='get_partner_list'),
     path('customer_company_autocomplete/', views.CustomerCompanyAutocompleteView.as_view(), name='customer_company_autocomplete'),
     path('get_province/', views.ProvinceAutocomplete.as_view(), name='get_province'),
+    path('get_partner_city/', views.PartnerCityAutocomplete.as_view(), name='get_partner_city'),
     path('get_city/', views.CityAutocomplete.as_view(), name='get_city'),
     path('get_address/', views.get_address, name='get_address'),
     path('<pk>/update/', views.PartnerUpdateView.as_view(), name='partner_update'),

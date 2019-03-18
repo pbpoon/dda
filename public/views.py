@@ -329,3 +329,38 @@ class SentWxMsgMixin:
         except Exception as e:
             pass
         return True
+
+
+
+class ItemSentWxMsgMixin:
+    app_name = None
+    user_ids = '@all'
+
+    def get_url(self, obj=None):
+        print(self.request)
+        obj = obj if obj else self.object
+        return "%s" % (self.request.build_absolute_uri(obj.get_absolute_url()))
+
+    def get_title(self, obj=None):
+        raise ValueError('define get_title')
+
+    def get_description(self, obj=None):
+        raise ValueError('define get_description')
+
+    def sent_msg(self, obj=None):
+        from action.models import WxConf
+        if not self.app_name:
+            return False
+        try:
+            wx_conf = WxConf(app_name=self.app_name)
+            # print(wx_conf,'in')
+            client = WeChatClient(wx_conf.corp_id, wx_conf.Secret)
+            # print(client, '222')
+            # print(self.get_title(obj), 'title')
+            client.message.send_text_card(agent_id=wx_conf.AgentId, user_ids=self.user_ids, title=self.get_title(obj),
+                                          description=self.get_description(obj),
+                                          url=self.get_url(obj))
+            # print('out')
+        except Exception as e:
+            pass
+        return True

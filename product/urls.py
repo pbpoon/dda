@@ -81,6 +81,10 @@ urlpatterns += [
     path('category/create/', views.CategoryCreateView.as_view(), name='category_create'),
     path('category/<pk>', views.CategoryDetailView.as_view(), name='category_detail'),
     path('category/', views.CategoryListView.as_view(), name='category_list'),
+    # --------------------------出材率
+    path('slab-yield/<pk>/update/', views.SlabYieldEditView.as_view(), name='slab_yield_update'),
+    path('slab-yield/create/<int:category_id>', views.SlabYieldEditView.as_view(), name='slab_yield_create'),
+    path('slab-yield/<int:category_id>', views.SlabYieldListView.as_view(), name='slab_yield_list'),
     # --------------------------矿口
     path('quarry/<pk>/update/', views.QuarryUpdateView.as_view(), name='quarry_update'),
     path('quarry/create/', views.QuarryCreateView.as_view(), name='quarry_create'),

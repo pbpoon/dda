@@ -1,0 +1,204 @@
+{% extends 'list.html' %}
+{% load public %}
+
+{% block content %}
+    {#    <div class="row">#}
+
+    <div class="col s12">
+
+        {#            <ul class="tabs">#}
+        {#                <li class="tab col s4"><a class="active" href="#items">确认</a></li>#}
+        {#                {% if object.invoices.all %}#}
+        {#                    <li class="tab col s4"><a href="#invoice">完成</a></li>#}
+        {#                {% endif %}#}
+        {#                {% if object.in_out_order.all %}#}
+        {#                    <li class="tab col s4 "><a href="#in_out_order">草稿</a></li>#}
+        {#                {% endif %}#}
+        {#            </ul>#}
+    </div>
+    {#        <div id="items" class="col s12">#}
+    <ul class="collection">
+        {% for object in object_list %}
+            <a class="collection-item avatar grey-text" href="{{ object.get_absolute_url }}">
+                <div class="row">
+                    <div class="right right-align">
+                        <span class=" right small {% if object.state == 'draft' %}default{% elif object.state == 'cancel' %}grey{% elif object.state == 'done' %}yellow{% else %}blue{% endif %}-text"
+                        >{{ object.get_state_display }}
+                            {{ object.order }}</span>
+                        <span>
+                        <h5 class="orange-text" style="font-weight: bold">{{ object.amount|format_money }}</h5>
+                        </span>
+
+                        <p>{{ object.date|date:"Y/m/d" }}<br>({{ object.date|timesince }}前)
+                        </p>
+                    </div>
+                    <div class="left">
+                        <i class="material-icons circle">{{ object.partner.name|slice:'1' }}</i>
+                        <span class="title black-text">{{ object.partner }}</span>
+                        <p>
+                            <i>{{ object.get_address }}</i>
+                        <div class="divider"></div>
+                        {#                        <div class="black-text">#}
+                        {#                            <span>{{ object.get_out_order_percentage|format_percentage|default_if_none:'' }}</span>#}
+                        {#                            {% for key, item in object.get_total.items %}#}
+                        {#                                <span>#}
+                        {#                                                {{ key }}:{% if item.part %}{{ item.part }}夹#}
+                        {#                                    / {% endif %}{{ item.piece }}件 /#}
+                        {#                                    {{ item.quantity }}{{ item.uom }}</span><br>#}
+                        {#                            {% endfor %}#}
+                        {#                        </div>#}
+                        {#                        <div class="divider"></div>#}
+                        {#                        <span>@{{ object.handler }}</span>#}
+                        </p>
+                    </div>
+
+                </div>
+                <div class="row">
+                    <div class="left">
+                        <span>@{{ object.handler }}</span>
+                    </div>
+                    <div class="right">
+                        <span class="chip">{{ object.progress }}</span>
+                    </div>
+                </div>
+
+            </a>
+        {% endfor %}
+    </ul>
+    {% include 'paginatior.html' %}
+    <div class="fixed-action-btn">
+{#        <a onclick="add_item_modal_form('{% url 'sales_leads_create' %}')" class="btn-floating btn-large red">#}
+        <a href="{% url 'sales_leads_create' %}" class="btn-floating btn-large red">
+            <i class="large material-icons">add</i>
+        </a>
+    </div>
+    {#        </div>#}
+    {#    </div>#}
+
+
+    <div id="form_modal" class="modal bottom-sheet modal-fixed-footer">
+        <div style="height:55px;">
+            <div class="modal-top" style="position: absolute; top:0;left:0;width:100%; border-bottom: grey 1px solid">
+                {#            <div class="left" style="position: absolute; top:15px; left:10px; font-weight: bold"#}
+                {#                 id="select_display"></div>#}
+                <div style="text-align: center;">
+
+                    <button id="submit" type="submit" form="modal_form" class="btn waves-teal waves-effect btn-large"
+                            style="position: absolute; left:0; top:0;">确定
+                    </button>
+                </div>
+                {#            <input type="submit" id="submit" class="btn waves-effect waves-light" form="item_form" value="确定">#}
+                <button class="modal-close waves-effect btn-large btn-flat right"><i
+                        class="large material-icons">close</i>
+                </button>
+            </div>
+        </div>
+        <div class="modal-content">
+            {#        <h6>添加明细行</h6>#}
+            {#        <hr>#}
+            <form id="modal_form" method="post" enctype="multipart/form-data">
+                <form action="" method="post" id="#modal_form">
+
+                    <div class="container">
+                        {#                        form#}
+                    </div>
+                </form>
+
+                {% csrf_token %}
+
+            </form>
+        </div>
+    </div>
+{% endblock %}
+{% block footer %}
+    {{ form.media }}
+    {{ block.super }}
+
+
+{% endblock %}
+<script>
+
+    {% block domready %}
+
+        {{ block.super }}
+        {#$('.select2-selection--single').append("<div style='z-index:999;' class='right' id='add'>添加</div>");#}
+        {#$('#add').on('click', function (e) {#}
+        {#    md_package_list.modal('open')#}
+        {#md_package_list.modal('open');#}
+        $("#modal_form").on('submit', (function (ev) {
+            var $form = $('#modal_form');
+            console.log($form.attr('action'));
+            ev.preventDefault();
+            $.ajax({
+                xhr: function () {
+                    var progress = $('.progress'), xhr = $.ajaxSettings.xhr();
+
+                    progress.show();
+
+                    xhr.upload.onprogress = function (ev) {
+                        if (ev.lengthComputable) {
+                            var percentComplete = parseInt((ev.loaded / ev.total) * 100);
+                            progress.val(percentComplete);
+                            if (percentComplete === 100) {
+                                progress.hide().val(0);
+                            }
+                        }
+                    };
+
+                    return xhr;
+                },
+                url: $form.attr('action'),
+                type: 'POST',
+                data: new FormData(this),
+                contentType: false,
+                cache: false,
+                processData: false,
+                beforeSend: function (XMLHttpRequest) {
+                    $('.progress').show;
+                    $("#submit").attr({disabled: "disabled"})
+                },
+                complete: function () {
+                    $("#submit").removeAttr("disabled");
+                },
+                success: function (data, status, xhr) {
+                    if (data['state'] == 'ok') {
+                        form_md.modal('close');
+                        {#$("#id_partner").append(#}
+                        {#    $('<option>', {value: data['partner_id'], text: data['partner_text'], selected: true})#}
+                        {#);#}
+                        {#$("#id_province").append(#}
+                        {#    $('<option>', {value: data['province_id'], text: data['province_text'], selected: true})#}
+                        {#);#}
+                        {#$("#id_city").append(#}
+                        {#    $('<option>', {value: data['city_id'], text: data['city_text'], selected: true})#}
+                        {#);#}
+                    }
+                    else {
+                        $('#form_modal .container').html(data);
+                        form_md.modal('open')
+                    }
+                },
+                error: function (xhr, status, error) {
+                    // ...
+                }
+            });
+        }));
+        $('#submit').on('click', function (e) {
+            $('#modal_form').submit()
+
+        });
+
+    {% endblock %}
+</script>
+{% block sidebar %}
+    <div class="card-panel white">
+        <span>按条件筛选</span>
+        <div class="divider"></div>
+        <form action="" method="GET">
+            <ul>
+                {{ filter.form.as_ul }}
+            </ul>
+            <button class="btn waves-effect" type="submit">确定</button>
+        </form>
+    </div>
+{% endblock %}

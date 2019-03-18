@@ -6,6 +6,7 @@ from django.apps import apps
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db import transaction
+from django import forms
 from django.db.models import Count, Sum
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, HttpResponse, redirect
@@ -25,7 +26,7 @@ from stock.models import Location, Stock, Warehouse
 from public.utils import qs_to_dict, Package
 
 from .models import Product, PackageList, DraftPackageList, DraftPackageListItem, Slab, Block, PackageListItem, \
-    Category, Quarry
+    Category, Quarry, SlabYieldSet
 
 from dal import autocomplete
 
@@ -726,3 +727,37 @@ class PackageListSlabPdfView(BaseDetailView, PDFTemplateView):
     def get_filename(self):
         self.object = self.get_object()
         return '%s#_tag.pdf' % self.object.product.name
+
+
+class SlabYieldListView(ListView):
+    model = SlabYieldSet
+
+
+class SlabYieldEditView(ModalEditMixin):
+    model = SlabYieldSet
+    fields = '__all__'
+    category_id = None
+
+    def get_category_id(self, **kwargs):
+        if self.object:
+            return self.object.category.id
+
+        return kwargs.get('category_id')
+
+    def dispatch(self, request, *args, **kwargs):
+        if kwargs.get('pk'):
+            self.object = self.get_object()
+        else:
+            self.object = None
+        self.category_id = self.get_category_id(**kwargs)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_initial(self):
+        initial = super().get_initial()
+        initial.update({'category': self.category_id})
+        return initial
+
+    def get_form(self, form_class=None):
+        f = super().get_form(form_class)
+        f.fields['category'].widget = forms.HiddenInput()
+        return f
