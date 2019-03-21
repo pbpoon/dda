@@ -14,12 +14,14 @@ from sales.models import Customer
 TYPE_CHOICES = (('block', '荒料'), ('slab', '板材'))
 
 SALES_LEADS_STATE_CHOICES = (
-    ('0%', '失去'),
-    ('10%', '新建'),
-    ('30%', '验证'),
-    ('70%', '跟进'),
+    ('0%', '错失'),
+    ('10%', '新线索'),
+    ('30%', '取得确认'),
+    ('70%', '报价阶段'),
+    ('90%', '成功在望'),
     ('100%', '赢得'),
 )
+MISS_REASON_CHOICES = [(i, i) for i in ('价钱差距', '质量不符合', '工程流产', '工程暂停', '换板')]
 
 
 class SalesLeads(HasChangedMixin, models.Model):
@@ -32,6 +34,9 @@ class SalesLeads(HasChangedMixin, models.Model):
     entry = models.ForeignKey('auth.User', on_delete=models.CASCADE, verbose_name='登记人',
                               related_name='%(class)s_entry')
 
+    miss_reason = models.CharField('错失原因', choices=MISS_REASON_CHOICES, max_length=60,
+                                   blank=True, null=True)
+
     created = models.DateField('创建日期', auto_now_add=True)
     updated = models.DateTimeField('更新时间', auto_now=True)
     comments = GenericRelation('comment.Comment')
@@ -40,8 +45,7 @@ class SalesLeads(HasChangedMixin, models.Model):
 
     start_time = models.DateTimeField('开始时间', blank=True, null=True)
     due_time = models.DateTimeField('截至时间', blank=True, null=True)
-    category = models.ForeignKey('product.Category', verbose_name='品种名称', on_delete=models.SET_NULL, blank=True,
-                                 null=True)
+    category = models.ForeignKey('product.Category', verbose_name='品种名称', on_delete=models.CASCADE)
     type = ArrayField(base_field=models.CharField(max_length=10, choices=TYPE_CHOICES, default='slab'), blank=True,
                       null=True,
                       verbose_name='类型')
@@ -71,10 +75,11 @@ class SalesLeads(HasChangedMixin, models.Model):
         thickness = ",".join(map(lambda x: "%s" % x, self.thickness)) if self.thickness else ""
         _type = get_type_display(self.type) if self.type else ""
         quantity = "=%s" % self.quantity if self.quantity else ""
-        return f"需求{self.category} {_type} {thickness} {quantity}"
+        return f"{self.category} {_type} {thickness} {quantity}"
 
     class Meta:
         verbose_name = '销售线索'
+        ordering = ('-state', '-created')
 
     def __str__(self):
         return self.name

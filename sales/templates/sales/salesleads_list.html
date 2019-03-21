@@ -16,8 +16,8 @@
                     <div class="right right-align">
                         <span class=" right small {% if object.state == 'draft' %}default{% elif object.state == 'cancel' %}grey{% elif object.state == 'done' %}yellow{% else %}blue{% endif %}-text"
                         >{{ object.get_state_display }}
-                            </span>
-                        <p>{{ object.start_time|date:"Y/m/d" }}<br>({{ object.start_time|naturalday }})
+                            </span><br>
+                        <p>({{ object.start_time|naturalday }})
                         </p>
                     </div>
                     <div class="left">

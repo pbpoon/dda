@@ -1,8 +1,12 @@
 {% extends 'detail.html' %}
 {% load public %}
 {{ form.media }}
-
-{% block headline %}
+{% block header %}
+    <div style="margin-bottom: 5px" class="row">
+    <div class="col s12 m8">
+    <div class="card sticky-action {% if object.state == '0%' %}grey lighten-1{% elif object.state not in  '0%,100%' %}blue lighten-4{% elif object.state == '100%' %} yellow lighten-4{% endif %}">
+        <div class="card-content">
+                    <span class="card-title activator grey-text text-darken-4"><i class="material-icons right">more_vert</i>
     <div class="row">
         <div class="left">
             {% if object.is_vital %}
@@ -10,25 +14,61 @@
             置顶
             </span>
             {% endif %}
-            <span class="chip {% if object.state == 'cancel' %}grey{% elif object.state == 'confirm' %}blue{% elif object.state == 'done' %} yellow{% endif %}">
+            <span class="chip {% if object.state == '0%' %}grey{% elif object.state not in  '0%,100%' %}blue{% elif object.state == '100%' %} yellow{% endif %}">
         {{ object.state }}
                 </span>
         </div>
     </div>
-    {{ object.name }}
-{% endblock %}
-{% block subheadline %}
-    <span><h5 class="grey-text">{{ object.desc }}</h5></span>
-    客户名称：<a href="{{ object.partner.get_absolute_url }} ">{{ object.partner }} </a> / {{ object.partner.phone }}<br/>
-    <hr>
-    跟进人:<span>{% for handler in object.handlers.all %}{% if forloop.last %}{{ handler }}{% else %}{{ handler }} /
-{% endif %}{% endfor %}</span>
+                        {{ object.name }}</span>
+            <p>
+                <!----suheader--->
+                <span><h5 class="grey-text">{{ object.desc }}
+                    {% if object.state == '0%' %}
+                        <span>
+            {{ object.miss_reason }}
+            </span>
+                    {% endif %}
+        </h5></span>
+                客户名称：<a href="{{ object.partner.get_absolute_url }} ">{{ object.partner }} </a>
+                / {{ object.partner.phone }}<br/>
+            <hr>
+            跟进人:<span>{% for handler in object.handlers.all %}{% if forloop.last %}{{ handler }}{% else %}
+            {{ handler }} /
+        {% endif %}{% endfor %}</span>
+            </p>
+        </div>
+        <div class="card-action" style="min-height: 60px">
+            <!--状态按钮组-->
+            {% if object.state != '0%' %}
+                <button onclick="confirm_option('{% url 'sales_leads_miss' object.id %}')"
+                        class="btn waves-effect red">错失
+                </button>
+            {% endif %}
+            <button onclick="confirm_option('{% url 'sales_leads_update_state' object.id %}')"
+                    class="btn waves-effect blue">
+                推进进度
+            </button>
+            <button onclick="confirm_option('{% url 'sales_leads_win' object.id %}')"
+                    class="btn waves-effect yellow black-text">赢得订单
+            </button>
+            <!--状态按钮组-->
+
+        </div>
+        <div class="card-reveal {% if object.state == 'cancel' %}grey lighten-1{% elif object.state == 'confirm' %}blue lighten-4{% elif object.state == 'done' %} yellow lighten-4{% endif %}">
+                    <span class="card-title grey-text text-darken-4">更多操作
+                      <i class="material-icons right">close</i></span>
+            <div class="valign-wrapper">
+                <div class="col s12">
+                    {% block operate %}
+                    {% endblock %}
+                </div>
+            </div>
+        </div>
+
+    </div>
+
 {% endblock %}
 
-{% block operate %}
-    <a class="btn waves-effect default" href="{% url 'sales_order_pdf' object.id %}" target="_blank"><i
-            class="material-icons">picture_as_pdf</i>打印</a>
-{% endblock %}
 {% block content %}
     <div class="row">
         <div class="col s12">
@@ -55,11 +95,13 @@
                 <tr>
                     <td>类型</td>
                     <td>{% for type in object.type %}
-                        <span class="chip">{% if type == 'block' %}荒料{% else %}板材{% endif %}</span>{% endfor %}</td>
+                        <span class="chip">{% if type == 'block' %}荒料{% else %}板材{% endif %}</span>{% endfor %}
+                    </td>
                 </tr>
                 <tr>
                     <td>厚度规格</td>
-                    <td>{% for thickness in object.thickness %}  <span class="chip">{{ thickness }}</span>  {% endfor %}
+                    <td>{% for thickness in object.thickness %}
+                        <span class="chip">{{ thickness }}</span>  {% endfor %}
                     </td>
                 </tr>
                 <tr>

@@ -199,12 +199,26 @@ class ModalOptionsMixin(BaseDetailView):
     model = None
     template_name = 'item_form.html'
     form_class = ConfirmOptionsForm
+    initial = None
 
     def get_options(self):
         raise ValueError('pls define get_options')
 
+    def do_option(self, option):
+        raise ValueError('pls define get_options')
+
+    def get_initial(self):
+        initial = self.initial.copy() if self.initial else None
+        return initial
+
+    def get_form_kwargs(self):
+        kwargs = {
+            'initial': self.get_initial()
+        }
+        return kwargs
+
     def get_form(self):
-        form = self.form_class()
+        form = self.form_class(**self.get_form_kwargs())
         form.fields['options'] = forms.ChoiceField(widget=RadioWidget(), choices=self.get_options())
         return form
 
@@ -329,7 +343,6 @@ class SentWxMsgMixin:
         except Exception as e:
             pass
         return True
-
 
 
 class ItemSentWxMsgMixin:

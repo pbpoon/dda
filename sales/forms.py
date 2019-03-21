@@ -152,7 +152,8 @@ class CustomerForm(forms.ModelForm):
     class Meta:
         model = Customer
         fields = (
-        'is_company', 'sex', 'name', 'phone', 'partner_province', 'province', 'city', 'entry', 'is_activate', 'company')
+            'is_company', 'sex', 'name', 'phone', 'partner_province', 'province', 'city', 'entry', 'is_activate',
+            'company')
         widgets = {
             'sex': RadioWidget(),
             'is_company': SwitchesWidget,
@@ -205,7 +206,7 @@ class SalesLeadsForm(forms.ModelForm):
     class Meta:
         customer_create = reverse_lazy('customer_modal_create')
         model = SalesLeads
-        fields = ('is_vital', 'partner', 'state', 'handlers', 'desc', 'entry')
+        fields = ('is_vital', 'partner', 'state', 'category', 'handlers', 'desc', 'entry')
         widgets = {
             'partner': Select2CreateModal(url='customer_autocomplete',
                                           attrs={'class': ' browser-default', 'data-minimum-input-length': 1,
@@ -226,7 +227,6 @@ class SalesLeadsDetailForm(forms.Form):
                                      widget=forms.DateTimeInput(attrs={'class': 'datepicker'}))
     due_time = forms.DateTimeField(label='截至时间', required=False,
                                    widget=forms.DateTimeInput(attrs={'class': 'datepicker'}))
-    category = forms.ModelChoiceField(label='品种名称', required=False, queryset=Category.objects.all())
     type = forms.MultipleChoiceField(label='类型', choices=TYPE_CHOICES, required=False)
     thickness = SimpleArrayField(label='厚度', base_field=forms.DecimalField(max_digits=4, decimal_places=2),
                                  required=False)

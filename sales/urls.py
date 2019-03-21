@@ -18,6 +18,9 @@ from . import views
 from .filters import CustomerAutocomplete
 
 urlpatterns = [
+    path('leads/<pk>/update/win/', views.SalesLeadsWinView.as_view(), name='sales_leads_win'),
+    path('leads/<pk>/update/miss/', views.SalesLeadsMissView.as_view(), name='sales_leads_miss'),
+    path('leads/<pk>/update/state/', views.SalesLeadsStateChangeView.as_view(), name='sales_leads_update_state'),
     path('leads/<pk>/update/', views.SalesLeadsUpdateView.as_view(), name='sales_leads_update'),
     path('leads/create/', views.SalesLeadsCreateView.as_view(), name='sales_leads_create'),
     path('leads/<pk>/', views.SalesLeadsDetailView.as_view(), name='sales_leads_detail'),

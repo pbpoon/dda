@@ -11,6 +11,7 @@ from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
 from django.shortcuts import render, get_object_or_404
 from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
+from django.views import View
 from django.views.generic import DetailView, CreateView, UpdateView, DeleteView
 from django.views.generic.detail import BaseDetailView
 from django.views.generic.edit import BaseDeleteView
@@ -28,6 +29,7 @@ from sales.models import SalesOrder, SalesOrderItem, Customer, SalesLeads
 from django.conf import settings
 from .filters import SalesOrderFilter, CustomerFilter
 from wkhtmltopdf.views import PDFTemplateView
+from .models.leads import SALES_LEADS_STATE_CHOICES, MISS_REASON_CHOICES
 
 
 class SalesOrderListView(FilterListView):
@@ -515,3 +517,57 @@ class SalesLeadsCreateView(SalesLeadsEditMixin, CreateView):
 
 class SalesLeadsUpdateView(SalesLeadsEditMixin, UpdateView):
     pass
+
+
+class SalesLeadsStateChangeView(ModalOptionsMixin):
+    model = SalesLeads
+
+    def get_initial(self):
+        initial = {'options': self.object.state}
+        return initial
+
+    def get_options(self):
+        return ((i[0], f"{i[1]}({i[0]})") for i in SALES_LEADS_STATE_CHOICES[1:-1])
+
+    def get_content(self):
+        return '把 线索 状态推进到：'
+
+    def do_option(self, option):
+        self.object.state = option
+        self.object.save()
+        return True, '已把状态 推进到 %s' % dict(SALES_LEADS_STATE_CHOICES)[option]
+
+
+class SalesLeadsMissView(ModalOptionsMixin):
+    model = SalesLeads
+
+    def get_options(self):
+        return MISS_REASON_CHOICES
+
+    def do_option(self, option):
+        self.object.miss_reason = option
+        self.object.state = '0%'
+        self.object.save()
+        return True, '虽然错失了这次， 继续努力！'
+
+    def get_content(self):
+        return '错失的原因为:'
+
+
+class SalesLeadsWinView(ModalOptionsMixin):
+    model = SalesLeads
+
+    def get_options(self):
+        return (('do_yes', '是'), ('do_no', '否'))
+
+    def get_content(self):
+        return '恭喜！赢得订单？'
+
+    def do_yes(self):
+        self.object.state = '100%'
+        # 发sent_wx
+        self.object.save()
+        return True, '恭喜！再下一城。'
+
+    def do_no(self):
+        return True, '再努力一下！'

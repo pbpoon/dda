@@ -84,6 +84,7 @@ class Partner(models.Model):
                                 on_delete=models.SET_NULL,
                                 null=True, blank=True, verbose_name='所属公司')
     tasks = GenericRelation('tasks.Tasks')
+    comments = GenericRelation('comment.Comment')
     objects = models.Manager()
     invoices = InvoicePartnerManager()
 
