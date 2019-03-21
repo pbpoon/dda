@@ -5,6 +5,20 @@ var md3 = $('#modal3').modal();//下面弹窗提示框
 var md_package_list = $('#modal_package_list').modal();//码单弹窗提示框
 var md_cart = $('#modal_cart').modal();
 
+//对应public.views的confirm
+function confirm_option(url) {
+    $.ajax({
+        url: url,
+        method: 'GET',
+        success: function (data) {
+            $('#modal1 .container').html(data);
+            $('#item_form').attr('action', url);
+            md.modal('open')
+        }
+    })
+}
+
+
 function add_item_modal_form(url) {
     $('#form_modal h6').text('添加明细行');
     $.ajax({
@@ -23,12 +37,12 @@ function add_item_modal_form(url) {
 //item的添加方法
 function add_item(url) {
     $('#modal1 h6').text('添加明细行');
-    $('#item_form').attr('action', url);
     $.ajax({
         url: url,
         method: 'GET',
         success: function (data) {
             $('#modal1 .container').html(data);
+            $('#item_form').attr('action', url);
             // when modal is open
             md.modal('open');
             // $('#modal1').removeAttr('tabindex');
@@ -325,15 +339,68 @@ function set_block(val) {
     $('input[name=block]').val(val);
 }
 
-//对应public.views的confirm
-function confirm_option(url) {
+
+$("#modal_form").on('submit', (function (ev) {
+    var $form = $('#modal_form');
+    ev.preventDefault();
     $.ajax({
-        url: url,
-        method: 'GET',
-        success: function (data) {
-            $('#modal1 .container').html(data);
-            $('#item_form').attr('action', url);
-            md.modal('open')
+        xhr: function () {
+            var progress = $('.progress'), xhr = $.ajaxSettings.xhr();
+
+            progress.show();
+
+            xhr.upload.onprogress = function (ev) {
+                if (ev.lengthComputable) {
+                    var percentComplete = parseInt((ev.loaded / ev.total) * 100);
+                    progress.val(percentComplete);
+                    if (percentComplete === 100) {
+                        progress.hide().val(0);
+                    }
+                }
+            };
+
+            return xhr;
+        },
+        url: $form.attr('action'),
+        type: 'POST',
+        data: new FormData(this),
+        contentType: false,
+        cache: false,
+        processData: false,
+        beforeSend: function (XMLHttpRequest) {
+            $('.progress').show;
+            $("#submit").attr({disabled: "disabled"})
+        },
+        complete: function () {
+            $("#submit").removeAttr("disabled");
+        },
+        success: function (data, status, xhr) {
+            if (data['state'] == 'ok') {
+                form_md.modal('close');
+                // if (md.modal.isOpen) {
+                $("#id_partner").append(
+                    $('<option>', {value: data['partner_id'], text: data['partner_text'], selected: true})
+                );
+                $("#id_province").append(
+                    $('<option>', {value: data['province_id'], text: data['province_text'], selected: true})
+                );
+                $("#id_city").append(
+                    $('<option>', {value: data['city_id'], text: data['city_text'], selected: true})
+                );
+                // }
+
+            }
+            else {
+                $('#form_modal .container').html(data);
+                form_md.modal('open')
+            }
+        },
+        error: function (xhr, status, error) {
+            // ...
         }
-    })
-}
+    });
+}));
+// $('#submit').on('click', function (e) {
+//     $('#modal_form').submit()
+//
+// });

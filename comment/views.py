@@ -13,18 +13,22 @@ class CommentEditMixin(ContentTypeEditMixin):
     def get_initial(self):
         initial = super().get_initial()
         initial['user'] = self.request.user.id
+        initial['is_log'] = False
         return initial
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
         form.fields['user'].widget = forms.HiddenInput()
-        form.fields['content'].widget.attrs = {'class': 'materialize-textarea','rows': '10'}
+        form.fields['is_log'].widget = forms.HiddenInput()
+        form.fields['content'].widget.attrs = {'class': 'materialize-textarea', 'rows': '10'}
         return form
 
 
 class CommentCreateView(CommentEditMixin, CreateView):
     model = Comment
     fields = '__all__'
+
+
 
 
 class CommentUpdateView(CommentEditMixin, UpdateView):

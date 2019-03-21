@@ -24,7 +24,7 @@ class LocationForm(forms.ModelForm):
             'warehouse': forms.HiddenInput,
             'is_main': forms.HiddenInput,
             'usage': forms.HiddenInput,
-            'is_activate':SwitchesWidget,
+            'is_activate': SwitchesWidget,
         }
 
 

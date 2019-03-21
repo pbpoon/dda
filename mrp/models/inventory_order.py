@@ -39,6 +39,7 @@ class InventoryOrder(HasChangedMixin, models.Model):
     updated = models.DateTimeField('更新时间', auto_now=True)
     comments = GenericRelation('comment.Comment')
     files = GenericRelation('files.Files')
+    tasks = GenericRelation('tasks.Tasks')
 
     class Meta:
         verbose_name = '盘点库存'

@@ -162,6 +162,7 @@ class OrderAbstract(HasChangedMixin, models.Model):
     comments = GenericRelation('comment.Comment')
     invoices = GenericRelation('invoice.Invoice')
     files = GenericRelation('files.Files')
+    tasks = GenericRelation('tasks.Tasks')
 
     # operation_logs = GenericRelation('comment.OperationLogs')
 

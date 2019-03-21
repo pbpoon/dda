@@ -1,10 +1,44 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Created by pbpoon on 2018/12/11
+from dal import autocomplete
 from django import forms
+from django.conf import settings
+from django.contrib.admin.widgets import SELECT2_TRANSLATIONS
 from django.urls import reverse
 from django.core.exceptions import ValidationError
+from django.utils import translation
 from django.utils.safestring import mark_safe
+
+
+class Select2CreateModal(autocomplete.ModelSelect2):
+    autocomplete_function = 'select2_crate_modal'
+
+    @property
+    def media(self):
+        extra = '' if settings.DEBUG else '.min'
+        i18n_name = SELECT2_TRANSLATIONS.get(translation.get_language())
+        i18n_file = ('admin/js/vendor/select2/i18n/%s.js' % i18n_name,) if i18n_name else ()
+        return forms.Media(
+            js=(
+                   'admin/js/vendor/jquery/jquery%s.js' % extra,
+                   'autocomplete_light/jquery.init.js',
+                   'admin/js/vendor/select2/select2.full%s.js' % extra,
+               ) + i18n_file + (
+                   'autocomplete_light/autocomplete.init.js',
+                   'autocomplete_light/forward.js',
+                   'autocomplete_light/select2_create_modal.js',  # 后期改的
+                   'autocomplete_light/jquery.post-setup.js',
+               ),
+            css={
+                'screen': (
+                    'admin/css/vendor/select2/select2%s.css' % extra,
+                    'admin/css/autocomplete.css',
+                    'css/materialize-select2.css',  # 后期自己加上
+                    'autocomplete_light/select2.css',
+                ),
+            },
+        )
 
 
 class AutocompleteWidget(forms.TextInput):
@@ -151,3 +185,9 @@ class DemoForm(forms.ModelForm):
     class Meta:
         model = Dummy
 """
+
+
+class DateTimePickerWidget(forms.SplitDateTimeWidget):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(date_attrs={'class': 'datepicker'}, time_attrs={'class': 'timepicker'}, *args, **kwargs)

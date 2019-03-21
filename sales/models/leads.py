@@ -24,7 +24,6 @@ SALES_LEADS_STATE_CHOICES = (
 
 class SalesLeads(HasChangedMixin, models.Model):
     is_vital = models.BooleanField('置顶', default=False)
-    name = models.CharField('商机', max_length=100)
     desc = models.CharField('摘要', max_length=200, blank=True, null=True)
     partner = models.ForeignKey(Customer, on_delete=models.SET_NULL, verbose_name='客户', blank=True, null=True)
     state = models.CharField('状态', choices=SALES_LEADS_STATE_CHOICES, max_length=20, default='10%')
@@ -37,6 +36,7 @@ class SalesLeads(HasChangedMixin, models.Model):
     updated = models.DateTimeField('更新时间', auto_now=True)
     comments = GenericRelation('comment.Comment')
     files = GenericRelation('files.Files')
+    tasks = GenericRelation('tasks.Tasks')
 
     start_time = models.DateTimeField('开始时间', blank=True, null=True)
     due_time = models.DateTimeField('截至时间', blank=True, null=True)
@@ -57,6 +57,21 @@ class SalesLeads(HasChangedMixin, models.Model):
 
     # 质量要求 用tag来输入，日后可以根据要求配比库存现货
     # 长 高 宽（荒料）
+    @property
+    def name(self):
+        def get_type_display(ts):
+            string = ""
+            for t in ts:
+                if t == 'slab':
+                    string += '板材'
+                else:
+                    string += '荒料'
+            return string
+
+        thickness = ",".join(map(lambda x: "%s" % x, self.thickness)) if self.thickness else ""
+        _type = get_type_display(self.type) if self.type else ""
+        quantity = "=%s" % self.quantity if self.quantity else ""
+        return f"需求{self.category} {_type} {thickness} {quantity}"
 
     class Meta:
         verbose_name = '销售线索'
@@ -127,5 +142,5 @@ class SalesLeads(HasChangedMixin, models.Model):
             comment = '修改'
         super().save(*args, **kwargs)
         if comment:
-            comment += '订单'
+            comment += '线索'
             self.create_comment(**{'comment': comment})

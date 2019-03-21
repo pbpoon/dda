@@ -3,6 +3,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.postgres.fields import JSONField
 from django.core.exceptions import ObjectDoesNotExist
+from wechatpy.enterprise import WeChatClient
+from django.conf import settings
 
 
 class Action(models.Model):
@@ -49,3 +51,57 @@ class WxConf:
 
     def __getattr__(self, item):
         return self.value.get(item, None)
+
+
+class SchemeWxPush(models.Model):
+    time = models.DateTimeField('时间')
+    title = models.CharField('标题', max_length=80)
+    description = models.CharField('内容', max_length=200, blank=True, null=True)
+    url = models.URLField('链接', blank=True, null=True)
+    app_name = models.CharField('推送app', max_length=200)
+    user_ids = models.TextField('推送用户', default='@all')
+
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, blank=True, null=True)
+    object_id = models.PositiveIntegerField(blank=True, null=True)
+    object = GenericForeignKey('content_type', 'object_id')
+
+    class Meta:
+        verbose_name = '计划微信推送'
+
+    def __str__(self):
+        return '%s@%s' % (self.title, self.time)
+
+    def get_obj(self):
+        return self.content_type.model_class().objects.get(pk=self.object_id)
+
+    def get_url(self):
+        print('url:', settings.DEFAULT_DOMAIN)
+        print('abs:', self.get_obj().get_absolute_url())
+
+        return "%s%s" % (settings.DEFAULT_DOMAIN, self.get_obj().get_absolute_url())
+
+    def get_title(self):
+        return "[%s]%s" % (self.get_obj()._meta.verbose_name, self.title)
+
+    def get_description(self):
+        html = '%s' % self.time
+        return html
+
+    def sent_msg(self):
+        if not self.app_name:
+            return False
+        try:
+            wx_conf = WxConf(app_name=self.app_name)
+            client = WeChatClient(wx_conf.corp_id, wx_conf.Secret)
+            print(client, 'client\n')
+            print(self.get_title(), 'title')
+            print('agent_id:', wx_conf.AgentId)
+            print('url:', self.get_url())
+            print('desc:', self.get_description())
+            client.message.send_text_card(agent_id=wx_conf.AgentId, user_ids=self.user_ids, title=self.get_title(),
+                                          description=self.get_description(),
+                                          url=self.get_url())
+            print('out')
+        except Exception as e:
+            print(e)
+        return True

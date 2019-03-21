@@ -7,7 +7,7 @@ from django.urls import reverse, reverse_lazy
 from partner.models import City
 from product.models import Product, PackageList
 from public.forms import FormUniqueTogetherMixin
-from public.widgets import SwitchesWidget, AutocompleteWidget, RadioWidget
+from public.widgets import SwitchesWidget, AutocompleteWidget, RadioWidget, Select2CreateModal
 from sales.models import SalesOrder, SalesOrderItem, Customer, SalesLeads
 from stock.models import Warehouse
 from dal import autocomplete
@@ -151,12 +151,14 @@ class CustomerForm(forms.ModelForm):
 
     class Meta:
         model = Customer
-        fields = ('is_company', 'sex', 'name', 'phone', 'partner_province', 'city', 'entry', 'is_activate', 'company')
+        fields = (
+        'is_company', 'sex', 'name', 'phone', 'partner_province', 'province', 'city', 'entry', 'is_activate', 'company')
         widgets = {
             'sex': RadioWidget(),
             'is_company': SwitchesWidget,
             'is_activate': SwitchesWidget,
             'entry': forms.HiddenInput(),
+            'province': forms.HiddenInput(),
             # 'partner_province': autocomplete.ModelSelect2(url='get_province',
             #                                               attrs={'class': 'browser-default'}),
             'city': autocomplete.ModelSelect2(url='get_partner_city',
@@ -165,6 +167,16 @@ class CustomerForm(forms.ModelForm):
             'company': autocomplete.ModelSelect2(url='customer_company_autocomplete',
                                                  attrs={'class': 'browser-default'})
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if kwargs.get('instance'):
+            instance = kwargs.get('instance')
+            self.fields['partner_province'].initial = instance.province
+
+    def clean_province(self):
+        cd = self.cleaned_data
+        return cd.get('partner_province')
 
 
 class SalesOrderCreateByCustomerForm(SalesOrderForm):
@@ -193,11 +205,11 @@ class SalesLeadsForm(forms.ModelForm):
     class Meta:
         customer_create = reverse_lazy('customer_modal_create')
         model = SalesLeads
-        fields = ('is_vital', 'name', 'partner', 'state', 'handlers', 'desc', 'entry')
+        fields = ('is_vital', 'partner', 'state', 'handlers', 'desc', 'entry')
         widgets = {
-            'partner': autocomplete.ModelSelect2(url='customer_autocomplete',
-                                                 attrs={'class': ' browser-default', 'data-minimum-input-length': 1,
-                                                        'data-html': True, 'data-create-url': customer_create}),
+            'partner': Select2CreateModal(url='customer_autocomplete',
+                                          attrs={'class': ' browser-default', 'data-minimum-input-length': 1,
+                                                 'data-html': True, 'data-create-url': customer_create}),
             'is_vital': SwitchesWidget(),
             'state': forms.HiddenInput(),
             'entry': forms.HiddenInput(),

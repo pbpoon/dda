@@ -17,7 +17,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('create/<app_label_name>/<object_id>/', views.CommentCreateView.as_view(), name='comment_create'),
-    path('create/update/<pk>/', views.CommentUpdateView.as_view(), name='comment_update'),
-    path('reply/<pk>/', views.CommentReplyView.as_view(), name='comment_update'),
+    path('create/<app_label_name>/<int:object_id>/', views.CommentCreateView.as_view(), name='comment_create'),
+    path('create/update/<int:pk>/', views.CommentUpdateView.as_view(), name='comment_update'),
+    path('reply/<pk>/', views.CommentReplyView.as_view(), name='comment_reply'),
 ]

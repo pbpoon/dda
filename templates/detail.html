@@ -5,9 +5,9 @@
     {{ object|verbose_name }}:{{ object }}
 {% endblock %}
 {% block header %}
-    <div class="row">
+    <div style="margin-bottom: 5px" class="row">
         <div class="col s12 m8">
-            <div class="card sticky-action {% if object.state == 'cancel' %}grey lighten-1{% elif object.state == 'confirm' %}blue lighten-4{% elif object.state == 'done' %} yellow lighten-4{% endif %}">
+            <div  class="card sticky-action {% if object.state == 'cancel' %}grey lighten-1{% elif object.state == 'confirm' %}blue lighten-4{% elif object.state == 'done' %} yellow lighten-4{% endif %}">
                 <div class="card-content">
                     <span class="card-title activator grey-text text-darken-4"><i
                             class="material-icons right">more_vert</i>
@@ -41,28 +41,25 @@
     {% block action_btn %}
         {% include 'float_btn.html' %}
     {% endblock %}
-    {% include 'modal.html' %}
-
 {% endblock %}
 {% block main %}
     <div class="row">
         <!--内容块，分content及sidebar-->
         <div class="col s12 m8 l8">
-            <div class="card-panel ">
+            {% include 'tasks_list.html' %}
+            <div class="card-panel " style="margin-top: 10px">
                 {% block content %}
                 {% endblock %}
             </div>
-
         </div>
         <div class="col s12 m4 l4">
             {% block sidebar %}
             {% endblock %}
         </div>
+        <!--comment 操作日志-->
         {% if object.comments.all %}
             <div class="col s12 m8 l8">
-                <div class="card-panel">
-                    {% include 'comment.html' %}
-                </div>
+                {% include 'comment.html' %}
             </div>
         {% endif %}
     </div>

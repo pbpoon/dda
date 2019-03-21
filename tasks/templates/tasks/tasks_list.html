@@ -1,0 +1,43 @@
+{% load humanize %}
+{% load public %}
+{% load i18n %}
+{% if object %}
+    <div class="container">
+        <div class="row" style="margin: 0">
+            <a class="green-text"
+               onclick="add_item('{% url 'tasks_create' object|label_name object.id %}')">提醒事项+
+            </a>
+        </div>
+            {% regroup object.tasks.all by time|naturalday as tasks_list %}
+            {% for tasks in tasks_list %}
+                <div style="text-align: center">
+                    <strong>{{ tasks.grouper|naturalday }}</strong>
+                    <div class="divider"></div>
+                </div>
+                {% for task in tasks.list %}
+                    <div id="{{ task.id }}_card">
+                        {% include 'tasks/task_card_panel.html' %}
+                    </div>
+                {% endfor %}
+            {% endfor %}
+        <script>
+            function set_task_complete(id) {
+                var $this = $(this);
+                var url = '{% url 'task_set_complete' 999 %}';
+                url = url.replace(999, id);
+                $.ajax({
+                    method: 'POST',
+                    data: {'pk': id},
+                    url: url,
+                    success: function (data) {
+                        console.log(data);
+                        if (data['state'] === 'ok') {
+                            $('#' + id + '_card').html(data['html']);
+                            $this.attr('checked', data['check'])
+                        }
+                    }
+                })
+            }
+        </script>
+    </div>
+{% endif %}

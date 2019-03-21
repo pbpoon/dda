@@ -16,6 +16,7 @@ class Comment(models.Model):
     object_id = models.PositiveIntegerField()
     object = GenericForeignKey('content_type', 'object_id')
     reply = GenericRelation('comment.Comment')
+    is_log = models.BooleanField('操作日志', default=True)
 
     class Meta:
         verbose_name = '评论信息'

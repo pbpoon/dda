@@ -43,8 +43,9 @@ urlpatterns = [
     path('files/', include('files.urls')),
     path('comment/', include('comment.urls')),
     path('wechat/', include('action.urls')),
-    path('', RedirectView.as_view(url='stock/available/')),
+    path('tasks/', include('tasks.urls')),
     path('ratings/', include('star_ratings.urls', namespace='ratings')),
+    path('', RedirectView.as_view(url='stock/available/')),
     # selectable
 
 ]

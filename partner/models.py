@@ -1,3 +1,4 @@
+from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from django.urls import reverse
 
@@ -82,6 +83,7 @@ class Partner(models.Model):
     company = models.ForeignKey('self', related_name='members', limit_choices_to={'is_company': True},
                                 on_delete=models.SET_NULL,
                                 null=True, blank=True, verbose_name='所属公司')
+    tasks = GenericRelation('tasks.Tasks')
     objects = models.Manager()
     invoices = InvoicePartnerManager()
 

@@ -1,0 +1,49 @@
+{% load humanize %}
+{% load public %}
+<div style="margin: 5px;padding: 5px" class="card-panel {% if task.is_complete %}grey
+                             {% else %}{% if task.id_expired %} red {% else %}blue{% endif %} {% endif %} lighten-3">
+    <div class="col s12">
+        <form><span>
+                    {% if  tasks.entry.avatar.url %}
+                        <img src="{{ task.entry.avatar.url }}" alt="{{ task.entry }}" class="circle responsive-img">
+                    {% else %}
+                        <strong>{{ task.entry }}</strong>
+                    {% endif %}
+                    </span>
+            <div class="right">
+                <a onclick="item_remove('{{ task.get_delete_url }}')">删除</a>
+                <a onclick="edit_item('{% url 'tasks_update' task.id %}')">修改</a>
+                <a onclick="confirm_option('{% url 'tasks_delay' task.id %}')">推迟</a>
+            </div>
+        </form>
+    </div>
+    <hr>
+    <div style="padding-left: 20px">
+
+        <p>
+            <label>
+                <input id="{{ task.id }}_chk" type="checkbox" class="filled-in"
+                       {% if task.is_complete %}checked="checked"{% endif %}
+                       onclick="set_task_complete('{{ task.id }}')"/>
+                <span class="black-text">
+                                    {% if task.is_complete %}<s>{% endif %}
+                    {{ task.name|safe }}
+                    {% if task.is_complete %}</s>{% endif %}
+                                    {% if task.is_complete %}
+                <span><strong>{{ task.complete_entry }}</strong> @ {{ task.complete_time|naturaltime }} 完成</span>
+            {% else %}
+                <span>
+                <strong class="green-text"> @ {{ task.time|naturalday }} {{ task.time|date:"h:i" }}
+                    <small>({{ task.time|naturaltime }})</small>
+                </strong>
+                </span>
+            {% endif %}
+                </span>
+            </label>
+
+        </p>
+        {% if task.handler.exists %}<span>{% for handler in task.handler.all %}
+            {% if forloop.first %}分派给:{{ handler }}{% else %} /
+                {{ handler }}{% endif %}{% endfor %}</span>{% endif %}
+    </div>
+</div>

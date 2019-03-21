@@ -8,9 +8,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}stone system{% endblock %}</title>
     <!--Import Google Icon Font-->
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
-          rel="stylesheet">
-    {#    <link href="https://cdn.bootcss.com/material-design-icons/3.0.1/iconfont/material-icons.css" rel="stylesheet">#}
+    {#    <link href="https://fonts.googleapis.com/icon?family=Material+Icons"#}
+    {#          rel="stylesheet">#}
+    <link href="https://cdn.bootcss.com/material-design-icons/3.0.1/iconfont/material-icons.css" rel="stylesheet">
     {#    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">#}
     {#        <link href="http://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">#}
     <!--Import materialize.css-->
@@ -53,7 +53,7 @@
         .modal.bottom-sheet {
             max-width: 800px;
             position: fixed;
-            left: auto;
+            left: 300px;
             right: auto;
             top: auto;
             bottom: -100%;
@@ -126,7 +126,6 @@
         {% block detail_title %}
         {% endblock %}
     </h5>
-
     <div class="divider"></div>
     {% block header %}
     {% endblock %}
@@ -134,12 +133,13 @@
 
 <main>
     {% block main %}
-
     {% endblock %}
+    {% include 'modal.html' %}
 </main>
+
 {% include 'cart_detail.html' %}
 {% block footer %}
-{#    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>#}
+    {#    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>#}
     <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
     {#    <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>#}
     {#    <script type="text/javascript" src="{% static 'admin/js/vendor/jquery/jquery.js' %}"></script>#}
@@ -181,46 +181,11 @@
             direction: 'left',
             hoverEnabled: false
         });
+        {% include 'materialize_picker.html' %}
 
-        $('input[name=date]').datepicker({
-            showMonthAfterYear: true,
-            selectYears: 10,
-            format: 'yyyy-mm-dd',
-            i18n: {
-                weekdaysLetter: ['日', '一', '二', '三', '四', '五', '六'],
-                today: '今天',
-                clear: '清除',
-                close: '关闭',
-                done: '确认',
-                cancel: '取消',
-                months: ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'],
-                monthsShort: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
-                weekdays: ['周日', '周一', '周二', '周三', '周四', '周五', '周六'],
-                weekdaysShort: ['周日', '周一', '周二', '周三', '周四', '周五', '周六'],
-            }
-        });
-        {#$('.datepicker').datepicker({'format': 'yyyy-mm-dd'});#}
-        $('.datepicker').datepicker({
-            showMonthAfterYear: true,
-            selectYears: 10,
-            format: 'yyyy-mm-dd',
-            i18n: {
-                weekdaysLetter: ['日', '一', '二', '三', '四', '五', '六'],
-                today: '今天',
-                clear: '清除',
-                close: '关闭',
-                done: '确认',
-                cancel: '取消',
-                months: ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'],
-                monthsShort: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
-                weekdays: ['周日', '周一', '周二', '周三', '周四', '周五', '周六'],
-                weekdaysShort: ['周日', '周一', '周二', '周三', '周四', '周五', '周六'],
-            }
-        });
         $('select').formSelect();
         $('.collapsible').collapsible({accordion: true});
         {% block domready %}{% endblock %}
-
     });
     {% if messages %}
         {% for message in messages %}

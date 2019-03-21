@@ -89,6 +89,7 @@ class Invoice(HasChangedMixin, models.Model):
     type = models.CharField('付款/收款', choices=TYPE_CHOICES, null=False, max_length=2, default='-1')
     comments = GenericRelation('comment.Comment')
     files = GenericRelation('files.Files')
+    tasks = GenericRelation('tasks.Tasks')
 
     monitor_fields = ['state', 'partner', 'usage', 'type', 'date', 'due_date']
 
@@ -328,6 +329,7 @@ class Payment(HasChangedMixin, models.Model):
     confirm = models.BooleanField('确认款项', default=False)
     comments = GenericRelation('comment.Comment')
     files = GenericRelation('files.Files')
+    tasks = GenericRelation('tasks.Tasks')
 
     class Meta:
         verbose_name = '收付款记录'

@@ -1,4 +1,5 @@
 {% extends 'list.html' %}
+{% load humanize %}
 {% load public %}
 
 {% block content %}
@@ -6,15 +7,6 @@
 
     <div class="col s12">
 
-        {#            <ul class="tabs">#}
-        {#                <li class="tab col s4"><a class="active" href="#items">确认</a></li>#}
-        {#                {% if object.invoices.all %}#}
-        {#                    <li class="tab col s4"><a href="#invoice">完成</a></li>#}
-        {#                {% endif %}#}
-        {#                {% if object.in_out_order.all %}#}
-        {#                    <li class="tab col s4 "><a href="#in_out_order">草稿</a></li>#}
-        {#                {% endif %}#}
-        {#            </ul>#}
     </div>
     {#        <div id="items" class="col s12">#}
     <ul class="collection">
@@ -24,19 +16,15 @@
                     <div class="right right-align">
                         <span class=" right small {% if object.state == 'draft' %}default{% elif object.state == 'cancel' %}grey{% elif object.state == 'done' %}yellow{% else %}blue{% endif %}-text"
                         >{{ object.get_state_display }}
-                            {{ object.order }}</span>
-                        <span>
-                        <h5 class="orange-text" style="font-weight: bold">{{ object.amount|format_money }}</h5>
-                        </span>
-
-                        <p>{{ object.date|date:"Y/m/d" }}<br>({{ object.date|timesince }}前)
+                            </span>
+                        <p>{{ object.start_time|date:"Y/m/d" }}<br>({{ object.start_time|naturalday }})
                         </p>
                     </div>
                     <div class="left">
                         <i class="material-icons circle">{{ object.partner.name|slice:'1' }}</i>
                         <span class="title black-text">{{ object.partner }}</span>
                         <p>
-                            <i>{{ object.get_address }}</i>
+                            <i>{{ object.partner.get_address }}</i>
                         <div class="divider"></div>
                         {#                        <div class="black-text">#}
                         {#                            <span>{{ object.get_out_order_percentage|format_percentage|default_if_none:'' }}</span>#}
@@ -55,10 +43,10 @@
                 </div>
                 <div class="row">
                     <div class="left">
-                        <span>@{{ object.handler }}</span>
+                        <span>@{{ object.entry }}</span>
                     </div>
                     <div class="right">
-                        <span class="chip">{{ object.progress }}</span>
+                        <span class="chip">{{ object.name }}</span>
                     </div>
                 </div>
 

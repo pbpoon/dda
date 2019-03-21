@@ -246,3 +246,7 @@ class WxBlockSearchView(WechatBaseView):
 
 class WxPaymentView(WechatBaseView):
     app_name = 'payment'
+
+
+class SchemeWxPush(WechatBaseView):
+    app_name = 'scheme_push'
