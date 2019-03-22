@@ -75,15 +75,21 @@ class SchemeWxPush(models.Model):
         return self.content_type.model_class().objects.get(pk=self.object_id)
 
     def get_url(self):
+        if self.url:
+            return self.url
         print('url:', settings.DEFAULT_DOMAIN)
         print('abs:', self.get_obj().get_absolute_url())
 
         return "%s%s" % (settings.DEFAULT_DOMAIN, self.get_obj().get_absolute_url())
 
     def get_title(self):
-        return "[%s]%s" % (self.get_obj()._meta.verbose_name, self.title)
+        if not self.title:
+            return "[%s]%s" % (self.get_obj()._meta.verbose_name, self.title)
+        return self.title
 
     def get_description(self):
+        if self.description:
+            return self.description
         html = '%s' % self.time
         return html
 

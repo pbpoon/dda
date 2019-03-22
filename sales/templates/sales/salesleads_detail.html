@@ -41,7 +41,7 @@
             <!--状态按钮组-->
             {% if object.state != '0%' %}
                 <button onclick="confirm_option('{% url 'sales_leads_miss' object.id %}')"
-                        class="btn waves-effect red">错失
+                        class="btn waves-effect grey">错失
                 </button>
             {% endif %}
             <button onclick="confirm_option('{% url 'sales_leads_update_state' object.id %}')"

@@ -28,7 +28,8 @@ def cart_remove(request):
         state = 'ok'
     else:
         state = 'error'
-    return JsonResponse({'state': state})
+    cart_length = len(cart)
+    return JsonResponse({'state': state, 'cart_length':cart_length})
 
 
 @require_POST

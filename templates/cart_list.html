@@ -30,6 +30,7 @@
             data: {'product_id': product_id},
             success: function (data) {
                 if (data['state'] == 'ok') {
+                    $('#menu_cart_length').text(data['cart_length']);
                     $li.remove()
                 }
             },

@@ -42,6 +42,9 @@ class Tasks(HasChangedMixin, models.Model):
     def __str__(self):
         return self.name
 
+    def get_full_name(self):
+        return f'{self.get_obj()._meta.verbose_name}{self.get_obj()}:{self.name}'
+
     def get_obj(self):
         return self.content_type.model_class().objects.get(pk=self.object_id)
 
@@ -50,10 +53,24 @@ class Tasks(HasChangedMixin, models.Model):
         if hasattr(obj, 'create_comment'):
             return self.get_obj().create_comment(**kwargs)
 
+    def get_description(self):
+        html = f'{self.entry}\n'
+        html += f'内容:{self.name}\n'
+        if self.handler.exists():
+            html += '分派给：'
+            for handler in self.handler.all():
+                html += f'{handler} '
+            html += '\n'
+        html += f'{self.time.strftime("%Y-%m-%d %H:%M")}'
+        return html
+
     def set_scheme_push(self):
         self.push.all().delete()
         if not self.is_complete:
-            self.push.create(title=self.name, time=self.time, app_name='scheme_push')
+            self.push.create(title=self.get_full_name(),
+                             url=self.get_absolute_url(),
+                             description=self.get_description(),
+                             time=self.time, app_name='scheme_push')
 
     def save(self, *args, **kwargs):
         comment = ""
@@ -84,7 +101,7 @@ class Tasks(HasChangedMixin, models.Model):
         return False
 
     def set_complete(self):
-        now = datetime.utcnow()# + timedelta(hours=8)
+        now = datetime.utcnow()  # + timedelta(hours=8)
         now = now.replace(tzinfo=pytz.timezone('UTC'))
         state = ''
         if self.is_complete:
@@ -98,5 +115,5 @@ class Tasks(HasChangedMixin, models.Model):
             self.complete_time = now
             self.complete_entry = self.get_user()
         comment = mark_safe(
-            "%s @ %s %s：<a href='%s'>%s</a> 提醒事项" % (self.get_user(), now, state, self.get_absolute_url(), self))
+            "%s  %s：<a href='%s'>%s</a> 提醒事项" % (self.get_user(), state, self.get_absolute_url(), self))
         self.save(**{'comment': comment})
