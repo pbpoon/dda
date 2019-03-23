@@ -2,16 +2,29 @@
 {% block main %}
     <div class="container">
         {% if request.user.is_authenticated %}
-            <h4>欢迎 {{ request.user }}</h4>
+            <h4>{{ request.user }}
+                <small><a href="{% url 'logout' %}">登出</a></small>
+            </h4>
             <div class="divider"></div>
-            <a href="{% url 'logout' %}">登出</a>
         {% else %}
             <h4>
                 {{ request.user }} 你好!
             </h4>
             <div class="divider"></div>
-            <a href="{% url 'wechat_auth' %}">微信登录</a>
-            <a href="{% url 'login' %}">登录</a>
+            {#            <a href="{% url 'wechat_auth' %}">微信登录</a>#}
+            <small><a href="{% url 'login' %}">登录</a></small>
         {% endif %}
+    </div>
+
+    <div class="row">
+        <div class="col s12 m8">
+            <a href="{% url 'user_sales_order_list' %}"><h6>跟进中的销售订单(共{{ my_sales_order_confirm_count }}张)>></h6></a>
+            <a href="{% url 'sales_order_delay_list' %}"><h6>超期 10天 的订单({{ delay_ten_day_sales_order_count }}张)>></h6>
+            </a>
+        </div>
+        <div class="col s12 m4">
+            <h6>提醒事项列表</h6>
+            {% include 'tasks_list.html' %}
+        </div>
     </div>
 {% endblock %}

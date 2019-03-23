@@ -3,10 +3,12 @@
 {{ form.media }}
 {% block header %}
     <div style="margin-bottom: 5px" class="row">
-    <div class="col s12 m8">
-    <div class="card sticky-action {% if object.state == '0%' %}grey lighten-1{% elif object.state not in  '0%,100%' %}blue lighten-4{% elif object.state == '100%' %} yellow lighten-4{% endif %}">
-        <div class="card-content">
-                    <span class="card-title activator grey-text text-darken-4"><i class="material-icons right">more_vert</i>
+
+        <div class="col s12 m8">
+            <div class="card sticky-action {% if object.state == '0%' %}grey lighten-1{% elif object.state not in  '0%,100%' %}blue lighten-4{% elif object.state == '100%' %} yellow lighten-4{% endif %}">
+                <div class="card-content">
+                    <span class="card-title activator grey-text text-darken-4"><i
+                            class="material-icons right">more_vert</i>
     <div class="row">
         <div class="left">
             {% if object.is_vital %}
@@ -20,53 +22,54 @@
         </div>
     </div>
                         {{ object.name }}</span>
-            <p>
-                <!----suheader--->
-                <span><h5 class="grey-text">{{ object.desc }}
-                    {% if object.state == '0%' %}
-                        <span>
+                    <p>
+                        <!----suheader--->
+                        <span><h5 class="grey-text">{{ object.desc }}
+                            {% if object.state == '0%' %}
+                                <span>
             {{ object.miss_reason }}
             </span>
-                    {% endif %}
+                            {% endif %}
         </h5></span>
-                客户名称：<a href="{{ object.partner.get_absolute_url }} ">{{ object.partner }} </a>
-                / {{ object.partner.phone }}<br/>
-            <hr>
-            跟进人:<span>{% for handler in object.handlers.all %}{% if forloop.last %}{{ handler }}{% else %}
-            {{ handler }} /
-        {% endif %}{% endfor %}</span>
-            </p>
-        </div>
-        <div class="card-action" style="min-height: 60px">
-            <!--状态按钮组-->
-            {% if object.state != '0%' %}
-                <button onclick="confirm_option('{% url 'sales_leads_miss' object.id %}')"
-                        class="btn waves-effect grey">错失
-                </button>
-            {% endif %}
-            <button onclick="confirm_option('{% url 'sales_leads_update_state' object.id %}')"
-                    class="btn waves-effect blue">
-                推进进度
-            </button>
-            <button onclick="confirm_option('{% url 'sales_leads_win' object.id %}')"
-                    class="btn waves-effect yellow black-text">赢得订单
-            </button>
-            <!--状态按钮组-->
+                        客户名称：<a href="{{ object.partner.get_absolute_url }} ">{{ object.partner }} </a>
+                        / {{ object.partner.phone }}<br/>
+                    <hr>
+                    跟进人:<span>{% for handler in object.handlers.all %}{% if forloop.last %}{{ handler }}{% else %}
+                    {{ handler }} /
+                {% endif %}{% endfor %}</span>
+                    </p>
+                </div>
+                <div class="card-action" style="min-height: 60px">
+                    <!--状态按钮组-->
+                    {% if object.state != '0%' %}
+                        <button onclick="confirm_option('{% url 'sales_leads_miss' object.id %}')"
+                                class="btn waves-effect grey">错失
+                        </button>
+                    {% endif %}
+                    <button onclick="confirm_option('{% url 'sales_leads_update_state' object.id %}')"
+                            class="btn waves-effect blue">
+                        推进进度
+                    </button>
+                    <button onclick="confirm_option('{% url 'sales_leads_win' object.id %}')"
+                            class="btn waves-effect yellow black-text">赢得订单
+                    </button>
+                    <!--状态按钮组-->
 
-        </div>
-        <div class="card-reveal {% if object.state == 'cancel' %}grey lighten-1{% elif object.state == 'confirm' %}blue lighten-4{% elif object.state == 'done' %} yellow lighten-4{% endif %}">
+                </div>
+                <div class="card-reveal {% if object.state == 'cancel' %}grey lighten-1{% elif object.state == 'confirm' %}blue lighten-4{% elif object.state == 'done' %} yellow lighten-4{% endif %}">
                     <span class="card-title grey-text text-darken-4">更多操作
                       <i class="material-icons right">close</i></span>
-            <div class="valign-wrapper">
-                <div class="col s12">
-                    {% block operate %}
-                    {% endblock %}
+                    <div class="valign-wrapper">
+                        <div class="col s12">
+                            {% block operate %}
+                            {% endblock %}
+                        </div>
+                    </div>
                 </div>
+
             </div>
         </div>
-
     </div>
-
 {% endblock %}
 
 {% block content %}
@@ -156,19 +159,6 @@
             {% include 'paginatior.html' %}
         </div>
     </div>
-{% endblock %}
-
-{% block sidebar %}
-    {% if object.get_files %}
-        <div class="collection">
-            <a class="collection-item" href="{% url 'object_files_list' object|label_name object.id %}">
-                <span>文件档案({{ object.get_files.count }})</span>
-                <i class="material-icons right">folder</i>
-            </a>
-        </div>
-    {% endif %}
-{% endblock %}
-{% block action_btn %}
     <!-- action btn -->
     <div class="fixed-action-btn click-to-toggle">
         <a class="btn-floating btn-large red">
@@ -209,6 +199,19 @@
             {% endif %}
         </ul>
     </div>
+
+
+{% endblock %}
+
+{% block sidebar %}
+    {% if object.get_files %}
+        <div class="collection">
+            <a class="collection-item" href="{% url 'object_files_list' object|label_name object.id %}">
+                <span>文件档案({{ object.get_files.count }})</span>
+                <i class="material-icons right">folder</i>
+            </a>
+        </div>
+    {% endif %}
 {% endblock %}
 
 <script>

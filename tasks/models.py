@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 
 import pytz
+from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
@@ -64,11 +65,14 @@ class Tasks(HasChangedMixin, models.Model):
         html += f'{self.time.strftime("%Y-%m-%d %H:%M")}'
         return html
 
+    def get_url(self):
+        return "%s%s" % (settings.DEFAULT_DOMAIN, self.get_absolute_url())
+
     def set_scheme_push(self):
         self.push.all().delete()
         if not self.is_complete:
             self.push.create(title=self.get_full_name(),
-                             url=self.get_absolute_url(),
+                             url=self.get_url(),
                              description=self.get_description(),
                              time=self.time, app_name='scheme_push')
 

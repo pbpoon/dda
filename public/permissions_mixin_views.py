@@ -7,7 +7,16 @@ from django.http import HttpResponse
 from django.template.loader import render_to_string
 
 
-class ModelPermissionRequiredMixin:
+class ModalHandleNoPermissionMixin(LoginRequiredMixin):
+
+    def handle_no_permission(self):
+        if self.request.user.is_authenticated:
+            path = self.request.META.get('HTTP_REFERER')
+            return HttpResponse(render_to_string('no_permissions.html', {'return_path': path}))
+        return super().handle_no_permission()
+
+
+class ModelPermissionRequiredMixin(ModalHandleNoPermissionMixin):
     model_permission = None
 
     def get_permission_required(self):
@@ -17,21 +26,13 @@ class ModelPermissionRequiredMixin:
                 ('%s.' + i + '_%s' for i in self.model_permission)))
         return perms
 
-    def handle_no_permission(self):
-        path = self.request.META.get('HTTP_REFERER')
-        return HttpResponse(render_to_string('no_permissions.html', {'return_path': path}))
 
-
-class DynamicPermissionRequiredMixin(ModelPermissionRequiredMixin, LoginRequiredMixin, PermissionRequiredMixin):
+class DynamicPermissionRequiredMixin(ModelPermissionRequiredMixin, PermissionRequiredMixin):
     model_permission = ('add', 'change')
 
 
 class ViewPermissionRequiredMixin(DynamicPermissionRequiredMixin):
     model_permission = ('view',)
-
-    def handle_no_permission(self):
-        path = self.request.META.get('HTTP_REFERER')
-        return HttpResponse(render_to_string('no_permissions.html', {'return_path': path}))
 
 
 class PostPermissionRequiredMixin(ModelPermissionRequiredMixin):

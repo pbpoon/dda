@@ -18,6 +18,7 @@ from . import views
 from .filters import CustomerAutocomplete
 
 urlpatterns = [
+    # ——————————————————————————————————————————————————leads
     path('leads/<pk>/update/win/', views.SalesLeadsWinView.as_view(), name='sales_leads_win'),
     path('leads/<pk>/update/miss/', views.SalesLeadsMissView.as_view(), name='sales_leads_miss'),
     path('leads/<pk>/update/state/', views.SalesLeadsStateChangeView.as_view(), name='sales_leads_update_state'),
@@ -25,7 +26,7 @@ urlpatterns = [
     path('leads/create/', views.SalesLeadsCreateView.as_view(), name='sales_leads_create'),
     path('leads/<pk>/', views.SalesLeadsDetailView.as_view(), name='sales_leads_detail'),
     path('leads/', views.SalesLeadsListView.as_view(), name='sales_leads_list'),
-    # ——————————————————————————————————————————————————leads
+    # ——————————————————————————————————————————————————order
     path('order/pdf/<pk>/', views.OrderToPdfView.as_view(), name='sales_order_pdf'),
     path('order/item/delete/<pk>/', views.SalesOrderItemDeleteView.as_view(), name='sales_order_item_delete'),
     path('order/item/edit/<pk>/', views.SalesOrderItemEditView.as_view(), name='sales_order_item_edit'),
@@ -40,6 +41,7 @@ urlpatterns = [
          name='sales_order_invoice_options'),
     path('order/charts/', views.SalesOrderChrtsView.as_view(), name='sales_order_charts_list'),
     path('order/month/', views.SalesOrderMonthListView.as_view(), name='sales_order_month_list'),
+    path('order/delay/', views.SalesOrderDelayListView.as_view(), name='sales_order_delay_list'),
     path('order/<int:pk>/', views.SalesOrderDetailView.as_view(), name='sales_order_detail'),
     path('order/', views.SalesOrderListView.as_view(), name='sales_order_list'),
     path('customer/create/modal/', views.CustomerCreateModalView.as_view(), name='customer_modal_create'),

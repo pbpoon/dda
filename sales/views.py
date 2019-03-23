@@ -1,10 +1,10 @@
 import collections
 from _decimal import Decimal
 import weasyprint
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from django.db import transaction
-from django.db.models import Q, Sum
+from django.db.models import Q, Sum, F
 from django.db.models.functions import TruncMonth
 from django.forms import inlineformset_factory
 from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
@@ -35,6 +35,24 @@ from .models.leads import SALES_LEADS_STATE_CHOICES, MISS_REASON_CHOICES
 class SalesOrderListView(FilterListView):
     model = SalesOrder
     filter_class = SalesOrderFilter
+
+
+class SalesOrderDelayListView(SalesOrderListView):
+    ordering = ('date', 'created')
+    template_name = 'sales/salesorder_delay_list.html'
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        ten_days_ago = datetime.now() - timedelta(days=10)
+        return qs.annotate(delay=datetime.now() - F('date')).filter(date__lte=ten_days_ago,
+                                                                    state='confirm')
+
+
+class UserSalesOrderListView(SalesOrderListView):
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        return qs.filter(handler=self.request.user)
 
 
 class SalesOrderMonthListView(ViewPermissionRequiredMixin, MonthArchiveView):
@@ -495,7 +513,6 @@ class SalesLeadsEditMixin(OrderFormInitialEntryMixin):
             cd = detail_form.cleaned_data
             self.object.start_time = cd.get('start_time', None)
             self.object.due_time = cd.get('due_time', None)
-            self.object.category = cd.get('category', None)
             self.object.type = cd.get('type', None)
             self.object.thickness = cd.get('thickness', None)
             self.object.quantity = cd.get('quantity', None)

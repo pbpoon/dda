@@ -12,7 +12,8 @@
             </p>
 
             <p class="pull">{{ object.piece }}件/ {% if object.part %} {{ object.part|length }}夹/{% endif %}
-                {{ object.quantity }}{{ object.product.uom }}
+                {{ object.quantity }}{{ object.product.uom }} {% if object.product.get_main_size %}
+                    <span>({{ object.product.get_main_size }})</span>{% endif %}
             </p>
         </li>
     {% endfor %}

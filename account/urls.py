@@ -17,8 +17,9 @@ from django.urls import path
 from django.urls import include
 from . import views
 from django.contrib.auth import views as auth_views
-
+from sales.views import UserSalesOrderListView
 urlpatterns = [
+    path('sales-order/', UserSalesOrderListView.as_view(template_name='account/sales_order_list.html'), name='user_sales_order_list'),
     path('dashboard/', views.DashboardView.as_view(), name='dashboard'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('login/', auth_views.LoginView.as_view(), name='login'),

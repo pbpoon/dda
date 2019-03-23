@@ -45,7 +45,7 @@ urlpatterns = [
     path('wechat/', include('action.urls')),
     path('tasks/', include('tasks.urls')),
     path('ratings/', include('star_ratings.urls', namespace='ratings')),
-    path('', RedirectView.as_view(url='stock/available/')),
+    path('', RedirectView.as_view(url='account/dashboard/')),
     # selectable
 
 ]

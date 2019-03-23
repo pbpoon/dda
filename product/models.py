@@ -105,6 +105,7 @@ class Block(models.Model):
 
     _files = GenericRelation('files.Files')
     comments = GenericRelation('comment.Comment')
+    tasks = GenericRelation('tasks.Tasks')
 
     class Meta:
         verbose_name = '荒料资料'
@@ -275,6 +276,7 @@ class Product(models.Model):
 
     semi_slab_single_qty = models.DecimalField('毛板单件平方', null=True, max_digits=5, decimal_places=2, blank=True)
     files = GenericRelation('files.Files')
+    tasks = GenericRelation('tasks.Tasks')
 
     class Meta:
         verbose_name = '产品资料'
@@ -341,6 +343,12 @@ class Product(models.Model):
 
     def get_available(self, location=None):
         return Stock.get_available(product=self, location=location)
+
+    def get_main_size(self):
+        for stock in self.stock.all():
+            if stock.main_width:
+                return f'{stock.main_long} * {stock.main_height} * {stock.main_width}'
+            return f'{stock.main_long} * {stock.main_height}'
 
     def get_stock_trace_all(self):
         stock_trace_list = []

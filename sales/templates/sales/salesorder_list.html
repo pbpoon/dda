@@ -3,7 +3,7 @@
     {% url "sales_order_create" %}
 {% endblock %}
 {% block headline %}
-    销售订单
+    销售订单<small><a href="{% url 'user_sales_order_list' %}">显示关于我的订单>></a></small>
 {% endblock %}
 {% block content %}
     <a href="{% url 'sales_order_month_list' %}?year={% now 'Y' %}&month={% now 'm' %}">按月查看</a>

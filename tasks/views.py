@@ -1,8 +1,6 @@
 from datetime import datetime, timedelta
 
-import pytz
 from django.http import JsonResponse
-from django.shortcuts import render
 from django.template.loader import render_to_string
 from django.views import View
 from django.views.generic import ListView, CreateView, DetailView, UpdateView
@@ -47,10 +45,14 @@ class TasksDelayView(ModalOptionsMixin):
 
     def get_options(self):
         return (
-            (1, '1天后'),
-            (3, '3天后'),
-            (7, '1周后'),
-            (30, '1个月后'),
+            ('1h', '1小时后'),
+            ('2h', '2小时后'),
+            ('3h', '3小时后'),
+            ('--', '------'),
+            ('1d', '1天后'),
+            ('3d', '3天后'),
+            ('7d', '1周后'),
+            ('30d', '1个月后'),
         )
 
     def get_success_url(self):
@@ -60,10 +62,16 @@ class TasksDelayView(ModalOptionsMixin):
         content = "推迟 %s 的提醒时间在：" % self.object
         return content
 
-    def do_option(self, day):
-        day = int(day)
+    def do_option(self, time):
+        state = time[-1]
+        delay_time = int(time[:-1])
         self.object = self.get_object()
-        self.object.time = self.object.time + timedelta(days=day)
+        if state == 'd':
+            self.object.time = self.object.time + timedelta(days=delay_time)
+        elif state == 'h':
+            self.object.time = self.object.time + timedelta(hours=delay_time)
+        else:
+            return False, ''
         self.object.save()
         comment = mark_safe('推迟 <a href="%s">%s</a> 提醒时间到:%s' % (
             self.object.get_absolute_url(), self.object, self.object.time + timedelta(hours=8)

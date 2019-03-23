@@ -4,7 +4,7 @@
 from django import forms
 
 from public.widgets import SwitchesWidget, DateTimePickerWidget
-from tasks.models import Tasks
+from .models import Tasks
 from dal import autocomplete
 
 

@@ -1,10 +1,8 @@
-{% extends 'list.html' %}
-{% load public %}
 {% load humanize %}
-{% block content %}
-
-   <ul class="collection">
-        {% for object in object_list %}
+{% load public %}
+{% load i18n %}
+<ul class="collection">
+        {% for object in my_sales_order %}
             <a class="collection-item avatar grey-text" href="{{ object.get_absolute_url }}">
                 <div class="row">
                     <div class="right right-align">
@@ -15,7 +13,7 @@
                         <h5 class="orange-text" style="font-weight: bold">{{ object.amount|format_money }}</h5>
                         </span>
 
-                        <p>{{ object.date|date:"Y/m/d" }}<br>({{ object.date|timesince }}前)
+                        <p>{{ object.date|date:"Y/m/d" }}<br>({{ object.date|naturalday }})
                         </p>
                     </div>
                     <div class="left">
@@ -24,6 +22,17 @@
                         <p>
                             <i>{{ object.get_address }}</i>
                         <div class="divider"></div>
+                        {#                        <div class="black-text">#}
+                        {#                            <span>{{ object.get_out_order_percentage|format_percentage|default_if_none:'' }}</span>#}
+                        {#                            {% for key, item in object.get_total.items %}#}
+                        {#                                <span>#}
+                        {#                                                {{ key }}:{% if item.part %}{{ item.part }}夹#}
+                        {#                                    / {% endif %}{{ item.piece }}件 /#}
+                        {#                                    {{ item.quantity }}{{ item.uom }}</span><br>#}
+                        {#                            {% endfor %}#}
+                        {#                        </div>#}
+                        {#                        <div class="divider"></div>#}
+{#                        <span>@{{ object.handler }}</span>#}
                         </p>
                     </div>
 
@@ -40,24 +49,3 @@
             </a>
         {% endfor %}
     </ul>
-    {% include 'paginatior.html' %}
-    <div class="fixed-action-btn">
-        <a href="{% block add_url %}{% endblock %}" class="btn-floating btn-large red">
-            <i class="large material-icons">add</i>
-        </a>
-    </div>
-    {#        </div>#}
-    {#    </div>#}
-{% endblock %}
-{% block sidebar %}
-    <div class="card-panel white">
-        <span>按条件筛选</span>
-        <div class="divider"></div>
-        <form action="" method="GET">
-            <ul>
-                {{ filter.form.as_ul }}
-            </ul>
-            <button class="btn waves-effect" type="submit">确定</button>
-        </form>
-    </div>
-{% endblock %}

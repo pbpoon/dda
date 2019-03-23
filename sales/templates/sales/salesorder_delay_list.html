@@ -1,0 +1,11 @@
+{% extends "sales/list.html" %}
+{% block add_url %}
+    {% url "sales_order_create" %}
+{% endblock %}
+{% block headline %}
+    超期 10天 进行中 的销售订单<small><a href="{% url 'sales_order_list' %}">显示全部订单>></a></small>
+{% endblock %}
+{% block subheadline %}
+{% endblock %}
+{% block sidebar %}
+{% endblock %}

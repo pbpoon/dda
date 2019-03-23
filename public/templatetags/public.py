@@ -5,9 +5,12 @@ from django import template
 from django.contrib.humanize.templatetags.humanize import intcomma
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
-
+from datetime import datetime
 register = template.Library()
 
+@register.filter
+def display_day(date_day):
+    return f'{date_day.days}天前'
 
 @register.filter
 def format_money(dollars, format=None):
