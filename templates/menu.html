@@ -1,10 +1,9 @@
 {% load static %}
 <ul id="slide-out" class="sidenav sidenav-fixed">
     <li class="logo">
-        <img class="responsive-img" src="{% static '/image/web-logo.jpg' %}"
-             alt="{{ user.get_company.company.name }}" style="width: 100%; height:auto"></li>
-    <li class="no-padding">
-
+        <img class="responsive-img" src="{% static '/image/logo.jpg' %}"
+             alt="{{ user.get_company.company.name }}" ></li>
+    <li class="no-padding" >
         <ul class="collapsible  collapsible-accordion">
             <li class="bold{% if request.path|slice:'9' == '/account/' %} active {% endif %}">
                 <div class="collapsible-header waves-effect waves-light">
@@ -18,12 +17,13 @@
                 </div>
                 <div class="collapsible-body">
                     <ul>
-
-                        <li {% if request.path|slice:'9:' == 'dashboard/' %} class="active" {% endif %} ><a
-                                href="{% url 'dashboard' %}">工作安排</a></li>
-                        <li {% if request.path|slice:'9:' == 'sales-order/' %} class="active" {% endif %} ><a
-                                href="{% url 'user_sales_order_list' %}">跟进中的销售订单</a></li>
                         {% if request.user.is_authenticated %}
+                            <li {% if request.path|slice:'9:' == 'dashboard/' %} class="active" {% endif %} ><a
+                                    href="{% url 'dashboard' %}">工作安排</a></li>
+                            <li {% if request.path|slice:'9:' == 'sales-order/' %} class="active" {% endif %} ><a
+                                    href="{% url 'user_sales_order_list' %}">跟进中的销售订单</a></li>
+                            <li {% if request.path|slice:'9:' == 'collect-block-list/' %} class="active" {% endif %} ><a
+                                    href="{% url 'collect_block_list' %}">荒料编号收集列表</a></li>
                             <li class="no-padding"><a href="#"
                                                       onclick="show_car_detail('{% url 'cart_detail' %}')">选择了：<span
                                     id="menu_cart_length">{{ cart|length }}</span>项</a>

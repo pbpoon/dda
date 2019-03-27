@@ -4,11 +4,19 @@
     <a href="{{ object.product.get_absolute_url }}">{{ object.product }}</a>
 {% endblock %}
 {% block operate %}
+
     <a class="btn waves-effect" href="{% url 'package_pdf' object.id %}" target="_blank">打印</a>
     <a class="btn waves-effect" href="{% url 'package_slab_pdf' object.id %}" target="_blank">打印便签</a>
     {% if add_new == 'True' %}
-        <a class="btn waves-effect yellow black-text" onclick='add_item("{% url 'package_import_data' object.id %}")' target="_blank">导入excel文件</a>
+        <a class="btn waves-effect yellow black-text" onclick='add_item("{% url 'package_import_data' object.id %}")'
+           target="_blank">导入excel文件</a>
     {% endif %}
+{% endblock %}
+{% block state %}
+    <button onclick="share_wechat()" class="btn waves-effect green"><i class="material-icons">share</i>用微信发送
+    </button>
+    {% include 'sales/jssdk.html' %}
+
 {% endblock %}
 {% block subheadline %}
     <span>

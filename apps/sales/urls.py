@@ -27,6 +27,7 @@ urlpatterns = [
     path('leads/<pk>/', views.SalesLeadsDetailView.as_view(), name='sales_leads_detail'),
     path('leads/', views.SalesLeadsListView.as_view(), name='sales_leads_list'),
     # ——————————————————————————————————————————————————order
+    path('order/share/pdf/<str:string>/', views.SalesOrderPdfShareDisplayView.as_view(), name='sales_order_pdf_share'),
     path('order/pdf/<pk>/', views.OrderToPdfView.as_view(), name='sales_order_pdf'),
     path('order/item/delete/<pk>/', views.SalesOrderItemDeleteView.as_view(), name='sales_order_item_delete'),
     path('order/item/edit/<pk>/', views.SalesOrderItemEditView.as_view(), name='sales_order_item_edit'),

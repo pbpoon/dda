@@ -29,7 +29,8 @@ from product.models import PackageList
 from public.permissions_mixin_views import ViewPermissionRequiredMixin, DynamicPermissionRequiredMixin
 from public.utils import Package, StockOperateItem
 from public.views import OrderItemEditMixin, OrderItemDeleteMixin, OrderFormInitialEntryMixin, FilterListView, \
-    SentWxMsgMixin, ItemSentWxMsgMixin
+     ItemSentWxMsgMixin
+from action.wechat import SentWxMsgMixin
 from public.widgets import SwitchesWidget
 from purchase.models import PurchaseOrder
 from public.views import GetItemsMixin, StateChangeMixin

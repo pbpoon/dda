@@ -17,7 +17,8 @@ from invoice.form import AssignInvoiceForm, InvoiceForm, PaymentForm
 from partner.models import Partner
 from public.permissions_mixin_views import DynamicPermissionRequiredMixin
 from public.views import GetItemsMixin, OrderItemEditMixin, StateChangeMixin, OrderItemDeleteMixin, ModalOptionsMixin, \
-    FilterListView, SentWxMsgMixin
+    FilterListView
+from action.wechat import SentWxMsgMixin
 from django.views.generic.edit import CreateView, UpdateView, ModelFormMixin
 from django.views.generic.base import TemplateResponseMixin, View
 
@@ -187,7 +188,12 @@ class AccountUpdateView(DynamicPermissionRequiredMixin, UpdateView):
 class PaymentSentWxMixin(SentWxMsgMixin):
     app_name = 'payment'  # 发微信
 
+    def get_js_sdk_url(self):
+        return self.get_url()
+
     def get_url(self):
+        if not self.object:
+            return ""
         return "%s" % (self.request.build_absolute_uri(self.object.get_absolute_url()))
 
     def get_title(self):

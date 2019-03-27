@@ -9,7 +9,6 @@ from invoice.models import CreateInvoice, Account
 from mrp.models import MrpOrderAbstract, OrderItemBase
 from public.fields import OrderField
 from public.stock_operate import StockOperate
-
 UOM_CHOICES = (('t', '吨'), ('m3', '立方'), ('m2', '平方'))
 OPERATION_TYPE = (('in', '入库'), ('out', '出库'))
 

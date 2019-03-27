@@ -19,7 +19,10 @@ from . import views
 from django.contrib.auth import views as auth_views
 from sales.views import UserSalesOrderListView
 urlpatterns = [
+    path('collect-block/<pk>/', views.CollectBlockUpdateView.as_view(), name='collect_block_update'),
     path('sales-order/', UserSalesOrderListView.as_view(template_name='account/sales_order_list.html'), name='user_sales_order_list'),
+    path('collect-block-list/', views.UserCollectBlockListView.as_view(), name='collect_block_list'),
+    path('collect-block-list/share/<str:string>', views.CollectBlockPhotoListView.as_view(), name='collect_block_share'),
     path('dashboard/', views.DashboardView.as_view(), name='dashboard'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('login/', auth_views.LoginView.as_view(), name='login'),

@@ -19,6 +19,7 @@ from . import views
 
 urlpatterns = [
     path('auth/', views.WechatAuthView.as_view(), name='wechat_auth'),
+    path('test/js-sdk/', views.TestJsSdkView.as_view(), name='wechat_test_jssdk'),
     path('scheme-push/', views.SchemeWxPush.as_view(), name='wechat_scheme_push'),
     path('payment/', views.WxPaymentView.as_view(), name='wechat_payment'),
     path('block_search/', views.WxBlockSearchView.as_view(), name='wechat_block_search'),

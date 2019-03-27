@@ -6,13 +6,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{% block title %}stone system{% endblock %}</title>
+    <title>{% block title %}云浮宏建石材/浅啡网{% endblock %}</title>
     <!--Import Google Icon Font-->
-        <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
-              rel="stylesheet">
+    {#    <link href="https://fonts.googleapis.com/icon?family=Material+Icons"#}
+    {#          rel="stylesheet">#}
 
-{#    <link href="https://cdn.bootcss.com/material-design-icons/3.0.1/iconfont/material-icons.css" rel="stylesheet">#}
-{#<link href="https://cdn.bootcss.com/material-design-icons/3.0.1/iconfont/material-icons.min.css" rel="stylesheet">#}
+    <link href="https://cdn.bootcss.com/material-design-icons/3.0.1/iconfont/material-icons.css" rel="stylesheet">
+    {#<link href="https://cdn.bootcss.com/material-design-icons/3.0.1/iconfont/material-icons.min.css" rel="stylesheet">#}
     {#    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">#}
     {#        <link href="http://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">#}
     <!--Import materialize.css-->
@@ -22,9 +22,45 @@
     {#    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-rc.2/css/materialize.min.css">#}
     <link rel="stylesheet" href="{% static 'star-ratings/css/star-ratings.css' %}">
     <script type="text/javascript" src="{% static 'star-ratings/js/dist/star-ratings.min.js' %}"></script>
+    <script src="http://res.wx.qq.com/open/js/jweixin-1.2.0.js"></script>
     {% block head %}
     {% endblock %}
     <style>
+        @font-face {
+            font-family: 'Material Icons';
+            font-style: normal;
+            font-weight: 400;
+            src: url({% static '/fonts/iconfont/MaterialIcons-Regular.eot' %}); /* For IE6-8 */
+            src: local('Material Icons'),
+            local('MaterialIcons-Regular'),
+            url({% static '/fonts/iconfont/MaterialIcons-Regular.woff2' %}) format('woff2'),
+            url({% static '/fonts/iconfont/MaterialIcons-Regular.woff' %}) format('woff'),
+            url({% static '/fonts/iconfont/MaterialIcons-Regular.ttf' %}) format('truetype'),
+        }
+
+        .material-icons {
+            font-family: 'Material Icons';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px; /* Preferred icon size */
+            display: inline-block;
+            width: 1em;
+            height: 1em;
+            line-height: 1;
+            text-transform: none;
+
+            /* Support for all WebKit browsers. */
+            -webkit-font-smoothing: antialiased;
+            /* Support for Safari and Chrome. */
+            text-rendering: optimizeLegibility;
+
+            /* Support for Firefox. */
+            -moz-osx-font-smoothing: grayscale;
+
+            /* Support for IE. */
+            font-feature-settings: 'liga';
+        }
+
         {#.ui-autocomplete {#}
         {#    z-index: 215000000 !important;#}
 
@@ -187,6 +223,7 @@
 
         $('select').formSelect();
         $('.collapsible').collapsible({accordion: true});
+        $('.materialboxed').materialbox();
         {% block domready %}{% endblock %}
     });
     {% if messages %}
@@ -194,7 +231,6 @@
             M.toast({html: '{{ message }}'}, 4000);
         {% endfor %}
     {% endif %}
-
 
 </script>
 </html>

@@ -9,18 +9,22 @@ from django.db import transaction
 from django import forms
 from django.db.models import Count, Sum
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, HttpResponse, redirect
+from django.shortcuts import get_object_or_404, HttpResponse, redirect, render_to_response
 from django.template.loader import render_to_string
+from django.urls import reverse
 from django.views import View
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, TemplateView
 from django.views.generic.detail import BaseDetailView
 from django.views.generic.list import MultipleObjectMixin
 from wkhtmltopdf.views import PDFTemplateView
+from django.core import signing
 
+from action.wechat import WxJsSdkMixin
 from cart.cart import Cart
 from product.filters import BlockFilter, ProductFilter
 from product.forms import DraftPackageListItemForm, PackageListItemForm, PackageListItemEditForm, \
     PackageListItemMoveForm, PackageListImportForm
+from public.permissions_mixin_views import DynamicPermissionRequiredMixin, ViewPermissionRequiredMixin
 from public.views import OrderItemEditMixin, OrderItemDeleteMixin, ModalOptionsMixin, FilterListView, ModalEditMixin
 from stock.models import Location, Stock, Warehouse
 from public.utils import qs_to_dict, Package
@@ -138,7 +142,7 @@ class CategoryListView(FilterListView):
     model = Category
 
 
-class CategoryEditMixin:
+class CategoryEditMixin(DynamicPermissionRequiredMixin):
     model = Category
     fields = '__all__'
     template_name = 'form.html'
@@ -152,7 +156,7 @@ class CategoryUpdateView(CategoryEditMixin, UpdateView):
     pass
 
 
-class CategoryDetailView(DetailView):
+class CategoryDetailView(ViewPermissionRequiredMixin, DetailView):
     model = Category
 
 
@@ -160,11 +164,11 @@ class QuarryListView(FilterListView):
     model = Quarry
 
 
-class QuarryDetailView(DetailView):
+class QuarryDetailView(ViewPermissionRequiredMixin, DetailView):
     model = Quarry
 
 
-class QuarryEditMixin:
+class QuarryEditMixin(DynamicPermissionRequiredMixin):
     model = Quarry
     fields = '__all__'
     template_name = 'form.html'
@@ -191,7 +195,7 @@ class BlockListView(FilterListView):
     #     return context
 
 
-class BlockDetailView(DetailView):
+class BlockDetailView(ViewPermissionRequiredMixin, DetailView):
     model = Block
 
 
@@ -200,11 +204,11 @@ class ProductListView(FilterListView):
     filter_class = ProductFilter
 
 
-class ProductDetailView(DetailView):
+class ProductDetailView(ViewPermissionRequiredMixin, DetailView):
     model = Product
 
 
-class SaleOrderListView(DetailView, MultipleObjectMixin):
+class SaleOrderListView(ViewPermissionRequiredMixin, DetailView, MultipleObjectMixin):
     model = None
     template_name = 'product/product_sales_order.html'
     paginate_by = 10
@@ -214,7 +218,7 @@ class SaleOrderListView(DetailView, MultipleObjectMixin):
         return super().get_context_data(object_list=qs, **kwargs)
 
 
-class OriginalStockTraceView(DetailView, MultipleObjectMixin):
+class OriginalStockTraceView(ViewPermissionRequiredMixin, DetailView, MultipleObjectMixin):
     model = Block
     template_name = 'product/block_original_stock_trace.html'
     paginate_by = 10
@@ -297,7 +301,7 @@ class DraftPackageListItemDeleteView(OrderItemDeleteMixin):
 
 
 # 一般order订单的码单显示
-class PackageListDetail(DetailView):
+class PackageListDetail(ViewPermissionRequiredMixin, DetailView):
     model = PackageList
     template_name = 'product/package_list.html'
 
@@ -327,7 +331,8 @@ class PackageListDetail(DetailView):
 
         data = {'package': package, 'cart': cart, 'package_slabs_ids': package_slabs_ids,
                 'state': state, 'object': self.object, 'is_reserve_list': is_reserve_list}
-        return data
+        kwargs.update(data)
+        return super().get_context_data(**kwargs)
 
     def get(self, *args, **kwargs):
         context = self.get_context_data(**kwargs)
@@ -359,7 +364,7 @@ class ProductionOrderPackageListDetailView(PackageListDetail):
         return context
 
 
-# 库存盘点码单（编辑）显示
+# 库存盘点码单（编辑）显示//////
 class InventoryOrderPackageListDetailView(PackageListDetail):
     template_name = 'product/inventory_package_list.html'
 
@@ -474,9 +479,26 @@ class TurnBackOrderPackageListDetailView(PackageListDetail):
         return slabs
 
 
-class PackageListFullPageView(DetailView):
+class PackageListFullPageView(DynamicPermissionRequiredMixin, WxJsSdkMixin, DetailView):
     model = PackageList
     template_name = 'product/packagelist_full_page.html'
+    app_name = 'zdzq_main'
+
+    def get_js_sdk_desc(self):
+        html = '%s夹 / ' % self.object.get_part()
+        html += '%s件 / ' % self.object.get_piece()
+        html += '%s%s' % (self.object.get_quantity(), self.object.product.get_uom())
+        return html
+
+    def get_js_sdk_url(self):
+        return self.request.build_absolute_uri()
+
+    def get_js_sdk_link(self):
+        from django.conf import settings
+        data = {'pk': self.object.id}
+        string = signing.dumps(data)
+        path = reverse('package_pdf_share', args=[string])
+        return f"{settings.DEFAULT_DOMAIN}{path}"
 
     def get_context_data(self, **kwargs):
         self.object = self.get_object()
@@ -496,6 +518,7 @@ class PackageListFullPageView(DetailView):
         return super().get_context_data(**kwargs)
 
 
+# 导入码单
 class PackageListImportView(TemplateView):
     model = PackageList
     form_class = PackageListImportForm
@@ -697,6 +720,23 @@ class PackageListPdfView(BaseDetailView, PDFTemplateView):
         return '%s(%s)-%spcs-%spart-%s%s.pdf' % (
             self.object.product.name, self.object.product.thickness, self.object.get_piece(), self.object.get_part(),
             self.object.get_quantity(), self.object.product.get_uom())
+
+
+class PackageListPdfShareView(PackageListPdfView):
+    def get_object(self, queryset=None):
+        return self.object
+
+    def dispatch(self, request, *args, **kwargs):
+        string = kwargs.get('string')
+        if string:
+            try:
+                data = signing.loads(string)
+                self.object = get_object_or_404(self.model, pk=data['pk'])
+                kwargs.update(data)
+                return super().dispatch(request, *args, **kwargs)
+            except Exception as e:
+                print(e)
+        return render_to_response("404.html", {})
 
 
 # 打印标签pdf

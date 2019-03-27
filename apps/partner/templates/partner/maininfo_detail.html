@@ -1,5 +1,7 @@
 {% extends 'detail.html' %}
+{% load static %}
 {% block headline %}
+    <img src="{{ object.logo.url }}" style="width: 100px" alt="">
     公司资料
 {% endblock %}
 {% block content %}

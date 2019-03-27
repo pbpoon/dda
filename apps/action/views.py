@@ -1,7 +1,8 @@
 from datetime import datetime
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render, redirect
-#
+import uuid
+import time
 # # Create your views here.
 from django.urls import reverse
 from django.views.generic.base import View
@@ -19,6 +20,10 @@ from wechatpy.replies import BaseReply, create_reply
 from action.models import WxConf
 
 from django.views.decorators.csrf import csrf_exempt
+
+from action.wechat import WxClient
+
+from django.conf import settings
 
 corp_id = 'wwb132fd0d32417e5d'
 
@@ -154,21 +159,23 @@ class WechatBaseView(View):
 
 
 class WechatAuthView(View):
-    CORP_ID = corp_id
-    SECRET = 'la8maluNMN_imtic0Jp0ECmE71ca2iQ80n3-a8HFFv4'
+    app_name = 'zdzq_main'
 
-    client = WeChatClient(
-        CORP_ID,
-        SECRET
-    )
+    def get_wx_conf(self):
+        return WxConf(app_name=self.app_name)
 
+    @csrf_exempt
     def dispatch(self, request, *args, **kwargs):
-        code = kwargs.get('code', None)
+        wx_conf = self.get_wx_conf()
+        self.client = WeChatClient(wx_conf.corp_id, wx_conf.Secret)
+        print(request.GET, '\n\n')
+        code = request.GET.get('code', None)
+        print('code:', code, '\n')
         # print(request.get_full_path())
         # print(request.META.HTTP_HOST)
-        path = request.build_absolute_uri()
+        path = 'emperador.ltd'
         url = self.client.oauth.authorize_url(path)
-        print(url)
+        print('url', url, '\n')
         if code:
             try:
                 user_info = self.client.oauth.get_user_info(code)
@@ -181,7 +188,6 @@ class WechatAuthView(View):
         else:
             print('go_url')
             return redirect(url)
-        return super().dispatch(request, *args, **kwargs)
 
 
 class WxBlockSearchView(WechatBaseView):
@@ -250,3 +256,84 @@ class WxPaymentView(WechatBaseView):
 
 class SchemeWxPush(WechatBaseView):
     app_name = 'scheme_push'
+
+
+class TestJsSdkView(WxClient, View):
+    app_name = 'zdzq_main'
+    template_name = 'action/test.html'
+
+    def get(self, *args, **kwargs):
+        self.client = self.get_client()
+        path = f'{settings.DEFAULT_DOMAINS}{self.request.path}'
+        noncestr = str(uuid.uuid1())[:12]
+        ticket = self.client.jsapi.get_jsapi_ticket()
+        timestamp = int(time.time())
+        signature = self.client.jsapi.get_jsapi_signature(noncestr, ticket, timestamp, path)
+        data = {
+            'signature': signature,
+            'noncestr': noncestr,
+            'timestamp': timestamp,
+            'appid': self.wx_conf.corp_id,
+            'url': path,
+        }
+        return render(self.request, self.template_name, {'data': data})
+
+#
+# from .models import WeUser
+# from django.contrib.auth.models import User
+#
+#
+# class WechatOpenidAuth(object):
+#
+#
+#     def get_user(self, user_id):
+#
+#
+#     try:
+#         return User.objects.get(id=user_id)
+#     except User.DoesNotExist:
+#         return None
+#
+#
+# def authenticate(self, openid=None):
+#
+#
+#     weus = WeUser.objects.filter(openID=openid, available=True)
+#
+#     for weu in weus:
+#         if not weu.user.has_perm('settings.is_admin'):
+#         return weu.user
+#     return None
+#
+#
+# def login(request):
+#
+#
+#     code = request.GET.get('code')
+#     next = request.GET.get('state', reverse('index'))
+#     we_auth_base = WeChatOAuth(app_id=settings.WECHAT_APP_ID, secret=settings.WECHAT_APP_SECRET,
+#                                redirect_uri=request.build_absolute_uri(reverse('wechatLogin')),
+#                                scope='snsapi_base',
+#                                state=next)
+#     if not code:
+#         try:
+#         authorize_url = we_auth_base.authorize_url
+#     except Exception as e:
+#         logger.error(e)
+#             return redirect(reverse('login') + '?force=1')
+#     return redirect(authorize_url)
+#     try:
+#         r = we_auth_base.fetch_access_token(code)
+#     except Exception as e:
+#         logger.error(e)
+#     return redirect(reverse('login') + '?force=1')
+#         if r.get('errcode'):
+#             logger.error(r)
+#     return redirect(reverse('login') + '?force=1')
+#
+#     open_id = r.get('openid')
+#     if log_in_with_open_id(request, open_id):
+#         messages.success(request, '登录成功')
+#         return redirect(next)
+#     else:
+#         return redirect(reverse('login') + '?force=1')

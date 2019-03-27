@@ -20,6 +20,7 @@ from . import views
 urlpatterns = [
     path('package_list/<pk>/import_data/', views.PackageListImportView.as_view(), name='package_import_data'),
     path('package_list/<pk>/pdf/slab/', views.PackageListSlabPdfView.as_view(), name='package_slab_pdf'),
+    path('package_list/share/pdf/<str:string>', views.PackageListPdfShareView.as_view(), name='package_pdf_share'),
     path('package_list/<pk>/pdf/', views.PackageListPdfView.as_view(), name='package_pdf'),
     path('block_list', views.get_block_list, name='get_block_list'),
     path('block-autocomplete/', views.BlockAutocompleteView.as_view(), name='block_autocomplete'),

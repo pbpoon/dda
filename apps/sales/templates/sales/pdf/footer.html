@@ -9,14 +9,14 @@
 <table style="border-bottom: 1px solid black; width: 100%; height: 5cm">
     <tr>
         <td class="section" style="text-align: right">
-                    {% if show_account %}
-                        <span style="display: block">
+            {% if show_account %}
+                <span style="display: block">
                             {{ object.entry.get_company.account_detail|safe }}
                         </span>
-                    {% endif %}
+            {% endif %}
         </td>
         <td style="text-align:right">
-{#            Page <span class="page"></span> of <span class="topage"></span>#}
+            {#            Page <span class="page"></span> of <span class="topage"></span>#}
         </td>
     </tr>
 </table>

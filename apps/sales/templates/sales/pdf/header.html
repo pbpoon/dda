@@ -104,6 +104,7 @@
             background-repeat: no-repeat;
             border-bottom: #5a5a5a 1px double;
         }
+
         .customer tr, td {
             border: none;
         }
@@ -128,10 +129,10 @@
                         <td colspan="2">{{ object.partner }}</td>
                     </tr>
                     {% if object.partner.phone %}
-                    <tr>
-                        <td class="text-right">电话：</td>
-                        <td colspan="2">{{ object.partner.phone }}</td>
-                    </tr>
+                        <tr>
+                            <td class="text-right">电话：</td>
+                            <td colspan="2">{{ object.partner.phone }}</td>
+                        </tr>
                     {% endif %}
                     <tr>
                         <td class="text-right">发往：</td>
@@ -148,6 +149,9 @@
                 <div class="text-right">
                     <div>经办人:{{ object.handler }}</div>
                 </div>
+                {% if request.user.is_authenticated %}
+                    <a href="{{ link }}">{{ link }}</a>
+                {% endif %}
             </div>
             <div class="clear"></div>
         </div>

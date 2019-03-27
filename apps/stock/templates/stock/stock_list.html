@@ -67,7 +67,12 @@
             <tbody>
             {% for object in object_list %}
                 <tr>
-                    <td><a href="{{ object.product.block.get_absolute_url }}">{{ object.product }}</a></td>
+                    <td><a href="{{ object.product.block.get_absolute_url }}">{{ object.product }}
+                        {% if object.product.block.files.exists %}
+                             <i class="material-icons">photo</i>
+                        {% endif %}
+
+                    </a></td>
                     <td><a onclick="open_package_list_by_stock('{% url 'stock_slabs_detail' object.id %}')">
                         {% if object.product.type == 'slab' %}{{ object.get_part }} 夹/ {% endif %}
                         {{ object.piece }} 件/ {{ object.quantity }}{{ object.uom }}</a></td>

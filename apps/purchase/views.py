@@ -11,8 +11,6 @@ from .forms import PurchaseOrderItemForm, PurchaseOrderForm, SupplierForm
 from .models import PurchaseOrder, PurchaseOrderItem
 from invoice.models import CreateInvoice
 
-from django.contrib import messages
-
 
 class PurchaseOrderListView(FilterListView):
     model = PurchaseOrder

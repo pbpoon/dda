@@ -2,7 +2,7 @@
 {% load public %}
 {% load humanize %}
 {% block content %}
-
+<script src="https://res.wx.qq.com/open/js/jweixin-1.2.0.js"></script>
    <ul class="collection">
         {% for object in object_list %}
             <a class="collection-item avatar grey-text" href="{{ object.get_absolute_url }}">

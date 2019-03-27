@@ -218,7 +218,10 @@
            onclick="confirm_option('{% url 'sales_order_invoice_options' object.id %}')">自动创建账单</a>
         <a class="btn default" href="{% url 'sales_invoice_create' object|label_name object.id %}">手动创建账单</a>
     {% endif %}
-    <a class="btn waves-effect default" href="{% url 'sales_order_pdf' object.id %}" target="_blank"><i class="material-icons">picture_as_pdf</i>打印</a>
+
+    <a class="btn waves-effect default" href="{% url 'sales_order_pdf' object.id %}" target="_blank"><i
+            class="material-icons">picture_as_pdf</i>打印</a>
+    <button onclick="share_wechat()" class="btn waves-effect green"><i class="material-icons">share</i>用微信发送</button>
 {% endblock %}
 {% block sidebar %}
     {#    {% if object.in_out_order.all %}#}
@@ -251,6 +254,8 @@
             </a>
         </div>
     {% endif %}
+
+    {% include 'sales/jssdk.html' %}
 {% endblock %}
 <script>
     {% block domready %}

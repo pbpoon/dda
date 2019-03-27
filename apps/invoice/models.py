@@ -450,10 +450,10 @@ class Account(models.Model):
 
 
 class InvoiceDueDateDefaultSet(models.Model):
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, verbose_name='对应order', unique=True,
-                                     limit_choices_to={'model__in': (
-                                         'salesorder', 'purchaseorder', 'movelocationorder', 'productionorder',
-                                         'inoutorder', 'inventoryorder')})
+    content_type = models.OneToOneField(ContentType, on_delete=models.CASCADE, verbose_name='对应order', unique=True,
+                                        limit_choices_to={'model__in': (
+                                            'salesorder', 'purchaseorder', 'movelocationorder', 'productionorder',
+                                            'inoutorder', 'inventoryorder')})
     default = models.CharField('默认值选项', choices=DUE_DATE_DEFAULT_CHOICES, max_length=20)
     updated = models.DateField('更新日期', auto_now=True)
 

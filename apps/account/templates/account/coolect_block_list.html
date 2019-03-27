@@ -1,0 +1,39 @@
+{% extends 'list.html' %}
+{% load static %}
+{% load public %}
+{% block content %}
+
+    <ul class="collection">
+        {% for object in object_list %}
+            {#            <div class="collection-item avatar grey-text">#}
+            <a class="collection-item avatar grey-text" href="{{ object.get_absolute_url }}">
+                <div class="col s6">
+                    <i class="material-icons circle">folder</i>
+                    <span class="title black-text">{{ object.name }}</span>
+                </div>
+                <div class="col s6">
+                    <div class=" black-text right-align">
+                        <p>
+                            <b>
+                                {{ object.category }}
+                            </b>
+                            <br>
+                            {{ object.get_batch }}
+                        </p>
+                        <span class="right-align">{{ object.created|date:"Y/m/d" }}</span>
+                    </div>
+                </div>
+            </a>
+            {#            </div>#}
+        {% endfor %}
+    </ul>
+    {% include 'paginatior.html' %}
+    {% include 'account/jssdk.html' %}
+{% endblock %}
+{% block sidebar %}
+    <form action="" method="post">
+        {% csrf_token %}
+        <button class="btn waves-effect red" type="submit" value="">清理所有收集项</button>
+    </form>
+
+{% endblock %}

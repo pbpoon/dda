@@ -91,7 +91,7 @@
 {% endblock %}
 {% block subheadline %}
     <div class="row">
-        <div class="col s7">
+        <div class="col s6">
 
             <ul style="display: inline">
                 <li>品种：{{ object.category|default_if_none:"" }}</li>
@@ -104,12 +104,36 @@
                     / {{ object.height|default_if_none:"" }}</li>
             </ul>
         </div>
-        <div class="col s5">
+        <div class="col s6">
             <div style="text-align: right">
                 {% if object.slab_yield %}
                     <span class="chip orange black-text">出材率:{{ object.slab_yield }}/{{ object.uom }}</span>
                 {% endif %}
             </div>
+            <i id="bookmark" onclick="post_collect_block()" class="medium material-icons waves-effect red-text right">
+                {% if object.id|add:"0" in request.user.collect_block.block_list %}bookmark{% else %}
+                    bookmark_border{% endif %}</i>
+            <script>
+
+                function post_collect_block() {
+                    $this = $('#bookmark');
+                    $.ajax({
+                        url: '{% url 'collect_block_update' object.id %}',
+                        method: 'POST',
+                        success: function (data) {
+                            if (data['inside'] == 'yes') {
+                                $this.text('bookmark');
+                            } else {
+                                $this.text('bookmark_border');
+                            }
+                            if (data['msg']) {
+                                M.toast({html: data['msg']}, 4000);
+                            }
+                        }
+                    })
+                }
+
+            </script>
         </div>
     </div>
 

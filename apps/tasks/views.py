@@ -13,6 +13,7 @@ from dal import autocomplete
 
 class TasksListView(ListView):
     model = Tasks
+    # TODO: 点击完成任务后跳出反馈框，可以写入反馈，或者新建后续提醒
 
 
 class TasksDetailView(DetailView):

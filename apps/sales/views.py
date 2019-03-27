@@ -2,13 +2,13 @@ import collections
 from _decimal import Decimal
 import weasyprint
 from datetime import datetime, timedelta
-
+from django.core import signing
 from django.db import transaction
 from django.db.models import Q, Sum, F
 from django.db.models.functions import TruncMonth
 from django.forms import inlineformset_factory
 from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, render_to_response
 from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
 from django.views import View
@@ -22,7 +22,8 @@ from cart.cart import Cart
 from public.permissions_mixin_views import ViewPermissionRequiredMixin, PostPermissionRequiredMixin, \
     DynamicPermissionRequiredMixin
 from public.views import OrderFormInitialEntryMixin, OrderItemEditMixin, OrderItemDeleteMixin, StateChangeMixin, \
-    ModalOptionsMixin, FilterListView, SentWxMsgMixin, ModalEditMixin
+    ModalOptionsMixin, FilterListView
+from action.wechat import SentWxMsgMixin, WxJsSdkMixin
 from sales.forms import SalesOrderForm, SalesOrderItemForm, SalesOrderItemQuickForm, CustomerForm, \
     SalesOrderCreateByCustomerForm, SalesLeadsForm, SalesLeadsDetailForm
 from sales.models import SalesOrder, SalesOrderItem, Customer, SalesLeads
@@ -161,6 +162,9 @@ class SalesSentWxMsg(SentWxMsgMixin):
 
     # SECRET = 'la8maluNMN_imtic0Jp0ECmE71ca2iQ80n3-a8HFFv4'
 
+    def get_js_sdk_url(self):
+        return self.request.build_absolute_uri(self.object.get_absolute_url())
+
     def get_url(self):
         return "%s" % (self.request.build_absolute_uri())
 
@@ -198,6 +202,12 @@ class SalesSentWxMsg(SentWxMsgMixin):
         html += '\n操作:%s \n@%s' % (self.request.user, datetime.strftime(now, '%Y/%m/%d %H:%M'))
         return html
 
+    def get_js_sdk_title(self):
+        return f'{self.object._meta.verbose_name}/{self.object}'
+
+    def get_js_sdk_desc(self):
+        return f'{self.object.partner}/{self.object.get_address()}'
+
 
 class SalesOrderDetailView(StateChangeMixin, SalesSentWxMsg, DetailView):
     model = SalesOrder
@@ -207,6 +217,13 @@ class SalesOrderDetailView(StateChangeMixin, SalesSentWxMsg, DetailView):
                 'confirm': {'draft': True},
                 'cancel': {'draft': True, },
                 'done': {}}[state]
+
+    def get_js_sdk_link(self):
+        from django.conf import settings
+        data = {'pk': self.object.id}
+        string = signing.dumps(data)
+        path = reverse('sales_order_pdf_share', args=[string])
+        return f"{settings.DEFAULT_DOMAIN}{path}"
 
     def confirm(self):
         is_done, msg = self.object.confirm()
@@ -357,7 +374,7 @@ def admin_order_pdf(request, pk):
     return response
 
 
-class OrderToPdfView(BaseDetailView, PDFTemplateView):
+class OrderToPdfViewMixin(BaseDetailView, PDFTemplateView):
     show_content_in_browser = True
     model = SalesOrder
     header_template = 'sales/pdf/header.html'
@@ -365,9 +382,9 @@ class OrderToPdfView(BaseDetailView, PDFTemplateView):
     footer_template = 'sales/pdf/footer.html'
 
     # cmd_options = {
-    #     'page-height': '19cm',
-    #     'page-width': '13cm',
-    #     'margin-top': '0',
+    # 'page-height': '19cm',
+    # 'page-width': '13cm',
+    # 'margin-top': '0',
     # 'margin-left': '0',
     # 'margin-bottom': '0',
     # 'margin-right': '0',
@@ -379,9 +396,34 @@ class OrderToPdfView(BaseDetailView, PDFTemplateView):
 
     def get_context_data(self, **kwargs):
         from public.gen_barcode import GenBarcode
+        path = reverse('sales_order_detail', args=[self.object.id])
+        kwargs['link'] = f"{settings.DEFAULT_DOMAIN}{path}"
         kwargs['show_account'] = True
         kwargs['barcode'] = GenBarcode(self.object.order, barcode_type='code39').value
+        content = self.response_class
         return super().get_context_data(**kwargs)
+
+
+class OrderToPdfView(ViewPermissionRequiredMixin, OrderToPdfViewMixin):
+    pass
+
+
+class SalesOrderPdfShareDisplayView(OrderToPdfViewMixin):
+
+    def get_object(self, queryset=None):
+        return self.object
+
+    def dispatch(self, request, *args, **kwargs):
+        string = kwargs.get('string')
+        if string:
+            try:
+                data = signing.loads(string)
+                self.object = get_object_or_404(self.model, pk=data['pk'])
+                kwargs.update(data)
+                return super().dispatch(request, *args, **kwargs)
+            except Exception as e:
+                print(e)
+        return render_to_response("404.html", {})
 
 
 class CustomerListView(FilterListView):
