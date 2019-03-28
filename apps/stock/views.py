@@ -127,6 +127,25 @@ class StockListView(FilterListView):
         return context
 
 
+class StockListPhotoView(StockListView):
+    template_name = 'stock/stock_photo_list.html'
+
+    def post(self, *args, **kwargs):
+        qs = super().get_queryset()[:20]
+        block_ids = qs.values_list('product__block__id',flat=True)
+        if not block_ids:
+            return JsonResponse({'state': 'ok', 'inside': 'no', 'msg': '但前没有任何编号'})
+
+        try:
+            collect_block = self.request.user.collect_block
+        except Exception as e:
+            from account.models import UserCollectBlock
+            collect_block = UserCollectBlock.objects.create(user=self.request.user)
+        collect_block.block_list = list(block_ids)
+        collect_block.save()
+        return JsonResponse({'state': 'ok', 'inside': 'yes', 'msg': '已把当前编号添加到收藏(最多20个编号)'})
+
+
 class StockChartsListView(FilterListView):
     model = Stock
     # paginate_by = 20

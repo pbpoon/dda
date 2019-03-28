@@ -1,20 +1,7 @@
-{% extends 'list.html' %}
+{% extends 'stock/list.html' %}
 {% block fixed-action-btn %}
 {% endblock %}
-{% block sidebar %}
-    <div class="filter-pc">
-        <div class="card-panel white">
-            <h4>筛选条件
-                <button class="btn grey waves-effect waves-light right clear">清除条件</button>
-            </h4>
-            <div class="divider"></div>
-            <form action="" method="GET" id="choose-form-sidebar">
-                {{ filter.form.as_p }}
-                <button class="btn waves-effect" type="submit">按条件筛选</button>
-            </form>
-        </div>
-    </div>
-{% endblock %}
+
 {% block content %}
     <style>
         @media (max-width: 992px) {
@@ -29,7 +16,7 @@
             }
         }
     </style>
-    <a href="{% url 'stock_charts_list' %}">图表查看</a>
+
     <!-- Modal Trigger -->
     <a id="choose-modal-btn" class="waves-effect waves-light btn modal-trigger" href="#choose-modal">按条件筛选</a>
     <!-- Modal Structure -->
@@ -69,7 +56,7 @@
                 <tr>
                     <td><a href="{{ object.product.block.get_absolute_url }}">{{ object.product }}
                         {% if object.product.block.files.exists %}
-                             <i class="material-icons">photo</i>
+                            <i class="material-icons">photo</i>
                         {% endif %}
 
                     </a></td>
@@ -90,11 +77,18 @@
 
 {% block subheadline %}
     <div class="card-panel">
-
         <span>产品编号:{{ count_total }}</span><br>
         <span>件数:{{ piece_total }}</span><br>
         <span>数量:{{ quantity_total }}</span>
     </div>
+{% endblock %}
+{% block headline %}
+    {{ block.super }}列表
+    <small>
+        <a href="{% url 'stock_charts_list' %}">图表查看<i class="material-icons">insert_chart</i></a>
+        <a href="{% url 'stock_photo_list' %}">图片浏览 <i class="material-icons">photo</i>
+        </a>
+    </small>
 {% endblock %}
 <script>
 

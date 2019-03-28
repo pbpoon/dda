@@ -105,7 +105,14 @@ class TaskSetCompleteView(View):
 class TasksAutocompleteListView(autocomplete.Select2ListView):
 
     def get_list(self):
-        return ['电话联系', '开单', '发图片', '报价', '寄样板', '选荒料', '到访本地', '接送', '查账']
+        lst = ['电话联系', '开单', '发图片', '报价', '寄样板', '选荒料', '到访本地', '接送', '查账']
+        task_id = self.forwarded.get('id')
+        if task_id:
+            from tasks.models import Tasks
+            task = Tasks.objects.get(pk=task_id)
+            if task.name not in lst:
+                lst.append(task.name)
+        return lst
 
     def create(self, text):
         lst = self.get_list()

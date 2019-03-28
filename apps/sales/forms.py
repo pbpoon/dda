@@ -26,9 +26,9 @@ class SalesOrderForm(forms.ModelForm):
         widgets = {
             'date': forms.DateInput(attrs={'class': 'datepicker'}),
             'entry': forms.HiddenInput,
-            'partner': autocomplete.ModelSelect2(url='customer_autocomplete',
-                                                 attrs={'class': ' browser-default', 'data-minimum-input-length': 1,
-                                                        'data-html': True, 'data-create-url': customer_create}),
+            'partner': Select2CreateModal(url='customer_autocomplete',
+                                          attrs={'class': ' browser-default', 'data-minimum-input-length': 1,
+                                                 'data-html': True, 'data-create-url': customer_create}),
             'province': autocomplete.ModelSelect2(url='get_province',
                                                   attrs={'class': 'browser-default'}),
             'city': autocomplete.ModelSelect2(url='get_city',

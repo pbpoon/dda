@@ -1,0 +1,172 @@
+{% extends 'stock/list.html' %}
+{% load ratings %}
+{% block fixed-action-btn %}
+{% endblock %}
+
+{% block content %}
+    <style>
+        @media (max-width: 992px) {
+            .filter-pc {
+                display: none;
+            }
+        }
+
+        @media (min-width: 992px) {
+            #choose-modal-btn {
+                display: none;
+            }
+        }
+    </style>
+    <!-- Modal Trigger -->
+    <a id="choose-modal-btn" class="waves-effect waves-light btn modal-trigger" href="#choose-modal">按条件筛选</a>
+    <!-- Modal Structure -->
+    <div id="choose-modal" class="modal bottom-sheet">
+        <div class="modal-content">
+            <h4>筛选条件
+                <button class="btn grey waves-effect waves-light right clear">清除条件</button>
+            </h4>
+            <div class="divider"></div>
+            <form action="" method="GET" id="choose-stock-form">
+                {{ filter.form.as_p }}
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn modal-close waves-effect waves-green" style="width: 100%" form="choose-stock-form"
+                    type="submit">
+                按条件筛选
+            </button>
+
+            {#                <a href="#!" class="modal-close waves-effect waves-green btn-flat">Agree</a>#}
+        </div>
+    </div>
+
+
+    {% regroup object_list by product.block.name as block_list %}
+    {% for blocks in block_list %}
+        {% for stock in blocks.list %}
+            {% if forloop.first %}
+                <div class="card-panel">
+                    <div class="row" style="margin: 0;padding:0">
+                        <div class="left" style="padding-left: 10px">
+                            <h4>
+                                <a href="{% url 'block_detail' stock.product.block.id %}">{{ stock.product.block }}#</a>
+                            </h4>
+                            <small>{% ratings stock.product.block template_name='star_ratings/star_widget.html' %}</small>
+                        </div>
+                        <div class="right">
+                            <i id="bookmark_{{ stock.product.block.id }}"
+                               onclick="post_collect_block('{{ stock.product.block.id }}')"
+                               class="medium material-icons waves-effect red-text right">
+                                {% if stock.product.block.id|add:"0" in request.user.collect_block.block_list %}
+                                    bookmark{% else %}
+                                    bookmark_border{% endif %}</i>
+                        </div>
+                    </div>
+                    <h6>
+                        {{ stock.product.block.category }}
+                        <br>
+                        (主要规格:{{ stock.product.get_main_size }})
+                    </h6>
+                    <div class="divider"></div>
+                    <ul>
+                        {% for s in stock.product.block.stock.all %}
+                            {% if s.product.type != 'semi_slab' %}
+                                <li><a
+                                        onclick="open_package_list_by_stock('{% url 'stock_slabs_detail' s.id %}')">{{ s.product.get_type_display }}({{ s.product.thickness|default_if_none:'' }}):{{ s.piece }}件/{{ s.quantity }}{{ s.uom }}@{{ s.location }}</a>
+                                </li>
+                            {% else %}
+                                <li>
+                                    <a>{{ s.product }}:{{ s.piece }}件/{{ s.quantity }}{{ s.uom }}@{{ s.location }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+
+                    {% if stock.product.block.files.exists %}
+                        <div class="row">
+                            {% for object in stock.product.block.files.all %}
+                                {% if forloop.first %}
+                                    {{ object.render|safe }}
+                                    <div class="divider"></div>
+                                {% else %}
+                                    <div class="left z-depth-2" style="height: auto;width:28%;margin: 2%">
+                                        {{ object.render|safe }}
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+        {% endfor %}
+    {% endfor %}
+    {% include 'paginatior.html' %}
+    {% include 'modal.html' %}
+    <script>
+        function post_collect_block(id) {
+            $this = $('#bookmark_' + id);
+            var url = '{% url 'collect_block_update' 999 %}';
+            $.ajax({
+                url: url.replace(999, id),
+                method: 'POST',
+                success: function (data) {
+                    if (data['inside'] == 'yes') {
+                        $this.text('bookmark');
+                    } else {
+                        $this.text('bookmark_border');
+                    }
+                    if (data['msg']) {
+                        M.toast({html: data['msg']}, 4000);
+                    }
+                }
+            })
+        }
+
+        function post_collect_all_block() {
+            $.ajax({
+                {#url: url.replace(999, id),#}
+                method: 'POST',
+                success: function (data) {
+                    if (data['msg']) {
+                        M.toast({html: data['msg']}, 4000);
+                    }
+                }
+            })
+        }
+    </script>
+{% endblock %}
+
+{% block subheadline %}
+    <div class="card-panel">
+
+        <span>产品编号:{{ count_total }}</span><br>
+        <span>件数:{{ piece_total }}</span><br>
+        <span>数量:{{ quantity_total }}</span>
+        <div class="right">
+            <button class="btn" onclick="post_collect_all_block()">把当前20项目添加单收藏</button>
+        </div>
+    </div>
+{% endblock %}
+{% block headline %}
+    {{ block.super }}图片
+    <small>
+        <a href="{% url 'stock_charts_list' %}">图表查看<i class="material-icons">insert_chart</i></a>
+        <a href="{% url 'stock_list' %}">列表显示 <i class="material-icons">list</i>
+        </a>
+    </small>
+{% endblock %}
+<script>
+
+    {% block domready %}
+        {{ block.super }}
+        $('.modal').modal();
+        $('.clear').on('click', function (e) {
+            $('#choose-stock-form').find('input[type=text],select,input[type=hidden]').each(function () {
+                $(this).val('');
+            });
+            $('#choose-form-sidebar').find('input[type=text],select,input[type=hidden]').each(function () {
+                $(this).val('');
+            });
+        });
+    {% endblock %}
+</script>

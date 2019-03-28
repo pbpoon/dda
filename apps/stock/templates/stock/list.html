@@ -1,25 +1,18 @@
 {% extends 'list.html' %}
-{% block content %}
-    <div class="collection">
-        {% for object in object_list %}
-            <a class="collection-item avatar grey-text" href="{{ object.get_absolute_url }}">
-
-                <i class="material-icons circle">{{ object.name|slice:'1' }}</i>
-                <span class="title black-text">{{ object }}</span>
-                <p><br>
-                    <i>{{ object.get_address }}</i>
-                </p><span>{{ object.date|date:"Y/m/d" }}</span>
-
-            </a>
-        {% endfor %}
-            {% include 'paginatior.html' %}
-
-    </div>
-    {% block fixed-action-btn %}
-        <div class="fixed-action-btn">
-            <a href="{% block add_url %}{% endblock %}" class="btn-floating btn-large red">
-                <i class="large material-icons">add</i>
-            </a>
+{% block headline %}
+    库存
+{% endblock %}
+{% block sidebar %}
+    <div class="filter-pc">
+        <div class="card-panel white">
+            <h4>筛选条件
+                <button class="btn grey waves-effect waves-light right clear">清除条件</button>
+            </h4>
+            <div class="divider"></div>
+            <form action="" method="GET" id="choose-form-sidebar">
+                {{ filter.form.as_p }}
+                <button class="btn waves-effect" type="submit">按条件筛选</button>
+            </form>
         </div>
-    {% endblock %}
+    </div>
 {% endblock %}

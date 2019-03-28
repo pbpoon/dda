@@ -106,6 +106,7 @@ class Block(models.Model):
     _files = GenericRelation('files.Files')
     comments = GenericRelation('comment.Comment')
     tasks = GenericRelation('tasks.Tasks')
+    ratings = GenericRelation('star_ratings.Rating')
 
     class Meta:
         verbose_name = '荒料资料'
@@ -275,6 +276,7 @@ class Product(models.Model):
     activate = models.BooleanField('启用', default=False)
 
     semi_slab_single_qty = models.DecimalField('毛板单件平方', null=True, max_digits=5, decimal_places=2, blank=True)
+    comments = GenericRelation('comment.Comment')
     files = GenericRelation('files.Files')
     tasks = GenericRelation('tasks.Tasks')
 

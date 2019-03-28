@@ -20,47 +20,50 @@
     <div class="container">
         {% regroup object_list by name as block_list %}
         {% for blocks in block_list %}
-            <ul class="collection">
-                {% for block in blocks.list %}
-                    {% for p in block.products.all %}
-                        {% if p.type == 'slab' %}
-                            {% for stock in p.stock.all %}
-                                <li class="collection-item grey-text">
-                                    <div class="left black-text">
-                                        {% if request.user.is_authenticated %}
-                                            <h4><a href="{% url 'block_detail' stock.product.block.id %}">{{ stock.product.block }}</a></h4>
-                                        {% else %}
-                                            <h4>{{ block.name }}#</h4>
-                                        {% endif %}
-                                        <h6>(主要规格:{{ stock.product.get_main_size }})</h6>
-                                        <span style="font-size: large">
+            {% for block in blocks.list %}
+                {% for p in block.products.all %}
+                    {% if p.type == 'slab' %}
+                        {% for stock in p.stock.all %}
+                            <div class="card-panel">
+                                {% if request.user.is_authenticated %}
+                                    <h4>
+                                        <a href="{% url 'block_detail' stock.product.block.id %}">{{ stock.product.block }}</a>
+                                    </h4>
+                                {% else %}
+                                    <h4>{{ block.name }}#</h4>
+                                {% endif %}
+                                <div class="divider"></div>
+                                <h6>(主要规格:{{ stock.product.get_main_size }})</h6>
+                                <span style="font-size: large">
                                     <a href="{% url 'stock_slabs_slab_pdf' stock.id %}" target="_blank">
                                     {{ stock.product.get_type_display }}{{ stock.product.thickness }}:
                                         {% if stock.product.type == 'slab' %}{{ stock.get_part }} 夹/ {% endif %}
                                         {{ stock.piece }} 件/ {{ stock.quantity }}{{ stock.uom }}(打开码单)</a><br>
                                     </span>
+                                <div class="divider"></div>
+                                {% if stock.product.block.files.exists %}
+                                    <div class="row">
                                         {% for object in stock.product.block.files.all %}
-                                            {% if forloop.counter <= 2 %}
-                                                <hr>
+                                            {% if forloop.first %}
                                                 {{ object.render|safe }}
+                                                <div class="divider"></div>
+                                            {% elif forloop.counter <= 3 %}
+                                                <div class="left z-depth-2"
+                                                     style="height: auto;width:28%;margin: 2%">
+                                                    {{ object.render|safe }}
+                                                </div>
                                             {% endif %}
                                         {% endfor %}
                                     </div>
-                                </li>
-                            {% endfor %}
-                        {% endif %}
-
-                    {% endfor %}
-
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
                 {% endfor %}
-            </ul>
+            {% endfor %}
         {% endfor %}
     </div>
 
-{% endblock %}
-{% block domready %}
-    {{ block.super }}
-    $('.materialboxed').materialbox();
 {% endblock %}
 {% block sidebar %}
 {% endblock %}

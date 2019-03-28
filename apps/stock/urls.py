@@ -40,6 +40,7 @@ urlpatterns = [
     path('available/<int:pk>/slabs/move/', views.StockSlabMoveView.as_view(), name='stock_slabs_move'),
     path('available/<int:pk>/update_line/', views.StockSlabsLineUpdateView.as_view(), name='stock_slabs_update_line'),
     path('available/<int:pk>/', views.StockDetailView.as_view(), name='stock_detail'),
+    path('available/photo/', views.StockListPhotoView.as_view(), name='stock_photo_list'),
     path('available/chart/', views.StockChartsListView.as_view(), name='stock_charts_list'),
-    path('available/', views.StockListView.as_view(), name='stock_list'),
+    path('available/list/', views.StockListView.as_view(), name='stock_list'),
 ]

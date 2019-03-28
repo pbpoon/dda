@@ -1,4 +1,4 @@
-{% extends 'list.html' %}
+{% extends 'stock/list.html' %}
 {% block fixed-action-btn %}
 {% endblock %}
 {% block sidebar %}
@@ -15,11 +15,18 @@
         </div>
     </div>
 {% endblock %}
+{% block headline %}
+    {{ block.super }}图表
+    <small>
+        <a href="{% url 'stock_list' %}">列表显示<i class="material-icons">list</i></a>
+        <a href="{% url 'stock_photo_list' %}">图片浏览 <i class="material-icons">photo</i>
+        </a>
+    </small>
+{% endblock %}
 {% block head %}
     <script src="http://code.highcharts.com/highcharts.js"></script>
 {% endblock %}
 {% block content %}
-    <a href="{% url 'stock_list' %}">按列表查看</a>
 
     <style>
         @media (max-width: 992px) {
