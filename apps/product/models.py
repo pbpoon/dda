@@ -10,6 +10,7 @@ from django.urls import reverse
 from public.fields import LineField
 from sales.models import SalesOrderItem
 from stock.models import Stock
+from taggit.managers import TaggableManager
 
 TYPE_CHOICES = (('block', '荒料'), ('semi_slab', '毛板'), ('slab', '板材'))
 UOM_CHOICES = (('t', '吨'), ('m3', '立方'))
@@ -107,6 +108,7 @@ class Block(models.Model):
     comments = GenericRelation('comment.Comment')
     tasks = GenericRelation('tasks.Tasks')
     ratings = GenericRelation('star_ratings.Rating')
+    tags = TaggableManager(blank=True)
 
     class Meta:
         verbose_name = '荒料资料'

@@ -1,0 +1,29 @@
+<h5>{{ title }}</h5>
+<ul>
+    {{ form.as_ul }}
+    {% csrf_token %}
+</ul>
+<div>
+    <h6>点击以下标签添加或于上方输入新标签</h6>
+    <div class="divider"></div>
+    {% for tag in tags %}
+        <p class="chip waves-effect" style="margin: 3px" onclick="add_chip(this)">
+            {{ tag }}
+        </p>
+    {% endfor %}
+</div>
+<script>
+    $tags_chips.chips({
+        data:{{ initial_tags|safe }}, autocompleteOptions: {
+            data: {{ autocomplete_tags|safe }},
+            limit: Infinity,
+            minLength: 1
+        }
+    });
+
+    function add_chip(el) {
+        var $btn = $(el);
+        var txt = $btn.text().trim();
+        $tags_chips.chips("addChip", {'tag': txt});
+    }
+</script>

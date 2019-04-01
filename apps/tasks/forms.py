@@ -9,7 +9,7 @@ from dal import autocomplete
 
 
 class TasksCreateForm(forms.ModelForm):
-    id = forms.IntegerField(widget=forms.HiddenInput())
+    id = forms.IntegerField(widget=forms.HiddenInput(), required=False)
     file = forms.FileField(required=False, label='附件', widget=forms.FileInput(attrs={'multiple': True}))
     time = forms.SplitDateTimeField(label='提醒时间', widget=DateTimePickerWidget())
 
@@ -25,13 +25,13 @@ class TasksCreateForm(forms.ModelForm):
             'content_type': forms.HiddenInput(),
             'object_id': forms.HiddenInput(),
         }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if self.initial.get('name', None):
-            namePK = self.initial['name']
-            name = Tasks.objects.get(pk=namePK)
-            self.fields['name'].widget = autocomplete.ListSelect2(url='tasks_autocomplete_list',
-                                                                  attrs={'class': 'browser-default'},
-                                                                  forward=['id'], extra_context={'values': [namePK],
-                                                                                                 'choices': [name]})
+    #
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)
+    #     if self.initial.get('id', None):
+    #         namePK = self.initial['id']
+    #         name = Tasks.objects.get(pk=namePK).name
+    #         self.fields['name'].widget = autocomplete.ListSelect2(url='tasks_autocomplete_list',
+    #                                                               attrs={'class': 'browser-default'},
+    #                                                               forward=['id'], extra_context={'values': [namePK],
+    #                                                                                              'choices': [name]})

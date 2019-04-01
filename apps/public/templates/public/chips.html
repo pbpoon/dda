@@ -1,0 +1,7 @@
+<div class="chips">
+    <input type="{{ widget.type }}" name="{{ widget.name }}"{% if widget.value != None %}
+           value=""{% endif %}{% include "django/forms/widgets/attrs.html" %}>
+</div>
+<script>
+    var $tags_chips = $('.chips').chips({data:{{ widget.value|safe }}, placeholder: '+标签'});
+</script>

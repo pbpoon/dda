@@ -4,7 +4,49 @@ var md2 = $('#modal2').modal();//删除提示框
 var md3 = $('#modal3').modal();//下面弹窗提示框
 var md_package_list = $('#modal_package_list').modal();//码单弹窗提示框
 var md_cart = $('#modal_cart').modal();
-
+//对应tags的form
+function add_tags(url) {
+    $.ajax({
+        url: url,
+        method: 'GET',
+        success: function (data) {
+            $('#form_modal .container').html(data);
+            $('#form_modal :button[type="submit"]').attr('form', 'tags_form');
+            $('#form_modal form').attr('id', 'tags_form');
+            // $('#tags_form').attr('action', url);
+            form_md.modal('open');
+            $('#form_modal form').on('submit', (function (e) {
+                var $form = $('#tags_form');
+                var chips_data = $tags_chips.chips('getData');
+                var tags = [];
+                for (var i in chips_data) {
+                    tags.push(chips_data[i]['tag'])
+                }
+                $('#tags_form [name="tags"]').val(tags.join(','));
+                $.ajax({
+                    url: url,
+                    method: 'POST',
+                    data: $form.serialize(),
+                    success: function (data) {
+                        if (data['state'] == 'ok') {
+                            console.log('ok');
+                            form_md.modal('close');
+                            if (data['url']) {
+                                location.replace(data['url'])
+                            } else {
+                                location.reload()
+                            }
+                        }
+                        else {
+                            $('#form_modal .container').html(data);
+                            form_md.modal('open');
+                        }
+                    }
+                })
+            }));
+        }
+    })
+}
 //对应public.views的confirm
 function confirm_option(url) {
     $.ajax({
@@ -17,7 +59,6 @@ function confirm_option(url) {
         }
     })
 }
-
 
 function add_item_modal_form(url) {
     $('#form_modal h6').text('添加明细行');
@@ -404,3 +445,5 @@ $("#modal_form").on('submit', (function (ev) {
 //     $('#modal_form').submit()
 //
 // });
+
+

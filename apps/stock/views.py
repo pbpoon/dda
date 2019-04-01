@@ -131,11 +131,12 @@ class StockListPhotoView(StockListView):
     template_name = 'stock/stock_photo_list.html'
 
     def post(self, *args, **kwargs):
+        if not self.request.POST.get('go'):
+            return JsonResponse({'state': 'ok'})
         qs = super().get_queryset()[:20]
-        block_ids = qs.values_list('product__block__id',flat=True)
+        block_ids = qs.values_list('product__block__id', flat=True)
         if not block_ids:
             return JsonResponse({'state': 'ok', 'inside': 'no', 'msg': '但前没有任何编号'})
-
         try:
             collect_block = self.request.user.collect_block
         except Exception as e:

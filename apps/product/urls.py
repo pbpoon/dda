@@ -94,6 +94,7 @@ urlpatterns += [
     # --------------------------荒料
     path('block/<pk>/original_stock_trace/', views.OriginalStockTraceView.as_view(), name='block_original_stock_trace'),
     path('block/<pk>/sales_order/', views.BlockSaleOrderListView.as_view(), name='block_sales_order_list'),
+    path('block/<pk>/tags/', views.BlockTagsEditView.as_view(), name='block_tags'),
     path('block/<pk>/', views.BlockDetailView.as_view(), name='block_detail'),
     path('block/', views.BlockListView.as_view(), name='block_list'),
     # --------------------------产品

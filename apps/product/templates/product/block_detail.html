@@ -4,10 +4,23 @@
 {% block bnaner-title %}
     {{ object.name }}
 {% endblock %}
+{% block state %}
+    <span>
+                            {% for tag in object.tags.all %}
+                                <div class="chip waves-effect small">
+                                    {{ tag }}
+                                </div>
+                            {% endfor %}
+        <span class="waves-effect"
+              onclick="add_tags('{% url 'block_tags' object.id %}')">
+            <p style="font-size: xx-large; padding: 0;margin: 3px;" class="material-icons blue-text waves-effect"
+            >local_offer
+            </p>
+            </span></span>
+
+{% endblock %}
 {% block content %}
-
     {% if object.stock.all %}
-
         <p class="h3">可用库存：</p>
         <hr>
         <form action="" method="post" id="stock_form">
@@ -88,6 +101,8 @@
 {% endblock %}
 {% block headline %}
     {{ object.name }}
+
+    {#    #template_name='star_ratings/star_widget.html'#}
 {% endblock %}
 {% block subheadline %}
     <div class="row">
@@ -103,6 +118,10 @@
                 <li>规格：{{ object.long|default_if_none:"" }} / {{ object.width|default_if_none:"" }}
                     / {{ object.height|default_if_none:"" }}</li>
             </ul>
+            <br>
+            <div>
+                {% ratings object %}
+            </div>
         </div>
         <div class="col s6">
             <div style="text-align: right">
@@ -148,9 +167,7 @@
     {% endif %}
 {% endblock %}
 {% block sidebar %}
-    <div class="card-panel white">
-        {% ratings object %}
-    </div>
+
     {% if object.original_stock_trace.all %}
         <div class="collection">
             <a class="collection-item" href="{% url 'block_original_stock_trace' object.id %}">

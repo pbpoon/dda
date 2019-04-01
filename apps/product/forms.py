@@ -4,7 +4,8 @@
 
 from django import forms
 
-from product.models import DraftPackageListItem, PackageListItem, Slab
+from product.models import DraftPackageListItem, PackageListItem, Slab, Block
+from public.widgets import ChipsWidget
 
 
 class DraftPackageListItemForm(forms.ModelForm):
@@ -150,4 +151,13 @@ class PackageListImportForm(forms.Form):
         file = self.cleaned_data['excel_file']
         print(file)
         return file
+
+
+class BlockTagsForm(forms.ModelForm):
+    class Meta:
+        model = Block
+        fields = ['tags']
+        widgets = {
+            'tags': ChipsWidget(attrs={'class': 'browser-default', 'required': False}),
+        }
 

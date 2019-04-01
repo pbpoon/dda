@@ -93,7 +93,7 @@
             {#                 id="select_display"></div>#}
             <div style="text-align: center;">
 
-                <button id="submit" type="submit" form="modal_form" class="btn waves-teal waves-effect btn-large"
+                <button type="submit" form="modal_form" class="btn waves-teal waves-effect btn-large"
                         style="position: absolute; left:0; top:0;">确定
                 </button>
             </div>
@@ -110,10 +110,8 @@
             <form action="" method="post" id="#modal_form">
                 <div class="container">
                 </div>
-            {% csrf_token %}
+                {% csrf_token %}
             </form>
-
-
         </form>
     </div>
 </div>

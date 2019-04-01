@@ -191,3 +191,14 @@ class DateTimePickerWidget(forms.SplitDateTimeWidget):
 
     def __init__(self, *args, **kwargs):
         super().__init__(date_attrs={'class': 'datepicker'}, time_attrs={'class': 'timepicker'}, *args, **kwargs)
+
+
+class ChipsWidget(forms.TextInput):
+    template_name = 'public/chips.html'
+
+    def format_value(self, value):
+        import json
+        if value == '' or value is None:
+            return None
+        string = [{'tag': i.name} for i in value]
+        return string

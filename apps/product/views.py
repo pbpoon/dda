@@ -23,7 +23,7 @@ from action.wechat import WxJsSdkMixin
 from cart.cart import Cart
 from product.filters import BlockFilter, ProductFilter
 from product.forms import DraftPackageListItemForm, PackageListItemForm, PackageListItemEditForm, \
-    PackageListItemMoveForm, PackageListImportForm
+    PackageListItemMoveForm, PackageListImportForm, BlockTagsForm
 from public.permissions_mixin_views import DynamicPermissionRequiredMixin, ViewPermissionRequiredMixin
 from public.views import OrderItemEditMixin, OrderItemDeleteMixin, ModalOptionsMixin, FilterListView, ModalEditMixin
 from stock.models import Location, Stock, Warehouse
@@ -801,3 +801,20 @@ class SlabYieldEditView(ModalEditMixin):
         f = super().get_form(form_class)
         f.fields['category'].widget = forms.HiddenInput()
         return f
+
+
+class BlockTagsEditView(ModalEditMixin):
+    template_name = 'tags/form.html'
+    model = Block
+    form_class = BlockTagsForm
+
+    def get(self, request, *args, **kwargs):
+        from taggit.models import Tag
+        form = self.get_form()
+        initial_tags = [{'tag': i.name} for i in self.object.tags.all()]
+        tags = Tag.objects.all()
+        autocomplete_tags = {tag.name: '' for tag in tags}
+        title = f'{self.object} 添加标签'
+        return HttpResponse(render_to_string(self.template_name, {'form': form, 'tags': tags, 'title': title,
+                                                                  'autocomplete_tags': autocomplete_tags,
+                                                                  'initial_tags': initial_tags}))

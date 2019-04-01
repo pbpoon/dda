@@ -47,19 +47,34 @@
             {% if forloop.first %}
                 <div class="card-panel">
                     <div class="row" style="margin: 0;padding:0">
-                        <div class="left" style="padding-left: 10px">
+                        <div class="left col s9" style="padding-left: 10px">
                             <h4>
                                 <a href="{% url 'block_detail' stock.product.block.id %}">{{ stock.product.block }}#</a>
+
                             </h4>
                             <small>{% ratings stock.product.block template_name='star_ratings/star_widget.html' %}</small>
+                            <br>
+                            <span>
+                            {% for tag in stock.product.block.tags.all %}
+                                <div class="chip waves-effect small">
+                                    {{ tag }}
+                                </div>
+                            {% endfor %}
+                                <span class="waves-effect"
+                                      onclick="add_tags('{% url 'block_tags' stock.product.block.id %}')">
+            <p style="font-size: xx-large; padding: 0;margin: 3px;" class="material-icons blue-text waves-effect"
+            >local_offer
+            </p>
+            </span></span>
                         </div>
-                        <div class="right">
+                        <div class="right col s3">
                             <i id="bookmark_{{ stock.product.block.id }}"
                                onclick="post_collect_block('{{ stock.product.block.id }}')"
                                class="medium material-icons waves-effect red-text right">
                                 {% if stock.product.block.id|add:"0" in request.user.collect_block.block_list %}
                                     bookmark{% else %}
                                     bookmark_border{% endif %}</i>
+
                         </div>
                     </div>
                     <h6>
@@ -71,8 +86,8 @@
                     <ul>
                         {% for s in stock.product.block.stock.all %}
                             {% if s.product.type != 'semi_slab' %}
-                                <li><a
-                                        onclick="open_package_list_by_stock('{% url 'stock_slabs_detail' s.id %}')">{{ s.product.get_type_display }}({{ s.product.thickness|default_if_none:'' }}):{{ s.piece }}件/{{ s.quantity }}{{ s.uom }}@{{ s.location }}</a>
+                                <li>
+                                    <a onclick="open_package_list_by_stock('{% url 'stock_slabs_detail' s.id %}')">{{ s.product.get_type_display }}({{ s.product.thickness|default_if_none:'' }}):{{ s.piece }}件/{{ s.quantity }}{{ s.uom }}@{{ s.location }}</a>
                                 </li>
                             {% else %}
                                 <li>
@@ -102,6 +117,7 @@
     {% endfor %}
     {% include 'paginatior.html' %}
     {% include 'modal.html' %}
+
     <script>
         function post_collect_block(id) {
             $this = $('#bookmark_' + id);
@@ -122,10 +138,12 @@
             })
         }
 
-        function post_collect_all_block() {
+        function post_collect_all_block(url) {
             $.ajax({
                 {#url: url.replace(999, id),#}
+                url: url,
                 method: 'POST',
+                data: {'go': true},
                 success: function (data) {
                     if (data['msg']) {
                         M.toast({html: data['msg']}, 4000);
@@ -143,7 +161,7 @@
         <span>件数:{{ piece_total }}</span><br>
         <span>数量:{{ quantity_total }}</span>
         <div class="right">
-            <button class="btn" onclick="post_collect_all_block()">把当前20项目添加单收藏</button>
+            <a class="btn" onclick="post_collect_all_block('{% url 'stock_photo_list' %}')">把当前20项目添加单收藏</a>
         </div>
     </div>
 {% endblock %}
@@ -156,7 +174,6 @@
     </small>
 {% endblock %}
 <script>
-
     {% block domready %}
         {{ block.super }}
         $('.modal').modal();
@@ -168,5 +185,6 @@
                 $(this).val('');
             });
         });
+
     {% endblock %}
 </script>
