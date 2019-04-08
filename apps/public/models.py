@@ -8,7 +8,6 @@ from django.db import models
 
 from public.fields import OrderField
 from public.middleware import current_user
-from action.utils import create_action
 
 STATE_CHOICES = (
     ('draft', '草稿'),

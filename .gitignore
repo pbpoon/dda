@@ -130,3 +130,5 @@ apps/cart/migrations/
 apps/invoice/templates/invoice/Account/
 media/product/block/6109/
 media/sales/salesorder/SO1903056/
+/static/select2-materialize/
+templates/widget/

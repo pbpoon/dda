@@ -1,55 +1,10 @@
-{% extends 'list.html' %}
-{% load static %}
-{% load humanize %}
-{% load public %}
-{% block headline %}
-    {% if object %}
-        <a href="{{ object.get_absolute_url }}">{{ object|verbose_name }}:{{ object }}</a>
-    {% endif %}
-    事务记录
-{% endblock %}
-{% block content %}
-
-    <div class="timeline">
-        {% regroup object.get_stock_trace_all by created as trace_list %}
-        {% for trace in trace_list %}
-
-            <div class="entry">
-                <div class="title">
-                    <h3>{{ trace.grouper|naturalday }}</h3>
-                    <p>
-                        <small>({{ trace.grouper|timesince }} 前)</small>
-                    </p>
-                </div>
-                {% for t in trace.list %}
-                    <div class="body">
-                        <ul>
-                            {% for key,value in t.items %}
-                                {% if key not in 'created,id,日期' %}
-                                    {% if key == '事务' %}
-                                        <li style="margin-bottom: 2px"><a href="{{ value.1.get_absolute_url }}">
-                                            {{ value.0 }}</a></li>
-                                    {% else %}
-                                        <li style="margin-bottom: 2px">
-                                            {{ key }}:{{ value }}
-                                        </li>
-                                    {% endif %}
-                                {% endif %}
-                            {% endfor %}
-                        </ul>
-                    </div>
-                {% endfor %}
-            </div>
-        {% endfor %}
-    </div>
-    {% include 'paginatior.html' %}
-
-{% endblock %}
-{% block domready %}
-    {{ block.super }}
-    $('.materialboxed').materialbox();
-{% endblock %}
-{% block head %}
-    <link rel="stylesheet" href="{% static 'css/timeline.css' %}">
-{% endblock %}
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>$Title$</title>
+</head>
+<body>
+$END$
+</body>
+</html>

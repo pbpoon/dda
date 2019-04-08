@@ -4,7 +4,7 @@
         <a class="btn waves-effect" href="{% url 'package_pdf' object.id %}" target="_blank"><i class="material-icons">picture_as_pdf</i>打印</a>
         <a class="btn waves-effect right"
            href="{% url 'package_full_page' object.id %}?state={{ state }}&add_new={{ add_new }}">
-            <span>全屏编辑<i class="material-icons right">fullscreen</i></span>
+            <span>全屏编辑<i class="material-icons right">crop_free</i></span>
         </a>
     </div>
 {% endif %}

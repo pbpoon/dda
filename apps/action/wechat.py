@@ -98,10 +98,8 @@ class SentWxMsgMixin(WxJsSdkMixin):
 
     def sent_msg(self):
         # print(client, '222')
-        # if settings.DEBUG:
-        #     return None
         self.client = self.get_client()
-        # print(self.get_title(), 'title')
+        print(self.get_title(), 'title')
         self.client.message.send_text_card(agent_id=self.wx_conf.AgentId, user_ids=self.user_ids,
                                            title=self.get_title(),
                                            description=self.get_description(),

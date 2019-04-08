@@ -4,7 +4,6 @@ from django.http import JsonResponse
 from django.views.generic import DetailView, ListView
 from django.views.generic.edit import ModelFormMixin, BaseCreateView, CreateView, BaseDeleteView
 
-from action.utils import create_action
 from public.permissions_mixin_views import DynamicPermissionRequiredMixin
 from public.views import ContentTypeEditMixin, FilterListView, OrderItemDeleteMixin
 from .models import Files
@@ -28,7 +27,6 @@ class FilesCreateView(DynamicPermissionRequiredMixin, ContentTypeEditMixin, Crea
     def form_valid(self, form):
         files = self.request.FILES.getlist('content')
         cd = form.cleaned_data
-        obj = self.get_to_obj()
         if len(files) > 1:
             for f in files:
                 self.model.objects.create(content_type=cd['content_type'],
@@ -36,11 +34,7 @@ class FilesCreateView(DynamicPermissionRequiredMixin, ContentTypeEditMixin, Crea
                                           content=f,
                                           desc=cd.get('desc'),
                                           entry=cd['entry'])
-            verb = f'给 {obj._meta.verbose_name}-{obj} 上传了 {len(files)} 份 文件'
-            create_action(self.request.user, verb, obj)
             return JsonResponse({'state': 'ok'})
-        verb = f'给 {obj._meta.verbose_name}-{obj} 上传了 {len(files)} 份 文件'
-        create_action(self.request.user, verb, obj)
         return super().form_valid(form)
 
 

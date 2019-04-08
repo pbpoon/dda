@@ -9,7 +9,7 @@ from django.shortcuts import render, get_object_or_404, redirect, reverse
 from django.template.loader import render_to_string
 from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
-from django.views.generic.dates import BaseMonthArchiveView, MonthArchiveView, BaseDayArchiveView
+from django.views.generic.dates import BaseMonthArchiveView, MonthArchiveView, BaseDateDetailView
 from django.contrib import messages
 
 from invoice.filters import InvoiceFilter, PaymentFilter
@@ -21,7 +21,7 @@ from public.views import GetItemsMixin, OrderItemEditMixin, StateChangeMixin, Or
 from action.wechat import SentWxMsgMixin
 from django.views.generic.edit import CreateView, UpdateView, ModelFormMixin
 from django.views.generic.base import TemplateResponseMixin, View
-from django.utils import timezone
+
 from invoice.models import Invoice, Payment, Account, Assign, InvoiceItem, InvoiceDueDateDefaultSet, PurchaseInvoice, \
     SalesInvoice, ExpensesInvoice
 from public.widgets import SwitchesWidget, RadioWidget, DatePickerWidget
@@ -54,11 +54,6 @@ class InvoiceListView(FilterListView):
     model = Invoice
     filter_class = InvoiceFilter
     template_name = 'invoice/list.html'
-
-
-class InvoiceDayListView(BaseDayArchiveView, InvoiceListView):
-    date_field = 'date'
-    month_format = '%m'
 
 
 class InvoiceMonthListView(MonthArchiveView):
@@ -211,7 +206,7 @@ class PaymentSentWxMixin(SentWxMsgMixin):
         html += '\n账户:%s' % self.object.account
         html += '\n对方:%s' % self.object.partner
         html += '\n日期:%s' % self.object.date
-        now = timezone.now()
+        now = datetime.now()
         html += '\n登记人:%s @%s' % (self.object.entry, datetime.strftime(now, '%Y/%m/%d %H:%M'))
         return html
 
@@ -238,11 +233,9 @@ class PaymentListView(FilterListView):
     model = Payment
     ordering = ('type', 'confirm', '-date')
     filter_class = PaymentFilter
-
-
-class PaymentDayListView(BaseDayArchiveView, PaymentListView):
-    date_field = 'date'
-    month_format = '%m'
+    # def get_queryset(self):
+    #     qs = super().get_queryset()
+    #     qs = qs.annotate('type')
 
 
 class PaymentEditView(PaymentSentWxMixin, DynamicPermissionRequiredMixin, ModelFormMixin, View):
@@ -273,24 +266,19 @@ class PaymentEditView(PaymentSentWxMixin, DynamicPermissionRequiredMixin, ModelF
         else:
             self.object = None
         context = super().get_context_data(**kwargs)
-        self.invoice = self.get_invoice()
+        invoice = self.get_invoice()
         context['form'].fields['date'].widget.attrs['class'] = 'datepicker'
+        context['form'].fields['amount'].widget.attrs['placeholder'] = '本单欠：' + str(invoice.due_amount)
         # context['form'].fields['amount'].widget.attrs['max'] = str(invoice.due_amount)
         context['form'].fields['entry'].widget = forms.HiddenInput()
         context['form'].fields['partner'].widget = forms.HiddenInput()
-        if self.invoice:
-            context['form'].fields['amount'].widget.attrs['placeholder'] = '本单欠：' + str(self.invoice.due_amount)
+        if invoice:
             context['form'].fields['type'].widget = forms.HiddenInput()
         return context
 
-    def get_template_name(self):
-        if self.invoice:
-            return self.template_name
-        return 'form.html'
-
     def get(self, *args, **kwargs):
         context = self.get_context_data(**kwargs)
-        return render(self.request, self.get_template_name(), context)
+        return HttpResponse(render_to_string(self.template_name, context))
 
     @transaction.atomic()
     def post(self, *args, **kwargs):
@@ -298,11 +286,12 @@ class PaymentEditView(PaymentSentWxMixin, DynamicPermissionRequiredMixin, ModelF
         context = self.get_context_data(**kwargs)
         form = context['form']
         msg = '修改' if self.object else '添加'
+        invoice = self.get_invoice()
         files = self.request.FILES.getlist('files')
         if form.is_valid():
             instance = form.save(commit=False)
-            if self.invoice:
-                instance.type = self.invoice.type
+            if invoice:
+                instance.type = invoice.type
             instance.save()
             print(instance)
             self.object = instance
@@ -313,9 +302,9 @@ class PaymentEditView(PaymentSentWxMixin, DynamicPermissionRequiredMixin, ModelF
                 for file in files:
                     f = Files(object=instance, content=file, entry=self.request.user, desc=desc)
                     f.save()
-            if self.invoice:
-                due_amount = min(self.invoice.due_amount, instance.amount)
-                assign = Assign.objects.create(invoice=self.invoice, payment=instance, amount=due_amount,
+            if invoice:
+                due_amount = min(invoice.due_amount, instance.amount)
+                assign = Assign.objects.create(invoice=invoice, payment=instance, amount=due_amount,
                                                entry=self.request.user)
             instance.create_comment()
             msg += '成功'

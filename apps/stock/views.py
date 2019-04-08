@@ -30,7 +30,6 @@ from .filters import StockFilter, WarehouseLocationFilter
 
 class WarehouseListView(FilterListView):
     model = Warehouse
-    paginate_by = 20
 
 
 class WarehouseDetailView(DynamicPermissionRequiredMixin, DetailView, MultipleObjectMixin):
@@ -123,8 +122,8 @@ class StockListView(FilterListView):
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
         qs = super().get_queryset()
-        qs = qs.aggregate(count_total=Count('product'), piece_total=Sum('piece'), quantity_total=Sum('quantity'))
-        context.update(qs)
+        context.update(
+            qs.aggregate(count_total=Count('product'), piece_total=Sum('piece'), quantity_total=Sum('quantity')))
         return context
 
 

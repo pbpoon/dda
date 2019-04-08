@@ -40,7 +40,6 @@ urlpatterns = [
     path('order/create/', views.SalesOrderCreateView.as_view(), name='sales_order_create'),
     path('order/invoice/options/<pk>/', views.SalesOrderInvoiceOptionsEditView.as_view(),
          name='sales_order_invoice_options'),
-    path('order/daydaily/', views.SalesOrderDayListView.as_view(), name='sales_order_day_daily_list'),
     path('order/charts/', views.SalesOrderChrtsView.as_view(), name='sales_order_charts_list'),
     path('order/month/', views.SalesOrderMonthListView.as_view(), name='sales_order_month_list'),
     path('order/delay/', views.SalesOrderDelayListView.as_view(), name='sales_order_delay_list'),

@@ -3,15 +3,12 @@ from django.shortcuts import render, redirect, render_to_response
 from django.urls import reverse, reverse_lazy
 
 from django.views import View
-from django.views.generic import TemplateView
-from django.views.generic.dates import DateDetailView
-from django.db.models import F, Sum
+from django.views.generic import TemplateView, DetailView
+from django.db.models import F
 from datetime import datetime, timedelta
 from django.contrib.auth.mixins import LoginRequiredMixin
 
-from action.utils import create_action
 from action.wechat import WxClient, WxJsSdkMixin
-from invoice.models import Payment, Invoice
 from sales.models import SalesOrder
 from product.models import Block
 from account.models import UserCollectBlock
@@ -19,10 +16,6 @@ from django.contrib.auth import get_user_model
 from django.core import signing
 from django.conf import settings
 import hashlib
-from django.utils import timezone
-from datetime import date
-
-from mrp.models import ProductionOrder, MoveLocationOrder, InOutOrder
 
 
 class DashboardView(LoginRequiredMixin, TemplateView):
@@ -32,8 +25,8 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         # 收款账单
         # 销售单 开单后状态超期10天的
         # 最近 3张 生产单
-        delay_ten_day = timezone.now() - timedelta(days=10)
-        delay_sales_order = SalesOrder.objects.annotate(delay=timezone.now() - F('date')
+        delay_ten_day = datetime.now() - timedelta(days=10)
+        delay_sales_order = SalesOrder.objects.annotate(delay=datetime.now() - F('date')
                                                         ).filter(date__lte=delay_ten_day,
                                                                  state='confirm').count()
         return delay_sales_order
@@ -54,7 +47,6 @@ class CollectBlockUpdateView(LoginRequiredMixin, View):
         inside = ''
         collect_block_id = kwargs.get('pk')
         collect_block_id = int(collect_block_id)
-        block = Block.objects.get(pk=collect_block_id)
         if collect_block_id:
             try:
                 collect_block = self.request.user.collect_block
@@ -69,15 +61,13 @@ class CollectBlockUpdateView(LoginRequiredMixin, View):
                 self.request.user.collect_block.block_list = lst
                 self.request.user.collect_block.save()
                 inside = 'yes'
-                msg = '已收集'
+                msg = '收集成功'
             else:
                 lst.remove(collect_block_id)
                 self.request.user.collect_block.block_list = lst
                 self.request.user.collect_block.save()
                 inside = 'no'
                 msg = '从收集中移除'
-            verb = f" {msg} {block._meta.verbose_name} {block}#"
-            create_action(self.request.user, verb, block)
         return JsonResponse({'state': 'ok', 'inside': inside, 'msg': msg})
 
 
@@ -97,7 +87,7 @@ class UserCollectBlockListMixin(WxJsSdkMixin, TemplateView):
         return f'{settings.DEFAULT_DOMAINS}{path}'
 
     def get_js_sdk_title(self):
-        return '云浮宏建石材现货推荐(%s)' % timezone.now().strftime('%Y-%m-%d')
+        return '云浮宏建石材现货推荐(%s)' % datetime.now().strftime('%Y-%m-%d')
 
     def get_js_sdk_desc(self):
         block_names = []
@@ -164,106 +154,4 @@ class CollectBlockPhotoListView(CollectBlockShareMixin):
         blocks = Block.objects.filter(id__in=self.share_data['collect_block_list'])
         user = get_user_model().objects.get(pk=self.share_data['user'])
         kwargs.update({'object_list': blocks, 'share_user': user})
-        return super(UserCollectBlockListMixin, self).get_context_data(**kwargs)
-
-
-def get_day_daily(**kwargs):
-    year, month, day = kwargs['year'], kwargs['month'], kwargs['day']
-    _date = date(year, month, day)
-    query = {
-        'date__year': _date.year,
-        'date__month': _date.month,
-        'date__day': _date.day,
-        'state__in': ('confirm', 'done')
-    }
-    invoices = Invoice.objects.filter(**query)
-    collect_invoices_amount = sum(inv.amount for inv in invoices.filter(type='1'))
-    pay_invoices_amount = sum(inv.amount for inv in invoices.filter(type='-1'))
-
-    payments = Payment.objects.filter(date=_date)
-    draft_payments = payments.filter(confirm=False)
-    collect_payments_amount = payments.filter(type='1').aggregate(collect_payments_amount=Sum('amount'))
-    pay_payments_amount = payments.filter(type='-1').aggregate(collect_payments_amount=Sum('amount'))
-    # draft_payments_amount = draft_payments.aggregate(draft_payments_amount=Sum('amount'))
-
-    sales_orders = SalesOrder.objects.filter(**query)
-    sales_orders_amount = sum(order.amount for order in sales_orders)
-    sales_orders_total = {}
-    for order in sales_orders:
-        for key, item in order.get_total().items():
-            if key not in sales_orders_total:
-                sales_orders_total[key] = item
-            else:
-                for k, v in item.items():
-                    if k != 'uom':
-                        sales_orders_total[key][k] += v
-
-    production_orders = ProductionOrder.objects.filter(**query)
-    production_orders_total = {}
-    for order in production_orders:
-        for key, item in order.get_total().items():
-            if key not in production_orders_total:
-                production_orders_total[key] = item
-            else:
-                for k, v in item.items():
-                    if k != 'uom':
-                        production_orders_total[key][k] += v
-    produce_items = (item for order in production_orders for item in order.produce_items.all())
-
-    inout_orders = InOutOrder.objects.filter(**query)
-    inout_orders_total = {}
-    for order in inout_orders:
-        for key, item in order.get_total().items():
-            if key not in inout_orders_total:
-                inout_orders_total[key] = item
-            else:
-                for k, v in item.items():
-                    if k != 'uom':
-                        inout_orders_total[key][k] += v
-
-    query.update({'partner__isnull': False})
-    move_orders = MoveLocationOrder.objects.filter(**query)
-    move_orders_total = {}
-    for order in move_orders:
-        for key, item in order.get_total().items():
-            if key not in move_orders_total:
-                move_orders_total[key] = item
-            else:
-                for k, v in item.items():
-                    if k != 'uom':
-                        move_orders_total[key][k] += v
-    data = {
-        'date': _date,
-
-        'sales_orders': sales_orders,
-        'sales_orders_total': sales_orders_total,
-        'sales_orders_amount': sales_orders_amount,
-
-        'production_orders': production_orders,
-        'production_orders_total': production_orders_total,
-        'produce_items': produce_items,
-
-        'inout_orders': inout_orders,
-        'inout_orders_total': inout_orders_total,
-
-        'move_orders': move_orders,
-        'move_orders_total': move_orders_total,
-
-        'payments': payments,
-        'draft_payments': draft_payments,
-        'collect_payments_amount': collect_payments_amount,
-        'pay_payments_amount': pay_payments_amount,
-
-        'invoices': invoices,
-        'collect_invoices_amount': collect_invoices_amount,
-        'pay_invoices_amount': pay_invoices_amount,
-    }
-    return data
-
-
-class DayDailyView(TemplateView):
-    template_name = 'account/daydaily.html'
-
-    def get_context_data(self, **kwargs):
-        kwargs.update(get_day_daily(**kwargs))
-        return super().get_context_data(**kwargs)
+        return super(UserCollectBlockListMixin,self).get_context_data(**kwargs)

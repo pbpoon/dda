@@ -5,7 +5,6 @@ from django.contrib.postgres.fields import JSONField
 from django.core.exceptions import ObjectDoesNotExist
 from wechatpy.enterprise import WeChatClient
 from django.conf import settings
-from datetime import timedelta
 
 
 class Action(models.Model):
@@ -71,10 +70,6 @@ class SchemeWxPush(models.Model):
 
     def __str__(self):
         return '%s@%s' % (self.title, self.time)
-    #
-    # def save(self, *args, **kwargs):
-    #     self.time = self.time + timedelta(hours=8)
-    #     super().save(*args, **kwargs)
 
     def get_obj(self):
         return self.content_type.model_class().objects.get(pk=self.object_id)

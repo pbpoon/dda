@@ -5,8 +5,6 @@ from django.template.loader import render_to_string
 from django.views import View
 from django.views.generic import ListView, CreateView, DetailView, UpdateView
 from django.utils.html import mark_safe
-
-from action.utils import create_action
 from public.views import ContentTypeEditMixin, OrderFormInitialEntryMixin, OrderItemDeleteMixin, ModalOptionsMixin
 from tasks.forms import TasksCreateForm
 from tasks.models import Tasks
@@ -27,23 +25,11 @@ class TasksCreateView(ContentTypeEditMixin, OrderFormInitialEntryMixin, CreateVi
     form_class = TasksCreateForm
     fields = None
 
-    def form_valid(self, form):
-        self.object = form.save()
-        verb = f"创建 {self.object._meta.verbose_name}-{self.object}"
-        create_action(self.request.user, verb, self.object)
-        return super().form_valid(form)
-
 
 class TasksUpdateView(ContentTypeEditMixin, OrderFormInitialEntryMixin, UpdateView):
     model = Tasks
     form_class = TasksCreateForm
     fields = None
-
-    def form_valid(self, form):
-        self.object = form.save()
-        verb = f"修改 {self.object._meta.verbose_name}-{self.object}"
-        create_action(self.request.user, verb, self.object)
-        return super().form_valid(form)
 
 
 class TasksDeleteView(OrderItemDeleteMixin):

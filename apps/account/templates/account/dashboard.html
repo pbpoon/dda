@@ -18,20 +18,13 @@
 
     <div class="row">
         <div class="col s12 m8">
-            {% now "Y" as year %}
-            {% now "m" as month %}
-            {% now "d" as day %}
-            <a href="{% url 'day_daily' year month day %}"><h6>今天汇总</h6></a>
             <a href="{% url 'user_sales_order_list' %}"><h6>跟进中的销售订单(共{{ my_sales_order_confirm_count }}张)>></h6></a>
             <a href="{% url 'sales_order_delay_list' %}"><h6>超期 10天 的订单({{ delay_ten_day_sales_order_count }}张)>></h6>
             </a>
         </div>
-        <div class="col s12 m4 right">
+        <div class="col s12 m4">
             <h6>提醒事项列表</h6>
             {% include 'tasks_list.html' %}
-        </div>
-        <div class="col s12 m8 ">
-            {% include 'account/actions.html' %}
         </div>
     </div>
 {% endblock %}

@@ -1,7 +1,6 @@
 import time
 
 from datetime import datetime
-from django.utils import timezone
 from django.apps import apps
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
@@ -16,23 +15,26 @@ from django.views.generic.detail import BaseDetailView
 from django.views.generic.edit import ModelFormMixin, CreateView, UpdateView, BaseDeleteView
 from django.contrib import messages
 from django.views.generic.list import MultipleObjectMixin
-from django.views.generic.dates import BaseDayArchiveView
 from wkhtmltopdf.views import PDFTemplateView
 
+from invoice.models import CreateInvoice
 from mrp.filters import InOutOrderFilter, MoveLocationOrderFilter, ProductionOrderFilter, InventoryOrderFilter, \
     ProductFilter
 from mrp.models import ProductionOrder, ProductionOrderRawItem, ProductionOrderProduceItem, ProductionType, InOutOrder, \
     InOutOrderItem, Expenses, ExpensesItem, InventoryOrder, InventoryOrderItem, InventoryOrderNewItem, MrpSupplier
 from mrp.models import TurnBackOrder, TurnBackOrderItem
+from partner.models import Partner
 
 from product.models import PackageList
 from public.permissions_mixin_views import ViewPermissionRequiredMixin, DynamicPermissionRequiredMixin
+from public.utils import Package, StockOperateItem
 from public.views import OrderItemEditMixin, OrderItemDeleteMixin, OrderFormInitialEntryMixin, FilterListView, \
-    ItemSentWxMsgMixin
+     ItemSentWxMsgMixin
 from action.wechat import SentWxMsgMixin
 from public.widgets import SwitchesWidget
 from purchase.models import PurchaseOrder
 from public.views import GetItemsMixin, StateChangeMixin
+from public.stock_operate import StockOperate
 from sales.models import SalesOrder
 from stock.models import Stock, Location
 from .models import MoveLocationOrder, MoveLocationOrderItem
@@ -40,11 +42,6 @@ from .forms import MoveLocationOrderItemForm, MoveLocationOrderForm, ProductionO
     ProductionOrderRawItemForm, ProductionOrderProduceItemForm, InOutOrderForm, MrpItemExpensesForm, TurnBackOrderForm, \
     TurnBackOrderItemForm, InventoryOrderForm, InventoryOrderItemForm, InventoryOrderNewItemForm, SupplierForm, \
     MoveWarehouseOrderForm
-
-
-class OrderBaseDayArchiveMixin(BaseDayArchiveView):
-    month_format = '%m'
-    date_field = 'date'
 
 
 class ChangeStateSentWx(SentWxMsgMixin):
@@ -79,7 +76,7 @@ class ChangeStateSentWx(SentWxMsgMixin):
         html += '\n销往:%s' % self.object.from_order.get_address()
         html += "\n订单日期:%s" % (datetime.strftime(self.object.date, "%Y/%m/%d"))
         html += "\n经办人:%s" % self.object.from_order.handler
-        now = timezone.now()
+        now = datetime.now()
         html += '%s' % self.get_items()
         html += '\n操作:%s \n@%s' % (self.request.user, datetime.strftime(now, '%Y/%m/%d %H:%M'))
         return html
@@ -102,10 +99,6 @@ class MoveWarehouseOrderListView(FilterListView):
     def get_queryset(self):
         qs = super().get_queryset()
         return qs.filter(partner__isnull=False)
-
-
-class MoveLocationOrderDayListView(OrderBaseDayArchiveMixin, MoveWarehouseOrderListView):
-    pass
 
 
 class MoveLocationOrderDetailView(StateChangeMixin, GetItemsMixin, DetailView):
@@ -220,10 +213,6 @@ class ProductionOrderListView(FilterListView):
     filter_class = ProductionOrderFilter
 
 
-class ProductionOrderDayListView(OrderBaseDayArchiveMixin, ProductionOrderListView):
-    pass
-
-
 class ProductionOrderDetailView(StateChangeMixin, DetailView, ItemSentWxMsgMixin):
     model = ProductionOrder
     app_name = 'zdzq_main'
@@ -329,10 +318,6 @@ class ProductionOrderProduceItemDeleteView(OrderItemDeleteMixin):
 class InOutOrderListView(FilterListView):
     model = InOutOrder
     filter_class = InOutOrderFilter
-
-
-class InOutOrderDayListView(OrderBaseDayArchiveMixin, InOutOrderListView):
-    pass
 
 
 class InOutOrderDetailView(StateChangeMixin, ChangeStateSentWx, DetailView):

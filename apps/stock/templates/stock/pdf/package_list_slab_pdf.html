@@ -7,8 +7,158 @@
     <meta name="viewport"
           content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    {#<link href="https://fonts.googleapis.com/css?family=Noto+Sans+SC:100,300,400,500,700,900|Roboto:300i,400,400i,500,500i,700,700i,900,900i" rel="stylesheet">    <title>Document</title>#}
+    {#    <link rel="stylesheet" href="{% static '/css/package_list_pdf.css' %}">#}
+    {#    <link href="https://fonts.googleapis.com/css?family=Noto+Sans+SC:100,300,400,500,700,900|Noto+Sans+TC|Roboto:300i,400,400i,500,500i,700,700i,900,900i"#}
+    {#          rel="stylesheet">#}
     <link href="https://fonts.googleapis.com/css?family=Noto+Sans+SC&amp;subset=chinese-simplified" rel="stylesheet">
-    <link href="{% static 'css/slab_pdf.css' %}" rel="stylesheet">
+    <style>
+        body, html {
+            font-family: 'Noto Sans SC', sans-serif;
+        {#font-family: 'Noto Sans SC', 'Arial Black','Xingkai SC',sans-serif,'Roboto';#}{#font-family: 'Noto Sans TC', sans-serif;#}{#font-family: 'Roboto', sans-serif;#}
+        }
+
+        .paper {
+            page-break-inside: avoid;
+        }
+
+        .page {
+            page-break-inside: avoid !important;
+            height: 15cm;
+
+        }
+
+        .container {
+            padding: 12px;
+            width: 92%;
+            margin-left: auto;
+            margin-right: 25px;
+            margin-bottom: 30px;
+        }
+
+        .part {
+            padding: 1cm auto;
+        {#position: relative;#} width: 98%;
+            min-height: 12cm;
+            float: left;
+            display: block;
+            margin-left: 2%;
+            margin-right: 2%;
+            margin-bottom: 1%;
+            margin-top: 0;
+        page-break-inside: avoid !important;
+
+        }
+
+        .heade {
+            padding-top: 0.3cm;
+            height: 1.7cm;
+            width: 100%;
+        }
+
+        .content {
+            min-height: 12cm;
+        }
+
+        .part-foot {
+            border-bottom: black 1px solid;
+        {#position: relative;#}{#bottom: 0px;#} width: 98%;
+        {#    height: 1.2cm;#} font-weight: bold;
+            font-size: large;
+        {#background-color: #f8f8f8;#} padding-top: 1px;
+            padding-bottom: 1px;
+        }
+
+        .total {
+            width: 100%;
+            text-align: center;
+            font-size: larger;
+        {#position: absolute;#}
+        }
+
+        table {
+            width: 92%;
+            border-collapse: collapse;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        th {
+            border-bottom: black 1px solid;
+        }
+
+        th, td {
+            padding: 1px 0px;
+        }
+
+        .content table td {
+            font-size: small;
+
+        }
+
+        {#td {#}
+        {#    font-size: small;#}
+
+        .quote {
+            padding-top: 10px;
+            padding-left: 25px;
+            border-left: grey 6px solid;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .left {
+            float: left;
+        }
+
+        .right {
+            float: right;
+        }
+
+        .clear {
+            clear: both;
+        }
+
+        .logo-font-black {
+            background-image: url('{% static '/image/logo-font-black.png' %}');
+            background-size: 50%;
+            height: 0.7cm;
+            width: 2.5cm;
+        {#background-position: left top;#} background-repeat: no-repeat;
+        }
+
+        .foot {
+            height: 2cm;
+            width: 100%;
+        {#page-break-inside: avoid !important;#}
+        }
+
+        .foot ul {
+            padding-left: 10px;
+            margin-top: 0px;
+        }
+
+        .smaller {
+            font-size: x-small;
+        }
+
+        .boadr {
+            margin-top: 15px;
+            border: #5a5a5a 1px solid;
+        }
+
+        .boadr td {
+            padding-left: 10px;
+            border: #5a5a5a 1px solid;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
 <div class="paper">

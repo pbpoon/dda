@@ -10,7 +10,7 @@ from .models import Action
 def create_action(user, verb, target=None):
     # 检查最后半分钟内的相同动作
     now = timezone.now()
-    last_minute = now - datetime.timedelta(seconds=60)
+    last_minute = now - datetime.timedelta(seconds=30)
     similar_actions = Action.objects.filter(user_id=user.id, verb=verb, created__gte=last_minute)
 
     if target:

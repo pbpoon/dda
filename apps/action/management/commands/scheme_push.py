@@ -2,17 +2,18 @@
 # -*- coding: utf-8 -*-
 # Created by pbpoon on 2019/3/18
 from django.core.management.base import BaseCommand
-from django.utils import timezone
+from datetime import datetime
+
+
 class Command(BaseCommand):
     """
     自定义命令
     """
 
     def handle(self, *args, **options):
-        from action.models import SchemeWxPush
         from datetime import datetime
+        from action.models import SchemeWxPush
         now = datetime.now()
-        print(now)
         now_pushs = SchemeWxPush.objects.filter(
             time__year=now.year,
             time__month=now.month,

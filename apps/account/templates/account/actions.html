@@ -1,34 +1,10 @@
-{% load humanize %}
-{% load static %}
-<link rel="stylesheet" href="{% static 'css/timeline.css' %}">
-<h5>最近的操作</h5>
-<div class="divider"></div>
-<div class="timeline">
-    {% regroup request.user.action.all|dictsortreversed:"created"|slice:":12" by created|naturalday as actions_list %}
-    {% for actions in actions_list %}
-        <div class="entry">
-            <div class="title">
-                <h3>{{ actions.grouper|naturalday }}</h3>
-                <p>
-                    {#                    <small>({{ actions.grouper }} 前)</small>#}
-                </p>
-            </div>
-            <div class="body">
-                <ul>
-                    {% for action in actions.list %}
-                        <li>
-                            {% if action.target %}
-                                <a href="{{ action.target.get_absolute_url }}">{{ action.verb }}</a>
-                            {% else %}
-                                <a href="#">{{ action.verb }}</a>
-                            {% endif %}
-                            <span>
-                            {{ action.created|timesince }} 前
-                        </span>
-                        </li>
-                    {% endfor %}
-                </ul>
-            </div>
-        </div>
-    {% endfor %}
-</div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>$Title$</title>
+</head>
+<body>
+$END$
+</body>
+</html>

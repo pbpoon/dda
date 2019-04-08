@@ -363,9 +363,6 @@ class Payment(HasChangedMixin, models.Model):
     def get_delete_url(self):
         return reverse('payment_delete', args=[self.id])
 
-    def get_update_url(self):
-        return reverse('payment_edit', args=[self.id])
-
     def get_balance(self):
         # 可分配的余额
         return self.amount - sum(assign.amount for assign in self.assign_invoice.all())
