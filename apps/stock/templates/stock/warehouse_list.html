@@ -5,3 +5,27 @@
 {% block add_url %}
     {% url 'warehouse_create' %}
 {% endblock %}
+{% block content %}
+    <div class="card-panel white">
+        <table>
+            <thead>
+            <tr>
+                <th>仓库</th>
+                <th>业务伙伴</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for object in object_list %}
+                <tr>
+                    <td><a href="{{ object.get_absolute_url }}">{{ object }}
+                    </a></td>
+                    <td>{{ object.partner|default_if_none:"" }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+
+        {% include 'paginatior.html' %}
+        {% include 'modal.html' %}
+    </div>
+{% endblock %}

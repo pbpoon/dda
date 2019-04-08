@@ -1,11 +1,11 @@
 from django.db.models import Q
-
+from django.utils import timezone
 
 @property
 def tasks(self):
-    from datetime import datetime, timedelta
+    from datetime import timedelta
     from tasks.models import Tasks
-    now = datetime.now()
+    now = timezone.now()
     future_start = now + timedelta(days=1)
     future_end = now + timedelta(days=365)
 

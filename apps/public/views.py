@@ -17,6 +17,7 @@ from django.views.generic.detail import BaseDetailView
 from django.views.generic.edit import BaseDeleteView, ModelFormMixin, ProcessFormView, FormMixin
 from wechatpy.enterprise import WeChatClient
 
+from action.utils import create_action
 from public.forms import StateForm, ConfirmOptionsForm
 from public.widgets import SwitchesWidget, RadioWidget
 from .permissions_mixin_views import DynamicPermissionRequiredMixin, ViewPermissionRequiredMixin
@@ -177,6 +178,9 @@ class StateChangeMixin(DynamicPermissionRequiredMixin):
                 # self.object.state = state
                 # self.object.save()
                 # self.make_invoice()
+                if hasattr(self.object, 'state'):
+                    verb = f'操作了 {self.object._meta.verbose_name}-{self.object}'
+                    create_action(self.request.user, verb, self.object)
                 return redirect(self.get_success_url())
             # 回滚数据库到保存点
             transaction.savepoint_rollback(sid)

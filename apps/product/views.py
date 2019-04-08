@@ -220,7 +220,8 @@ class SaleOrderListView(ViewPermissionRequiredMixin, DetailView, MultipleObjectM
 
 class OriginalStockTraceView(ViewPermissionRequiredMixin, DetailView, MultipleObjectMixin):
     model = Block
-    template_name = 'product/block_original_stock_trace.html'
+    # template_name = 'product/block_original_stock_trace.html'
+    template_name = 'product/stock_trace_time_line.html'
     paginate_by = 10
 
     def get_context_data(self, **kwargs):

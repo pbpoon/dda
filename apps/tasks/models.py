@@ -8,6 +8,7 @@ from django.db import models
 from django.urls import reverse
 from django.utils.html import mark_safe
 from public.models import HasChangedMixin
+from django.utils import timezone
 
 
 class Tasks(HasChangedMixin, models.Model):
@@ -71,10 +72,10 @@ class Tasks(HasChangedMixin, models.Model):
     def set_scheme_push(self):
         self.push.all().delete()
         if not self.is_complete:
-            self.push.create(title=self.get_full_name(),
-                             url=self.get_url(),
-                             description=self.get_description(),
-                             time=self.time, app_name='scheme_push')
+            push = self.push.create(title=self.get_full_name(),
+                                    url=self.get_url(),
+                                    description=self.get_description(),
+                                    time=self.time, app_name='scheme_push')
 
     def save(self, *args, **kwargs):
         comment = ""
@@ -92,21 +93,27 @@ class Tasks(HasChangedMixin, models.Model):
         self.set_scheme_push()
 
     def get_absolute_url(self):
-        return "%s#%s_card" % (self.get_obj().get_absolute_url(), self.id)
+        to_obj = self.get_obj()
+        try:
+            return "%s#%s_card" % (to_obj.get_absolute_url(), self.id)
+        except Exception as e:
+            return reverse(settings.LOGIN_REDIRECT_URL)
 
     def get_delete_url(self):
         return reverse('tasks_delete', args=[self.id])
 
     @property
     def id_expired(self):
-        now = datetime.utcnow().replace(tzinfo=pytz.timezone('UTC'))
+        now = timezone.now()
+        # now = datetime.utcnow().replace(tzinfo=pytz.timezone('UTC'))
         if now - self.time > timedelta(minutes=1):
             return True
         return False
 
     def set_complete(self):
-        now = datetime.utcnow()  # + timedelta(hours=8)
-        now = now.replace(tzinfo=pytz.timezone('UTC'))
+        now = timezone.now()
+        # now = datetime.utcnow()  # + timedelta(hours=8)
+        # now = now.replace(tzinfo=pytz.timezone('UTC'))
         state = ''
         if self.is_complete:
             state = '设为：未完成'

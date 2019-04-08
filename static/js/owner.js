@@ -441,6 +441,21 @@ $("#modal_form").on('submit', (function (ev) {
         }
     });
 }));
+
+var csrftoken = Cookies.get('csrftoken');
+
+        function csrfSafeMethon(method) {
+            // 如下的HTTP请求不需要设置CRSF信息
+            return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+        }
+
+        $.ajaxSetup({
+            beforeSend: function (xhr, settings) {
+                if (!csrfSafeMethon(settings.type) && !this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                }
+            }
+        });
 // $('#submit').on('click', function (e) {
 //     $('#modal_form').submit()
 //

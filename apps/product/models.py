@@ -11,6 +11,7 @@ from public.fields import LineField
 from sales.models import SalesOrderItem
 from stock.models import Stock
 from taggit.managers import TaggableManager
+from django.db.models import Count
 
 TYPE_CHOICES = (('block', '荒料'), ('semi_slab', '毛板'), ('slab', '板材'))
 UOM_CHOICES = (('t', '吨'), ('m3', '立方'))
@@ -113,6 +114,13 @@ class Block(models.Model):
     class Meta:
         verbose_name = '荒料资料'
         ordering = ['category', 'batch', 'name']
+
+    def get_similar_blocks(self):
+        tags_ids = self.tags.values_list('id', flat=True)
+        similar_blocks = self._meta.model.objects.filter(tags__in=tags_ids, products__stock__isnull=False).exclude(
+            id=self.id)
+        similar_blocks = similar_blocks.annotate(same_tags=Count('tags')).order_by('-same_tags', '-batch', '-name')[:5]
+        return similar_blocks
 
     def get_batch(self):
         if not self.batch:

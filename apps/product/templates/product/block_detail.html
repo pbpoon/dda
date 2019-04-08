@@ -168,6 +168,7 @@
 {% endblock %}
 {% block sidebar %}
 
+
     {% if object.original_stock_trace.all %}
         <div class="collection">
             <a class="collection-item" href="{% url 'block_original_stock_trace' object.id %}">
@@ -191,6 +192,21 @@
                 <span>相关销售订单({{ object.sales_order_item.count }})</span>
                 <i class="material-icons right">folder</i>
             </a>
+        </div>
+    {% endif %}
+    {% if object.get_similar_blocks.exists %}
+        类似编号：
+        <div class="collection">
+            {% for block in object.get_similar_blocks %}
+                <a class="collection-item" href="{{ block.get_absolute_url }}">{{ block }}
+                    {% for tag in block.tags.all|slice:":3" %}
+                        <div class="chip waves-effect small">
+                            {{ tag }}
+                        </div>
+                    {% endfor %}
+                    <i class="material-icons right">folder</i>
+                </a>
+            {% endfor %}
         </div>
     {% endif %}
 {% endblock %}

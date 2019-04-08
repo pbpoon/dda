@@ -2,8 +2,15 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from django.urls import reverse
 
+from action.utils import create_action
 from invoice.models import Invoice
 from stock.models import Location
+from public.middleware import current_user
+
+
+def get_user():
+    return current_user.get_current_user()
+
 
 PARTNER_TYPE_CHOICES = (
     ('customer', '客户'),
@@ -149,6 +156,21 @@ class Partner(models.Model):
 
     def get_balance(self):
         return sum(pay.get_balance() for pay in self.payments.all() if pay.get_balance() > 0)
+
+    def save(self, *args, **kwargs):
+        if self.pk:
+            is_new = False
+        else:
+            is_new = True
+        super().save(*args, **kwargs)
+        verb = '创建' if is_new else '修改'
+        verb += f' {self}[{self.get_type_display()}] 资料'
+        create_action(get_user(), verb, self)
+
+    def delete(self, *args, **kwargs):
+        super().delete(*args, **kwargs)
+        verb = f'删除 {self}[{self.get_type_display()}] 资料'
+        create_action(get_user(), verb)
 
 
 class InvoicePartner(Partner):

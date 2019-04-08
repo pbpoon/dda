@@ -104,10 +104,6 @@ class Files(models.Model):
 
     # image: 图片   text：要添加的文本  font：字体
     def _add_text_to_image(self, image, text):
-        # rgba_image = image.convert('RGBA')
-        # text_overlay = Image.new('RGBA', rgba_image.size, (255, 255, 255, 0))
-        # bg_w, bg_h = image.size
-        # bg_im = Image.new('RGB', image.size)
         image_draw = ImageDraw.Draw(image)
         xSize, ySize = image.size
         fontSize = min(xSize, ySize) // 26

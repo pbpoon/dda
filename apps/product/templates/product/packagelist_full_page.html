@@ -1,10 +1,12 @@
 {% extends "detail.html" %}
 {% load public %}
 {% block headline %}
-    <a href="{{ object.product.get_absolute_url }}">{{ object.product }}</a>
+    <a href="{{ object.return_path }}" style="padding-right: 20px"><i class="material-icons">chevron_left</i></a><br>
+    <span>
+        {{ object.product }}<a href="{{ object.product.get_absolute_url }}"><i class="material-icons">link</i></a>
+    </span>
 {% endblock %}
 {% block operate %}
-
     <a class="btn waves-effect" href="{% url 'package_pdf' object.id %}" target="_blank">打印</a>
     <a class="btn waves-effect" href="{% url 'package_slab_pdf' object.id %}" target="_blank">打印便签</a>
     {% if add_new == 'True' %}
@@ -22,7 +24,6 @@
     <span>
 
     <input type="hidden" name="return_path" value="{{ return_path }}" form="select_slab_form">
-    <a href="{{ object.return_path }}">返回</a>
     {{ object|call:'get_part' }} 夹/
     {{ object|call:'get_piece' }} 件/
     {{ object|call:'get_quantity' }}m2

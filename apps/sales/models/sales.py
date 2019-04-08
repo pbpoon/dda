@@ -60,6 +60,17 @@ class SalesOrder(OrderAbstract):
             return address
         return self.partner.get_address()
 
+    def get_time_line(self):
+        """
+        先取出所有的需要显示在时间线上的项目
+        订单 创建日期 确认日期 取消日期
+        账单 付款日期：金额 完成日期
+        提货 确认日期：
+        回退订单确定日期
+        最好订单完成日期
+        """
+        pass
+
     def get_absolute_url(self):
         return reverse('sales_order_detail', args=[self.id])
 

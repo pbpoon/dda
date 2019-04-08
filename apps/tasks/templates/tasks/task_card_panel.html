@@ -1,25 +1,33 @@
 {% load humanize %}
 {% load public %}
 {% now "Y-m-d" as today %}
-<div style="margin: 5px;padding: 5px" class="card-panel{% if task.time|date:"Y-m-d" == today %} yellow {% else %}{% if task.is_complete %}grey
+<div style="margin: 5px;padding: 5px"
+     class="card-panel{% if task.time|date:"Y-m-d" == today %} yellow {% else %}{% if task.is_complete %}grey
                              {% elif task.id_expired %} red {% else %} blue {% endif %} {% endif %} lighten-3">
-    <div class="col s12">
-        <form><span>
+    <div class="row no-padding no-margin">
+        <div class="col s12">
+            <form><span>
                     {% if  tasks.entry.avatar.url %}
                         <img src="{{ task.entry.avatar.url }}" alt="{{ task.entry }}" class="circle responsive-img">
                     {% else %}
                         <strong>{{ task.entry }}</strong>
                     {% endif %}
                     </span>
-            <div class="right">
-                <a href="{{ task.get_absolute_url }}">定位<i class="material-icons">my_location</i></a>
-                <a onclick="item_remove('{{ task.get_delete_url }}')">删除<i class="material-icons">delete</i></a>
-                <a onclick="edit_item('{% url 'tasks_update' task.id %}')">修改<i class="material-icons">edit</i> </a>
-                <a onclick="confirm_option('{% url 'tasks_delay' task.id %}')">推迟<i class="material-icons">access_alarm</i></a>
-            </div>
-        </form>
+            <style>
+                .pd-l a{
+                    padding-left: 10px;
+                }
+            </style>
+                <div class="right pd-l">
+                    <a href="{{ task.get_absolute_url }}"><i class="material-icons">my_location</i></a>
+                    <a onclick="item_remove('{{ task.get_delete_url }}')"><i class="material-icons">delete</i></a>
+                    <a onclick="edit_item('{% url 'tasks_update' task.id %}')"><i class="material-icons">edit</i> </a>
+                    <a onclick="confirm_option('{% url 'tasks_delay' task.id %}')"><i class="material-icons">access_alarm</i></a>
+                </div>
+            </form>
+        </div>
     </div>
-    <hr>
+    <div class="divider"></div>
     <div style="padding-left: 20px">
 
         <p>
@@ -31,15 +39,15 @@
                                     {% if task.is_complete %}<s>{% endif %}
                     {{ task.name|safe }}
                     {% if task.is_complete %}</s>{% endif %}
-                                    {% if task.is_complete %}
-                <span><strong>{{ task.complete_entry }}</strong> @ {{ task.complete_time|naturaltime }} 完成</span>
-            {% else %}
-                <span>
+                    {% if task.is_complete %}
+                        <span><strong>{{ task.complete_entry }}</strong> @ {{ task.complete_time|naturaltime }} 完成</span>
+                    {% else %}
+                        <span>
                 <strong class="green-text"> @ {{ task.time|naturalday }} {{ task.time|date:"h:i" }}
                     <small>({{ task.time|naturaltime }})</small>
                 </strong>
                 </span>
-            {% endif %}
+                    {% endif %}
                 </span>
             </label>
 

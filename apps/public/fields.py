@@ -3,8 +3,7 @@
 # Created by pbpoon on 2018/10/27
 from django.db import models
 from django.core.exceptions import ObjectDoesNotExist
-from datetime import datetime
-
+from django.utils import timezone
 
 class LineField(models.PositiveIntegerField):
     def __init__(self, for_fields=None, *args, **kwargs):
@@ -49,7 +48,7 @@ class OrderField(models.CharField):
         attname_value = getattr(model_instance, self.attname)
         if attname_value == 'New' or not attname_value:
             #如果是新记录
-            date_str = datetime.now().strftime('%y%m')
+            date_str = timezone.now().strftime('%y%m')
             # 转换时间格式为str
             value = self.order_str + date_str + '001'
             # 把value初始化成 order_str + 年月 + 001

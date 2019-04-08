@@ -6,8 +6,10 @@ from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMix
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 
+from action.views import WechatAuthView
 
-class ModalHandleNoPermissionMixin(LoginRequiredMixin):
+
+class ModalHandleNoPermissionMixin( LoginRequiredMixin):
 
     def handle_no_permission(self):
         if self.request.user.is_authenticated:

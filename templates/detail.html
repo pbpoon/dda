@@ -45,20 +45,20 @@
 {% block main %}
     <div class="row">
         <!--内容块，分content及sidebar-->
-        <div class="col s12 m8 l8">
+        <div class="col s12 m8 l8 left">
             {% include 'tasks_list.html' %}
             <div class="card-panel " style="margin-top: 10px">
                 {% block content %}
                 {% endblock %}
             </div>
         </div>
-        <div class="col s12 m4 l4">
+        <div class="col s12 m4 l4 right">
             {% block sidebar %}
             {% endblock %}
         </div>
         <!--comment 操作日志-->
         {% if object.comments.all %}
-            <div class="col s12 m8 l8">
+            <div class="col s12 m8 l8 left">
                 {% include 'comment.html' %}
             </div>
         {% endif %}

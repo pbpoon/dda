@@ -10,7 +10,7 @@
         <div class="col s12 m8">
             {% for location in object_list %}
                 <div class="col s12 m6">
-                    <div class="card-panel">
+                    <div class="card-panel teal">
                         <a class="black-text" href="{{ location.get_absolute_url }}">
                             <h6 class="card-title">{{ location.name }}<span><p>({{ location.get_usage_display }})</p></span>
                             </h6>

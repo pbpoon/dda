@@ -5,19 +5,17 @@ from datetime import datetime, timedelta
 from django.core import signing
 from django.db import transaction
 from django.db.models import Q, Sum, F
-from django.db.models.functions import TruncMonth
 from django.forms import inlineformset_factory
 from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
 from django.shortcuts import render, get_object_or_404, render_to_response
 from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
-from django.views import View
 from django.views.generic import DetailView, CreateView, UpdateView, DeleteView
 from django.views.generic.detail import BaseDetailView
 from django.views.generic.edit import BaseDeleteView
-from django.views.generic.dates import MonthArchiveView, BaseYearArchiveView, YearArchiveView
+from django.views.generic.dates import MonthArchiveView, BaseDayArchiveView, YearArchiveView
 from django.contrib import messages
-
+from django.utils import timezone
 from cart.cart import Cart
 from public.permissions_mixin_views import ViewPermissionRequiredMixin, PostPermissionRequiredMixin, \
     DynamicPermissionRequiredMixin
@@ -44,9 +42,16 @@ class SalesOrderDelayListView(SalesOrderListView):
 
     def get_queryset(self):
         qs = super().get_queryset()
-        ten_days_ago = datetime.now() - timedelta(days=10)
-        return qs.annotate(delay=datetime.now() - F('date')).filter(date__lte=ten_days_ago,
+        ten_days_ago = timezone.now() - timedelta(days=10)
+        return qs.annotate(delay=timezone.now() - F('date')).filter(date__lte=ten_days_ago,
                                                                     state='confirm')
+
+
+class SalesOrderDayListView(BaseDayArchiveView, SalesOrderListView):
+    year_format = '%Y'
+    month_format = '%m'
+    day_format = '%d'
+    date_field = 'date'
 
 
 class UserSalesOrderListView(SalesOrderListView):
@@ -197,7 +202,7 @@ class SalesSentWxMsg(SentWxMsgMixin):
         html += '\n销往:%s' % self.object.get_address()
         html += "\n订单日期:%s" % (datetime.strftime(self.object.date, "%Y/%m/%d"))
         html += "\n销售:%s" % self.object.handler
-        now = datetime.now()
+        now = timezone.now()
         html += '%s' % self.get_items()
         html += '\n操作:%s \n@%s' % (self.request.user, datetime.strftime(now, '%Y/%m/%d %H:%M'))
         return html
@@ -396,11 +401,9 @@ class OrderToPdfViewMixin(BaseDetailView, PDFTemplateView):
 
     def get_context_data(self, **kwargs):
         from public.gen_barcode import GenBarcode
-        path = reverse('sales_order_detail', args=[self.object.id])
-        kwargs['link'] = f"{settings.DEFAULT_DOMAIN}{path}"
+
         kwargs['show_account'] = True
         kwargs['barcode'] = GenBarcode(self.object.order, barcode_type='code39').value
-        content = self.response_class
         return super().get_context_data(**kwargs)
 
 
@@ -424,6 +427,10 @@ class SalesOrderPdfShareDisplayView(OrderToPdfViewMixin):
             except Exception as e:
                 print(e)
         return render_to_response("404.html", {})
+
+    def get_context_data(self, **kwargs):
+        kwargs['link'] = f"{settings.DEFAULT_DOMAIN}{reverse('sales_order_detail', args=[self.object.id])}"
+        return kwargs
 
 
 class CustomerListView(FilterListView):
