@@ -1,1 +1,0 @@
-/Users/vincent_pun/.pyenv/versions/3.6.3/lib/python3.6/token.py
