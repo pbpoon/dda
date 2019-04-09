@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="315d5000-d4a1-4146-b1ab-ecccc359401a" name="ali" url="http://120.78.136.222">
+        <fileTransfer host="120.78.136.222" port="22" rootFolder="/var/www/dda" accessType="SFTP">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" />
+          </advancedOptions>
+          <option name="port" value="22" />
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>
